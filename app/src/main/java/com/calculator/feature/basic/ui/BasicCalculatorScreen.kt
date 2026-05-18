@@ -613,10 +613,18 @@ private fun Keypad(
             keys = listOf(Key.MemoryClear, Key.MemoryRecall, Key.MemoryAdd, Key.MemorySubtract),
             compact = true,
         )
+    // Basic-mode modifier row: sign-flip + factorial + percent + divide.
+    // Parens are dropped from basic mode (they live in the scientific
+    // section in advanced mode); ± and x! take their slots.
+    val signFlipRow =
+        KeypadRowSpec(
+            keys = listOf(Key.SignFlip, Key.Factorial, Key.Symbol("%"), Key.Symbol("÷")),
+            compact = true,
+        )
     val basicRows =
         listOf(
             memoryRow,
-            KeypadRowSpec(listOf(Key.LeftParen, Key.RightParen, Key.Symbol("%"), Key.Symbol("÷"))),
+            signFlipRow,
             KeypadRowSpec(listOf(Key.Symbol("7"), Key.Symbol("8"), Key.Symbol("9"), Key.Symbol("×"))),
             KeypadRowSpec(listOf(Key.Symbol("4"), Key.Symbol("5"), Key.Symbol("6"), Key.Symbol("-"))),
             KeypadRowSpec(listOf(Key.Symbol("1"), Key.Symbol("2"), Key.Symbol("3"), Key.Symbol("+"))),
@@ -634,6 +642,13 @@ private fun Keypad(
             ),
             KeypadRowSpec(
                 listOf(Key.Function("log"), Key.Function("ln"), Key.Symbol("π"), Key.Symbol("e")),
+                compact = true,
+            ),
+            // Parens only exist in advanced mode (basic users rarely
+            // need them). Two empty slots keep the column count at 4 so
+            // the grid stays aligned with the rest of the keypad.
+            KeypadRowSpec(
+                listOf(Key.LeftParen, Key.RightParen, Key.Empty, Key.Empty),
                 compact = true,
             ),
         )
@@ -684,15 +699,21 @@ private fun KeypadRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         row.forEach { key ->
-            KeyButton(
-                key = key,
-                onEvent = onEvent,
-                compact = compact,
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .aspectRatio(aspectRatio),
-            )
+            if (key is Key.Empty) {
+                // Reserve the slot so the row's remaining buttons stay
+                // the same width as a fully-populated row.
+                Spacer(modifier = Modifier.weight(1f).aspectRatio(aspectRatio))
+            } else {
+                KeyButton(
+                    key = key,
+                    onEvent = onEvent,
+                    compact = compact,
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .aspectRatio(aspectRatio),
+                )
+            }
         }
     }
 }
@@ -756,6 +777,21 @@ private sealed interface Key {
     data object MemorySubtract : Key {
         override val label: String = "M-"
     }
+
+    /** Toggle the sign of the trailing operand (`5` <-> `-5`). */
+    data object SignFlip : Key {
+        override val label: String = "±"
+    }
+
+    /** Postfix factorial. Appends `!` to the expression. */
+    data object Factorial : Key {
+        override val label: String = "x!"
+    }
+
+    /** Renders as empty space; used to pad partial rows in the keypad grid. */
+    data object Empty : Key {
+        override val label: String = ""
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -780,6 +816,11 @@ private fun KeyButton(
             Key.MemoryRecall -> onEvent(BasicCalculatorEvent.MemoryRecall)
             Key.MemoryAdd -> onEvent(BasicCalculatorEvent.MemoryAdd)
             Key.MemorySubtract -> onEvent(BasicCalculatorEvent.MemorySubtract)
+            Key.SignFlip -> onEvent(BasicCalculatorEvent.SignFlip)
+            // Factorial is a plain char append - the tokenizer turns
+            // trailing `!` into Token.Factorial during evaluation.
+            Key.Factorial -> onEvent(BasicCalculatorEvent.Append("!"))
+            Key.Empty -> Unit
         }
     }
     // Every click also plays its DTMF tone. Tones are silently no-op if
@@ -966,6 +1007,8 @@ private class KeyToneGenerator(private val tg: ToneGenerator) {
             Key.Clear -> ToneGenerator.TONE_PROP_NACK
             Key.MemoryClear, Key.MemoryRecall, Key.MemoryAdd, Key.MemorySubtract ->
                 ToneGenerator.TONE_PROP_BEEP
+            Key.SignFlip, Key.Factorial -> ToneGenerator.TONE_PROP_BEEP
+            Key.Empty -> null
             is Key.Function -> ToneGenerator.TONE_PROP_BEEP
         }
 
@@ -1006,8 +1049,10 @@ private enum class KeyCategory { Digit, Operator, Modifier, Function, Equals }
 private fun keyCategoryOf(key: Key): KeyCategory =
     when (key) {
         Key.Equals -> KeyCategory.Equals
-        Key.Clear, Key.LeftParen, Key.RightParen, Key.Backspace -> KeyCategory.Modifier
+        Key.Clear, Key.LeftParen, Key.RightParen, Key.Backspace, Key.SignFlip -> KeyCategory.Modifier
         Key.MemoryClear, Key.MemoryRecall, Key.MemoryAdd, Key.MemorySubtract -> KeyCategory.Function
+        Key.Factorial -> KeyCategory.Function
+        Key.Empty -> KeyCategory.Digit // unused; Empty is rendered separately
         is Key.Function -> KeyCategory.Function
         is Key.Symbol ->
             if (key.label in OperatorLabels) KeyCategory.Operator else KeyCategory.Digit

@@ -98,6 +98,7 @@ class BasicCalculatorViewModel
                 BasicCalculatorEvent.MemorySubtract -> memoryDelta(addToMemory = false)
                 BasicCalculatorEvent.MemoryRecall -> memoryRecall()
                 BasicCalculatorEvent.MemoryClear -> memoryClear()
+                BasicCalculatorEvent.SignFlip -> signFlip()
             }
         }
 
@@ -273,6 +274,34 @@ class BasicCalculatorViewModel
             }
 
         /**
+         * Toggle the sign of the trailing numeric operand in the expression.
+         *
+         * Examples (`|` marks where the user's caret would be):
+         *  - `5|`         -> `-5|`
+         *  - `-5|`        -> `5|`
+         *  - `10+5|`      -> `10+-5|`   (the engine parses `+-5` as `+(-5)`)
+         *  - `10+-5|`     -> `10+5|`
+         *  - `|` (empty)  -> `-|`       (so the next digit lands as `-digit`)
+         *  - `10+|`       -> `10+-|`    (no operand yet; arm a unary minus
+         *                                for the next digit)
+         *
+         * After equals, the expression IS the result, so `signFlip` just
+         * flips its sign - same code path because the result is a single
+         * numeric token.
+         */
+        private fun signFlip() =
+            _state.update { current ->
+                val flipped = flipSignOfTrailingOperand(current.expression)
+                current
+                    .copy(
+                        expression = flipped,
+                        liveResult = preview(flipped, current.angleMode),
+                        errorMessage = null,
+                        pendingRepeat = null,
+                    ).also(::persist)
+            }
+
+        /**
          * Resolve the canonical equation string to evaluate on `=`.
          *
          * Returns `(expressionToEvaluate, repeatTokenForNextEquals)`. The
@@ -292,7 +321,9 @@ class BasicCalculatorViewModel
 
             // Trailing operator: auto-complete with the operand the user just
             // typed (the number immediately before that operator). So `1+=`
-            // resolves as `1+1=2`, `10-3×=` as `10-3×3=1`, and so on.
+            // resolves as `1+1=2`, `10-3×=` as `10-3×3=1`, and so on. This
+            // is the *only* path that arms a repeat-equals token: pressing
+            // `=` again replays the auto-completed `+1`, `×3`, etc.
             if (expr.last() in ArithmeticOperators) {
                 val precedingNumber = PrecedingNumberRegex.find(expr)?.groupValues?.getOrNull(1)
                 return if (precedingNumber != null) {
@@ -304,9 +335,13 @@ class BasicCalculatorViewModel
                 }
             }
 
-            // Normal path: extract trailing `op+operand` for future replays.
-            val repeat = TrailingOpRegex.find(expr)?.value
-            return expr to repeat
+            // Normal path: a complete expression like `2+3`. We arm an
+            // empty-string repeat token: it does NOT add anything on
+            // subsequent `=` presses (the user has to type a dangling
+            // operator to opt into the repeat chain) but it still signals
+            // "we just completed an equals" so digit/decimal presses
+            // correctly start a fresh expression (see [appendAfterEquals]).
+            return expr to ""
         }
 
         /**
@@ -383,6 +418,47 @@ class BasicCalculatorViewModel
             return if (opens > closes) expr + ")".repeat(opens - closes) else expr
         }
 
+        /**
+         * Toggle the leading `-` of the rightmost numeric operand.
+         *
+         * "Operand" here is whatever the cursor is on - the trailing
+         * digits/dot string, optionally preceded by a unary `-`. If that
+         * unary `-` is present we remove it; otherwise we insert one.
+         *
+         * Three edge cases handled at the boundary:
+         *  - Empty expression: there's nothing to flip, but the user
+         *    pressing `±` first wants to start a negative number - so
+         *    we return `"-"` so the next digit appends to it.
+         *  - Expression ends with an operator (`10+`): no operand yet;
+         *    insert `-` after the operator (`10+-`) so the next digit
+         *    becomes the negative operand.
+         *  - Expression ends with `)` or `!`: don't try to flip; the
+         *    operand isn't a single numeric token.
+         */
+        private fun flipSignOfTrailingOperand(expr: String): String {
+            if (expr.isEmpty()) return "-"
+            val last = expr.last()
+            if (last in ArithmeticOperators || last == '(') {
+                // Arm a unary minus for the next digit.
+                return expr + "-"
+            }
+            if (last == ')' || last == '!') return expr // operand isn't a flat number
+            val match = TrailingNumberRegex.find(expr) ?: return expr
+            val numStart = match.range.first
+            // Is there a leading `-` directly before the number that we should
+            // remove? It counts as unary if it sits at the start of input, or
+            // right after an operator/`(`.
+            val minusPos = numStart - 1
+            if (minusPos >= 0 && expr[minusPos] == '-') {
+                val priorPos = minusPos - 1
+                val isUnary = priorPos < 0 || expr[priorPos] in "+-×÷*/^("
+                if (isUnary) {
+                    return expr.removeRange(minusPos, minusPos + 1)
+                }
+            }
+            return expr.substring(0, numStart) + "-" + expr.substring(numStart)
+        }
+
         private companion object {
             const val KEY_EXPRESSION = "calculator.expression"
             const val KEY_ERROR = "calculator.error"
@@ -403,5 +479,8 @@ class BasicCalculatorViewModel
              * `=` (e.g. `10-3×` → use `3`, the operand just entered).
              */
             val PrecedingNumberRegex = Regex("(\\d+(?:\\.\\d+)?)[+\\-×÷*/^]$")
+
+            /** The trailing numeric literal of the expression. Used by [flipSignOfTrailingOperand]. */
+            val TrailingNumberRegex = Regex("(\\d+(?:\\.\\d+)?|\\.\\d+)$")
         }
     }

@@ -1,6 +1,7 @@
 package com.calculator.core.math
 
 import java.math.BigDecimal
+import java.math.BigInteger
 import java.math.MathContext
 import java.util.ArrayDeque
 
@@ -119,6 +120,15 @@ class Evaluator(
                     operators.push(token)
                 }
 
+                Token.Factorial -> {
+                    // Postfix: emit straight to output. It binds tighter
+                    // than any infix op, so it operates on whatever
+                    // operand was just emitted - whether that was a
+                    // single number or the result of a parenthesised
+                    // sub-expression that already collapsed via `)`.
+                    output += token
+                }
+
                 Token.LeftParen -> operators.push(token)
 
                 Token.RightParen -> {
@@ -188,6 +198,10 @@ class Evaluator(
                     check(stack.isNotEmpty()) { "function '${token.func.keyword}' missing argument" }
                     stack.push(applyFunction(token.func, stack.pop()))
                 }
+                Token.Factorial -> {
+                    check(stack.isNotEmpty()) { "'!' missing operand" }
+                    stack.push(factorial(stack.pop()))
+                }
                 Token.LeftParen, Token.RightParen ->
                     error("parenthesis leaked into RPN output: $token")
             }
@@ -255,6 +269,41 @@ class Evaluator(
 
     private fun fromRadians(value: Double): Double =
         if (angleMode == AngleMode.Degree) Math.toDegrees(value) else value
+
+    /**
+     * `n!` for non-negative integers, computed in BigInteger so we don't
+     * lose precision for large factorials (`170! ≈ 7.26e306` would
+     * overflow `Double`).
+     *
+     * Domain rejections:
+     *  - Negative: undefined for real numbers.
+     *  - Non-integer: undefined (`0.5!` is the gamma function, out of
+     *    scope for this calculator).
+     *  - n > [FACTORIAL_CAP]: arbitrary cap to avoid the user accidentally
+     *    asking for `10000!` and pinning a thread for several seconds.
+     *    1000! is already a 2,568-digit number - well past anything the
+     *    display can render.
+     */
+    private fun factorial(value: BigDecimal): BigDecimal {
+        if (value.signum() < 0) throw DomainException("factorial of negative: $value")
+        // stripTrailingZeros collapses 5.0 -> 5 so it counts as integer.
+        if (value.stripTrailingZeros().scale() > 0) {
+            throw DomainException("factorial of non-integer: $value")
+        }
+        val n = value.toBigInteger()
+        if (n > FACTORIAL_CAP) throw DomainException("factorial too large: $value")
+        var result = BigInteger.ONE
+        var i = BigInteger.TWO
+        while (i <= n) {
+            result = result.multiply(i)
+            i = i.add(BigInteger.ONE)
+        }
+        return BigDecimal(result).round(mathContext)
+    }
+
+    companion object {
+        private val FACTORIAL_CAP = BigInteger.valueOf(1000)
+    }
 }
 
 /** Signals an out-of-domain argument to a function (e.g. `log(-1)`). */

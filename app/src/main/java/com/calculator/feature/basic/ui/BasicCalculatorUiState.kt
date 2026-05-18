@@ -77,4 +77,7 @@ sealed interface BasicCalculatorEvent {
 
     /** Reset memory to zero. */
     data object MemoryClear : BasicCalculatorEvent
+
+    /** Flip the sign of the trailing operand in the expression. */
+    data object SignFlip : BasicCalculatorEvent
 }
