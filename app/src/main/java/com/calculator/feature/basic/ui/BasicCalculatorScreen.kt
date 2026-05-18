@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.MonitorWeight
 import androidx.compose.material.icons.filled.Percent
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -160,6 +161,15 @@ internal fun BasicCalculatorScreenContent(
         ModalBottomSheet(
             sheetState = sheetState,
             onDismissRequest = { menuOpen = false },
+            // iOS palette: near-black sheet so it sits flat against the
+            // calculator's black canvas, with a light-grey drag handle
+            // to match the modifier-key tone.
+            containerColor = IosSheetBackground,
+            dragHandle = {
+                BottomSheetDefaults.DragHandle(
+                    color = IosKeyModifierContainer,
+                )
+            },
         ) {
             SettingsSheetContent(
                 state = state,
@@ -193,13 +203,6 @@ private fun SettingsSheetContent(
     onClose: () -> Unit,
 ) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Text(
-            text = "Tools",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
-        )
-        Spacer(Modifier.size(8.dp))
-
         val tiles =
             listOf(
                 ToolTile(
@@ -268,16 +271,7 @@ private fun SettingsSheetContent(
             Spacer(Modifier.size(8.dp))
         }
 
-        Spacer(Modifier.size(8.dp))
-        HorizontalDivider()
-        Spacer(Modifier.size(8.dp))
-        Text(
-            text = "More tools light up as they ship.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 8.dp),
-        )
-        Spacer(Modifier.size(24.dp))
+        Spacer(Modifier.size(16.dp))
     }
 }
 
@@ -292,16 +286,21 @@ private data class ToolTile(
 
 @Composable
 private fun ToolTileButton(tile: ToolTile, modifier: Modifier = Modifier) {
+    // iOS palette: selected tile uses the same orange as the operator
+    // keys; enabled tiles use the digit-key dark grey; disabled tiles
+    // fade toward the function-key medium grey at 60% alpha so they
+    // read as placeholders without disappearing entirely.
     val containerColor =
         when {
-            tile.selected -> MaterialTheme.colorScheme.primaryContainer
-            else -> MaterialTheme.colorScheme.surfaceVariant
+            tile.selected -> IosKeyOperator
+            tile.enabled -> IosKeyDigitContainer
+            else -> IosKeyDigitContainer.copy(alpha = 0.6f)
         }
     val contentColor =
         when {
-            tile.selected -> MaterialTheme.colorScheme.onPrimaryContainer
-            tile.enabled -> MaterialTheme.colorScheme.onSurfaceVariant
-            else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            tile.selected -> Color.White
+            tile.enabled -> Color.White
+            else -> Color.White.copy(alpha = 0.5f)
         }
     Column(
         modifier =
@@ -681,16 +680,15 @@ private fun KeyButton(
     val keyShape = RoundedCornerShape(20.dp)
 
     // iOS-style palette: dark-grey digits, light-grey modifiers (with
-    // black text), vivid orange operators and equals (white text). These
-    // are intentionally literal colors rather than theme tokens because
-    // the iOS look is recognisable specifically because of these hexes;
-    // M3 dynamic-color tokens would dilute the vibe.
+    // black text), vivid orange operators and equals (white text).
+    // Sourced from the named constants below so the popup sheet and any
+    // future surfaces can share the same palette.
     val containerColor =
         when (category) {
-            KeyCategory.Digit -> Color(0xFF505050)
-            KeyCategory.Function -> Color(0xFF707070)
-            KeyCategory.Modifier -> Color(0xFFA5A5A5)
-            KeyCategory.Operator, KeyCategory.Equals -> Color(0xFFFF9F0A)
+            KeyCategory.Digit -> IosKeyDigitContainer
+            KeyCategory.Function -> IosKeyFunctionContainer
+            KeyCategory.Modifier -> IosKeyModifierContainer
+            KeyCategory.Operator, KeyCategory.Equals -> IosKeyOperator
         }
     val contentColor =
         when (category) {
@@ -877,6 +875,16 @@ private val OperatorLabels = setOf("+", "-", "×", "÷", "%", "^", "π", "e")
 // shape physical desk calculators use. Tweaking this is the single
 // knob for "make keys taller / shorter" without touching layout code.
 private const val BUTTON_ASPECT_RATIO = 1.6f
+
+// iOS palette tokens, used by both the keypad and the tools sheet so
+// the calculator reads as a single visual system. Literal colors rather
+// than theme roles because the iOS feel is recognisable specifically by
+// these hexes; M3 dynamic-color would dilute it.
+private val IosKeyDigitContainer = Color(0xFF505050)
+private val IosKeyFunctionContainer = Color(0xFF707070)
+private val IosKeyModifierContainer = Color(0xFFA5A5A5)
+private val IosKeyOperator = Color(0xFFFF9F0A)
+private val IosSheetBackground = Color(0xFF1C1C1E)
 
 // ----- Previews -----
 
