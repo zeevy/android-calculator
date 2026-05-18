@@ -249,9 +249,9 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 - [x] `M` chip in the header when memory holds a non-zero value (tap to recall)
 - [x] Transcendentals route through `Double` then round at 14 sig figs so `sin(30°) = 0.5` exactly (not `0.4999…`)
 - [x] `EvaluationResult.Error.Domain` for `log(-1)`, `sqrt(-1)`, NaN/infinite power
-- [ ] Factorial key (`x!`) - postfix unary, deferred
-- [ ] Sign-flip (`+/-`) key for unary-minus convenience
-- [ ] Landscape auto-show of scientific keypad (currently the Sci toggle is the only entry point)
+- [x] Factorial key (`x!`) - postfix unary on the engine, rejects negative / non-integer / n > 1000
+- [x] Sign-flip (`+/-`) key toggles the trailing operand's leading `-`
+- [ ] Landscape auto-show of scientific keypad - **superseded** (manifest locks orientation to portrait)
 
 ### Phase 2 - Unit tests
 
@@ -274,7 +274,7 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 - [x] `pi` keyword resolves to `π`
 - [x] Composed expression: `sin(30°) + log(100) × π` matches reference
 - [x] Unknown identifier rejected as `Error.UnknownToken`
-- [ ] Factorial cases (`5! = 120`, `0! = 1`, `(-1)!` → Domain error) - blocked on factorial feature
+- [x] Factorial cases: `5! = 120`, `0! = 1`, `1! = 1`, `5.0! = 120`, `(2+3)! = 120`, `5! + 3 = 123`, `(-3)!`/`2.5!` → Domain, `!5` → UnknownToken
 
 #### ViewModel (`BasicCalculatorViewModelTest`)
 

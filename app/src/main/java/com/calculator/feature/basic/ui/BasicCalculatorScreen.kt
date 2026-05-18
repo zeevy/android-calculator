@@ -630,6 +630,10 @@ private fun Keypad(
             KeypadRowSpec(listOf(Key.Symbol("1"), Key.Symbol("2"), Key.Symbol("3"), Key.Symbol("+"))),
             KeypadRowSpec(listOf(Key.Backspace, Key.Symbol("0"), Key.Symbol("."), Key.Equals)),
         )
+    // Four scientific rows, all compact. Parens slot into row 3
+    // (replacing π/e there); π and e move to row 4 alongside x² and x³
+    // shortcuts so every cell in advanced mode does something useful -
+    // no empty placeholders.
     val scientificRows =
         listOf(
             KeypadRowSpec(
@@ -641,14 +645,11 @@ private fun Keypad(
                 compact = true,
             ),
             KeypadRowSpec(
-                listOf(Key.Function("log"), Key.Function("ln"), Key.Symbol("π"), Key.Symbol("e")),
+                listOf(Key.Function("log"), Key.Function("ln"), Key.LeftParen, Key.RightParen),
                 compact = true,
             ),
-            // Parens only exist in advanced mode (basic users rarely
-            // need them). Two empty slots keep the column count at 4 so
-            // the grid stays aligned with the rest of the keypad.
             KeypadRowSpec(
-                listOf(Key.LeftParen, Key.RightParen, Key.Empty, Key.Empty),
+                listOf(Key.Symbol("π"), Key.Symbol("e"), Key.Squared, Key.Cubed),
                 compact = true,
             ),
         )
@@ -788,6 +789,16 @@ private sealed interface Key {
         override val label: String = "x!"
     }
 
+    /** Squares the current operand. Appends `^2` to the expression. */
+    data object Squared : Key {
+        override val label: String = "x²"
+    }
+
+    /** Cubes the current operand. Appends `^3` to the expression. */
+    data object Cubed : Key {
+        override val label: String = "x³"
+    }
+
     /** Renders as empty space; used to pad partial rows in the keypad grid. */
     data object Empty : Key {
         override val label: String = ""
@@ -820,6 +831,8 @@ private fun KeyButton(
             // Factorial is a plain char append - the tokenizer turns
             // trailing `!` into Token.Factorial during evaluation.
             Key.Factorial -> onEvent(BasicCalculatorEvent.Append("!"))
+            Key.Squared -> onEvent(BasicCalculatorEvent.Append("^2"))
+            Key.Cubed -> onEvent(BasicCalculatorEvent.Append("^3"))
             Key.Empty -> Unit
         }
     }
@@ -1007,7 +1020,7 @@ private class KeyToneGenerator(private val tg: ToneGenerator) {
             Key.Clear -> ToneGenerator.TONE_PROP_NACK
             Key.MemoryClear, Key.MemoryRecall, Key.MemoryAdd, Key.MemorySubtract ->
                 ToneGenerator.TONE_PROP_BEEP
-            Key.SignFlip, Key.Factorial -> ToneGenerator.TONE_PROP_BEEP
+            Key.SignFlip, Key.Factorial, Key.Squared, Key.Cubed -> ToneGenerator.TONE_PROP_BEEP
             Key.Empty -> null
             is Key.Function -> ToneGenerator.TONE_PROP_BEEP
         }
@@ -1051,7 +1064,7 @@ private fun keyCategoryOf(key: Key): KeyCategory =
         Key.Equals -> KeyCategory.Equals
         Key.Clear, Key.LeftParen, Key.RightParen, Key.Backspace, Key.SignFlip -> KeyCategory.Modifier
         Key.MemoryClear, Key.MemoryRecall, Key.MemoryAdd, Key.MemorySubtract -> KeyCategory.Function
-        Key.Factorial -> KeyCategory.Function
+        Key.Factorial, Key.Squared, Key.Cubed -> KeyCategory.Function
         Key.Empty -> KeyCategory.Digit // unused; Empty is rendered separately
         is Key.Function -> KeyCategory.Function
         is Key.Symbol ->
