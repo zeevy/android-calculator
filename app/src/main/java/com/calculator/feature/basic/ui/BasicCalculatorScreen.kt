@@ -1,9 +1,14 @@
 package com.calculator.feature.basic.ui
 
+import android.media.AudioManager
+import android.media.ToneGenerator
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,11 +45,17 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,6 +68,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.core.designsystem.theme.CalculatorTheme
 import com.calculator.core.math.AngleMode
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
@@ -89,7 +101,9 @@ internal fun BasicCalculatorScreenContent(
     var menuOpen by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
+    val tones = rememberKeyToneGenerator()
 
+    CompositionLocalProvider(LocalKeyTones provides tones) {
     Scaffold(
         // Hand out insets per-child: outer Column absorbs the status-bar
         // inset (so the display card sits below the system icons), and
@@ -122,6 +136,11 @@ internal fun BasicCalculatorScreenContent(
                         .weight(1f),
             )
             Spacer(Modifier.size(8.dp))
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant,
+                thickness = 1.dp,
+            )
+            Spacer(Modifier.size(12.dp))
             // No keypad tray. iOS calculator puts keys directly on the
             // screen background; the colored keys carry the visual
             // structure on their own.
@@ -152,6 +171,7 @@ internal fun BasicCalculatorScreenContent(
             )
         }
     }
+    } // CompositionLocalProvider
 }
 
 /**
@@ -615,7 +635,8 @@ private fun KeyButton(
     onEvent: (BasicCalculatorEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val click: () -> Unit = {
+    val tones = LocalKeyTones.current
+    val rawClick: () -> Unit = {
         when (key) {
             is Key.Symbol -> onEvent(BasicCalculatorEvent.Append(key.label))
             is Key.Function -> onEvent(BasicCalculatorEvent.Append("${key.keyword}("))
@@ -630,16 +651,31 @@ private fun KeyButton(
             Key.MemorySubtract -> onEvent(BasicCalculatorEvent.MemorySubtract)
         }
     }
+    // Every click also plays its DTMF tone. Tones are silently no-op if
+    // the system refused to give us a ToneGenerator (rare; some OEM
+    // devices restrict STREAM_DTMF for non-phone apps).
+    val click: () -> Unit = {
+        tones?.play(key)
+        rawClick()
+    }
 
-    // Long-press wiring. Right now only Backspace defines a long-press
-    // action (it clears the whole expression - the standalone C key was
-    // removed in favour of this gesture). Per-key long-press semantics
-    // can be added here without touching the Box-based render below.
+    // Long-press wiring. Only Backspace defines a long-press action - it
+    // clears the whole expression, in place of the standalone C key.
     val longClick: (() -> Unit)? =
         when (key) {
             Key.Backspace -> { { onEvent(BasicCalculatorEvent.Clear) } }
             else -> null
         }
+
+    // Keys that auto-repeat while held: digits, dot, parens, arithmetic
+    // operators. Backspace deliberately does not repeat (its long-press
+    // is bound to Clear) and equals / memory / function keys are
+    // one-shot actions where a repeat doesn't make sense.
+    val repeatOnHold = when (key) {
+        is Key.Symbol -> true
+        Key.LeftParen, Key.RightParen -> true
+        else -> false
+    }
 
     val category = keyCategoryOf(key)
     val keyShape = RoundedCornerShape(20.dp)
@@ -675,20 +711,30 @@ private fun KeyButton(
         }
     val labelWeight = if (category == KeyCategory.Equals) FontWeight.Bold else FontWeight.Medium
 
-    // Box + combinedClickable instead of Material's Button because Button
-    // doesn't expose onLongClick. The ripple still fires via the
-    // clickable modifier; we just lose the Button's intrinsic state-layer
-    // tint on press (acceptable - color contrast already differentiates
-    // each key).
+    // Three click modes:
+    //   - repeatOnHold (digits, dot, parens, operators): immediate first
+    //     fire on press, then auto-repeat after 400ms while still held.
+    //   - longClick != null (backspace): tap to delete, long-press to
+    //     clear the whole expression.
+    //   - everything else (equals, functions, memory): plain click.
+    //
+    // Box rather than Material Button because Button exposes neither
+    // long-press nor repeat. The visual press feedback for repeating
+    // keys is the digit appearing in the expression - acceptable
+    // tradeoff for the gesture.
+    val clickModifier =
+        when {
+            repeatOnHold -> Modifier.repeatingClickable(onClick = click)
+            longClick != null ->
+                Modifier.combinedClickable(onClick = click, onLongClick = longClick)
+            else -> Modifier.clickable(onClick = click)
+        }
     Box(
         modifier =
             modifier
                 .clip(keyShape)
                 .background(containerColor)
-                .combinedClickable(
-                    onClick = click,
-                    onLongClick = longClick,
-                ),
+                .then(clickModifier),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -698,6 +744,118 @@ private fun KeyButton(
         )
     }
 }
+
+/**
+ * Auto-repeating clickable. Fires [onClick] immediately on press, then
+ * repeats every [intervalMillis] after an [initialDelayMillis] hold,
+ * stopping on release or cancel.
+ *
+ * This is what makes holding a digit key emit "555555..." the way a
+ * physical keyboard's auto-repeat works. The 400ms / 80ms defaults
+ * mirror Android's IME long-press behaviour so it feels familiar.
+ */
+@Composable
+private fun Modifier.repeatingClickable(
+    enabled: Boolean = true,
+    initialDelayMillis: Long = 400L,
+    intervalMillis: Long = 80L,
+    onClick: () -> Unit,
+): Modifier {
+    val currentOnClick by rememberUpdatedState(onClick)
+    var pressed by remember { mutableStateOf(false) }
+    // The pointerInput sets `pressed` on down and clears it on up/cancel.
+    // The LaunchedEffect watches that flag - delay first (so a quick tap
+    // doesn't trigger any repeats), then fire onClick on an interval as
+    // long as the finger is still down.
+    LaunchedEffect(pressed) {
+        if (pressed && enabled) {
+            delay(initialDelayMillis)
+            while (pressed) {
+                currentOnClick()
+                delay(intervalMillis)
+            }
+        }
+    }
+    return this.pointerInput(enabled) {
+        awaitEachGesture {
+            awaitFirstDown(requireUnconsumed = false)
+            if (!enabled) return@awaitEachGesture
+            currentOnClick() // immediate first click
+            pressed = true
+            waitForUpOrCancellation()
+            pressed = false
+        }
+    }
+}
+
+/**
+ * DTMF tone generator for the keypad.
+ *
+ * Maps digits to the standard phone touch-tones (so 7 sounds like 7
+ * and 9 sounds like 9), and gives operators, equals, and modifier keys
+ * their own tones so the audio cues differentiate by key category, not
+ * just by pitch. Falls back silently if the system refuses to allocate
+ * a [ToneGenerator] (some OEM devices restrict STREAM_DTMF).
+ */
+private class KeyToneGenerator(private val tg: ToneGenerator) {
+    fun play(key: Key) {
+        val tone = toneFor(key) ?: return
+        // 80ms is short enough that overlapping repeats don't smear into
+        // one long buzz when a digit auto-repeats.
+        runCatching { tg.startTone(tone, KEY_TONE_DURATION_MS) }
+    }
+
+    private fun toneFor(key: Key): Int? =
+        when (key) {
+            is Key.Symbol -> {
+                val label = key.label
+                when {
+                    label.length == 1 && label[0].isDigit() ->
+                        ToneGenerator.TONE_DTMF_0 + (label[0] - '0')
+                    label == "." -> ToneGenerator.TONE_DTMF_P
+                    else -> ToneGenerator.TONE_PROP_BEEP
+                }
+            }
+            Key.Equals -> ToneGenerator.TONE_PROP_ACK
+            Key.Backspace -> ToneGenerator.TONE_PROP_PROMPT
+            Key.LeftParen, Key.RightParen -> ToneGenerator.TONE_PROP_BEEP
+            Key.Clear -> ToneGenerator.TONE_PROP_NACK
+            Key.MemoryClear, Key.MemoryRecall, Key.MemoryAdd, Key.MemorySubtract ->
+                ToneGenerator.TONE_PROP_BEEP
+            is Key.Function -> ToneGenerator.TONE_PROP_BEEP
+        }
+
+    fun release() {
+        runCatching { tg.release() }
+    }
+}
+
+private const val KEY_TONE_DURATION_MS = 80
+private const val KEY_TONE_VOLUME = 80
+
+/**
+ * Constructs and remembers a [KeyToneGenerator] scoped to the current
+ * composition. Released automatically on dispose. Returns null if the
+ * device wouldn't give us a tone generator (we then play no audio at
+ * all rather than crashing).
+ */
+@Composable
+private fun rememberKeyToneGenerator(): KeyToneGenerator? {
+    val generator =
+        remember {
+            runCatching {
+                ToneGenerator(AudioManager.STREAM_DTMF, KEY_TONE_VOLUME)
+            }.getOrNull()
+        }
+    val keyTones = remember(generator) { generator?.let(::KeyToneGenerator) }
+    DisposableEffect(keyTones) {
+        onDispose { keyTones?.release() }
+    }
+    return keyTones
+}
+
+/** CompositionLocal so any key in the tree can play tones without prop drilling. */
+private val LocalKeyTones = compositionLocalOf<KeyToneGenerator?> { null }
 
 private enum class KeyCategory { Digit, Operator, Modifier, Function, Equals }
 
