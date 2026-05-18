@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
@@ -206,11 +207,17 @@ private fun KeyButton(
         }
     }
 
+    // Rounded-square keys: 20dp radius keeps the soft Material 3 feel while
+    // reading as a square rather than the default near-circular pill shape
+    // that Material 3 buttons fall into at small aspect-ratio sizes.
+    val keyShape = RoundedCornerShape(20.dp)
+
     when (key) {
         Key.Equals ->
             Button(
                 onClick = click,
                 modifier = modifier,
+                shape = keyShape,
                 colors =
                     ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
@@ -219,7 +226,11 @@ private fun KeyButton(
             ) { Text(key.label, style = MaterialTheme.typography.headlineSmall) }
 
         else ->
-            FilledTonalButton(onClick = click, modifier = modifier) {
+            FilledTonalButton(
+                onClick = click,
+                modifier = modifier,
+                shape = keyShape,
+            ) {
                 Text(key.label, style = MaterialTheme.typography.headlineSmall)
             }
     }
