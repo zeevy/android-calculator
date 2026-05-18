@@ -526,9 +526,17 @@ private fun AutoSizeText(
     val measurer = rememberTextMeasurer()
     BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.BottomEnd) {
         val maxWidthPx = constraints.maxWidth
-        val widthConstraints = Constraints(maxWidth = maxWidthPx)
+        // The display box also has a bounded height (in scientific mode
+        // the keypad takes most of the screen, leaving only ~130dp for
+        // the display). Pass maxHeight into the measurer too so the
+        // shrink loop terminates when text overflows *either* axis,
+        // not just width. Without this, three lines of displayLarge
+        // would overflow the box vertically and crowd the keypad.
+        val maxHeightPx =
+            if (constraints.hasBoundedHeight) constraints.maxHeight else Int.MAX_VALUE
+        val measureConstraints = Constraints(maxWidth = maxWidthPx, maxHeight = maxHeightPx)
         val fontSize =
-            remember(text, maxWidthPx, maxLines, maxFontSize, minFontSize, style) {
+            remember(text, maxWidthPx, maxHeightPx, maxLines, maxFontSize, minFontSize, style) {
                 var candidate = maxFontSize
                 while (candidate.value > minFontSize.value) {
                     val measured =
@@ -537,7 +545,7 @@ private fun AutoSizeText(
                             style = style.copy(fontSize = candidate),
                             maxLines = maxLines,
                             softWrap = maxLines > 1,
-                            constraints = widthConstraints,
+                            constraints = measureConstraints,
                         )
                     if (!measured.didOverflowWidth && !measured.didOverflowHeight) break
                     candidate = (candidate.value - AUTO_SIZE_STEP_SP).sp
