@@ -1,5 +1,6 @@
 package com.calculator.feature.basic.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -91,51 +92,53 @@ internal fun BasicCalculatorScreenContent(
     val scope = rememberCoroutineScope()
 
     Scaffold(
-        // Scaffold defaults to padding its content by the system-bar insets;
-        // that would push the hamburger 24-28dp below the status bar before
-        // its own 48dp tap target adds another 12dp. Zero the Scaffold's
-        // insets and hand them out per-child instead - chips and display
-        // text get the status-bar inset, the hamburger doesn't.
+        // Hand out insets per-child: outer Column absorbs the status-bar
+        // inset (so the display card sits below the system icons), and
+        // the keypad card absorbs the navigation-bar inset on its bottom
+        // edge (so the bottom row of keys doesn't collide with the
+        // gesture pill).
         contentWindowInsets = WindowInsets(0.dp),
     ) { padding ->
         Column(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(padding),
+                    .padding(padding)
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(horizontal = 12.dp)
+                    .padding(top = 8.dp),
         ) {
-            // Display fills whatever room the keypad doesn't take.
-            // The hamburger icon lives at the absolute top of this
-            // section (no status-bar inset on the section itself) so
-            // its 48dp tap target starts at screen top - the icon
-            // glyph's built-in 12dp internal padding then centers it
-            // right at the edge of the status bar with no visible gap.
-            // Only the display *text* and the chips opt into the
-            // status-bar inset so they don't draw behind it.
-            DisplaySection(
-                state = state,
-                onEvent = onEvent,
-                onOpenMenu = { menuOpen = true },
+            // Two stacked cards. Display gets an outlined treatment
+            // (transparent fill + 1dp border) so it reads as a defined
+            // region without competing with the keypad's tonal fill.
+            // Keypad uses surfaceContainerHigh - one step brighter than
+            // the screen background - so the interactive layer is the
+            // visually heavier one.
+            Surface(
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .weight(1f),
-            )
-            Spacer(Modifier.size(16.dp))
-            // Visual separation between display and keypad: a tinted
-            // surface with rounded top corners reads as a distinct "key
-            // tray" sitting under the result area - same idiom Mi
-            // Calculator uses. surfaceContainerHigh sits one step above
-            // the screen background in the M3 tonal hierarchy, enough
-            // contrast in both light and dark themes without a divider.
+                color = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(28.dp),
+                border =
+                    BorderStroke(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    ),
+            ) {
+                DisplaySection(
+                    state = state,
+                    onEvent = onEvent,
+                    onOpenMenu = { menuOpen = true },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+            Spacer(Modifier.size(12.dp))
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                shape =
-                    RoundedCornerShape(
-                        topStart = 28.dp,
-                        topEnd = 28.dp,
-                    ),
+                shape = RoundedCornerShape(28.dp),
             ) {
                 Keypad(
                     scientific = state.scientific,
@@ -143,12 +146,13 @@ internal fun BasicCalculatorScreenContent(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
+                            .padding(horizontal = 12.dp)
                             .padding(top = 16.dp)
                             .windowInsetsPadding(WindowInsets.navigationBars)
                             .padding(bottom = 12.dp),
                 )
             }
+            Spacer(Modifier.size(8.dp))
         }
     }
 
