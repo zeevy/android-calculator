@@ -1,0 +1,93 @@
+# detekt configuration for the Calculator project.
+#
+# This file overrides defaults; rules not listed here use detekt's
+# built-in defaults (see `buildUponDefaultConfig = true` in app/build.gradle.kts).
+#
+# Tune one of three things and nothing else:
+#   1. Project-specific complexity / length thresholds.
+#   2. Rules that are too noisy for an open-source Kotlin codebase.
+#   3. The formatting ruleset (delegated to ktlint via detekt-formatting).
+
+build:
+  maxIssues: 0
+  excludeCorrectable: false
+
+config:
+  validation: true
+  warningsAsErrors: true
+
+processors:
+  active: true
+
+console-reports:
+  active: true
+
+complexity:
+  active: true
+  LongMethod:
+    threshold: 80
+  LongParameterList:
+    functionThreshold: 7
+    constructorThreshold: 8
+  CyclomaticComplexMethod:
+    threshold: 18
+  # Shunting-Yard naturally produces a switch-inside-while pattern; 5 is
+  # tight enough to catch genuine over-nesting elsewhere.
+  NestedBlockDepth:
+    threshold: 5
+  TooManyFunctions:
+    thresholdInClasses: 20
+    thresholdInInterfaces: 15
+    thresholdInObjects: 15
+    thresholdInEnums: 15
+
+empty-blocks:
+  active: true
+  EmptyFunctionBlock:
+    active: true
+    ignoreOverridden: true
+
+style:
+  active: true
+  # Compose `@Preview` functions are intentionally private and never
+  # called from app code; detekt's UnusedPrivateMember would otherwise
+  # flag every preview as dead code.
+  UnusedPrivateMember:
+    ignoreAnnotated: ['Preview', 'PreviewLightDark', 'PreviewScreenSizes', 'PreviewFontScale']
+  # The Shunting-Yard `while` loop uses `break` to stop popping when an
+  # operator of lower precedence is reached and again when `(` is hit;
+  # raising the limit avoids restructuring the algorithm for the linter.
+  LoopWithTooManyJumpStatements:
+    maxJumpCount: 2
+  MagicNumber:
+    ignoreNumbers: ['-1', '0', '1', '2', '3', '4', '5', '8', '10', '16', '24', '48', '100']
+    ignorePropertyDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+    ignoreAnnotation: true
+    ignoreEnums: true
+    ignoreRanges: true
+  MaxLineLength:
+    maxLineLength: 140
+    excludePackageStatements: true
+    excludeImportStatements: true
+  ReturnCount:
+    max: 4
+  WildcardImport:
+    active: true
+
+naming:
+  active: true
+  FunctionNaming:
+    # Allow Composable functions to use PascalCase.
+    functionPattern: '[a-zA-Z][a-zA-Z0-9]*'
+  # Navigation destination files collect several `@Serializable` route
+  # objects in one place; one-decl-per-file would balloon the package.
+  MatchingDeclarationName:
+    active: true
+    excludes: ['**/navigation/**']
+
+## ktlint formatting rules are already enforced by the ktlint Gradle plugin
+## with a newer ktlint than detekt-formatting bundles, so they would
+## disagree on edge cases. Run one or the other, not both.
+formatting:
+  active: false

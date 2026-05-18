@@ -1,0 +1,79 @@
+# Release workflow.
+#
+# Triggered manually or by pushing a tag like `v0.1.0`. Builds a release AAB
+# and APK, attaches them to a GitHub release, and uploads test/lint reports.
+#
+# Signing is intentionally left unsigned in this workflow for now; once Play
+# App Signing is enrolled the release config will pull the keystore from
+# encrypted secrets and produce a signed AAB.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag name to publish (e.g. v0.1.0)
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build release artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: true
+
+      - name: Assemble release APK
+        run: ./gradlew :app:assembleRelease --stacktrace
+
+      - name: Bundle release AAB
+        run: ./gradlew :app:bundleRelease --stacktrace
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: calculator-apk
+          path: app/build/outputs/apk/release/*.apk
+          retention-days: 90
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: calculator-aab
+          path: app/build/outputs/bundle/release/*.aab
+          retention-days: 90
+
+      - name: Create GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/bundle/release/*.aab

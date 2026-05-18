@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Auto Backup rules (used on Android < 12; superseded by data_extraction_rules.xml
+  on Android 12+ but declared here as a safety net so older devices behave
+  identically).
+
+  The calculator stores only:
+    - User preferences (theme, default currency, etc.) in DataStore.
+    - Calculation history, cached currency rates and favourites in Room.
+
+  None of these are sensitive. We include them all in backup so a reinstall
+  restores the user's setup.
+-->
+<full-backup-content>
+    <include domain="database" path="." />
+    <include domain="sharedpref" path="." />
+    <include domain="file" path="datastore/" />
+</full-backup-content>

@@ -1,0 +1,75 @@
+# Continuous integration for the Calculator project.
+#
+# Runs on every push and pull request against the main branch:
+#   1. Restore Gradle caches.
+#   2. Run static analysis (ktlint + detekt + Android Lint).
+#   3. Run unit tests (JUnit5).
+#   4. Assemble the debug APK to catch compilation regressions.
+#
+# Instrumented tests are run on emulator runners and are intentionally
+# kept out of the default workflow (slow, flaky on shared infra). They
+# move into a separate workflow once the first emulator-pinned feature
+# lands.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs when a new commit lands on the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: ktlint
+        run: ./gradlew ktlintCheck --stacktrace
+
+      - name: detekt
+        run: ./gradlew detekt --stacktrace
+
+      - name: Android Lint
+        run: ./gradlew :app:lintDebug --stacktrace
+
+      - name: Unit tests
+        run: ./gradlew test --stacktrace
+
+      - name: Assemble debug
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Upload test reports
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            app/build/reports/tests/
+            app/build/reports/lint-results-*.html
+            app/build/reports/detekt/
+            app/build/reports/ktlint/
+          retention-days: 7

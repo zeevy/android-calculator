@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  XML themes are intentionally minimal: the real theming happens in
+  Compose (`core/designsystem/theme/Theme.kt`). These XML themes only
+  need to:
+    - Provide a `Theme.<App>.Starting` for the SplashScreen API.
+    - Set window flags before Compose attaches.
+
+  Keeping the XML theme thin avoids drift between an XML theme palette
+  and the Compose ColorScheme - the Compose layer is the source of truth.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Splash screen theme. Inherits from the platform Material SplashScreen. -->
+    <style name="Theme.Calculator.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Calculator</item>
+    </style>
+
+    <!-- App theme after splash hands off. Compose owns colors/typography. -->
+    <style name="Theme.Calculator" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor" tools:targetApi="l">@android:color/transparent</item>
+        <item name="android:navigationBarColor" tools:targetApi="l">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="29">false</item>
+    </style>
+
+</resources>

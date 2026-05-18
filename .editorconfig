@@ -1,0 +1,33 @@
+## Single source of truth for whitespace and a small number of ktlint rules.
+## IDEs (Android Studio, IntelliJ, VS Code with the EditorConfig plugin) and
+## the ktlint Gradle plugin both consume this file, so contributor machines
+## stay in sync without anyone having to remember a settings dialog.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{kt,kts}]
+indent_style = space
+indent_size = 4
+continuation_indent_size = 4
+max_line_length = 140
+
+## ktlint-specific overrides.
+ktlint_standard_function-signature = disabled
+ktlint_standard_class-signature = disabled
+ktlint_standard_multiline-expression-wrapping = disabled
+ktlint_standard_no-empty-first-line-in-class-body = disabled
+## Composables intentionally use PascalCase.
+ktlint_function_naming_ignore_when_annotated_with = Composable,Preview,PreviewLightDark
+
+[*.{xml,yml,yaml,json,md}]
+indent_style = space
+indent_size = 2
+
+[Makefile]
+indent_style = tab

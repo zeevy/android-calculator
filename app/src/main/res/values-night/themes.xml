@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Dark-mode overrides. Compose computes the actual color scheme dynamically
+  from the system night-mode setting (`isSystemInDarkTheme()`), so this
+  file only differs from the day theme in the status-bar foreground.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.Calculator" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor" tools:targetApi="l">@android:color/transparent</item>
+        <item name="android:navigationBarColor" tools:targetApi="l">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="29">false</item>
+    </style>
+</resources>

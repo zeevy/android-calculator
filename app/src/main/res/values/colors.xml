@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Non-theme colors.
+
+  Used only by resources that can't be expressed in Compose:
+    - The adaptive launcher icon background.
+    - The SplashScreen API background (XML-only).
+
+  Theme colors for the running app live in Compose (`Theme.kt`).
+-->
+<resources>
+    <color name="ic_launcher_background">#6750A4</color>
+</resources>

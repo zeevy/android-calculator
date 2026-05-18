@@ -1,0 +1,45 @@
+## Dependabot keeps Gradle, Kotlin, AndroidX, and GitHub Actions versions
+## fresh. PRs land grouped (one per ecosystem per week) so review is light.
+
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: Asia/Kolkata
+    open-pull-requests-limit: 10
+    groups:
+      androidx:
+        patterns:
+          - "androidx.*"
+      kotlin:
+        patterns:
+          - "org.jetbrains.kotlin*"
+          - "org.jetbrains.kotlinx*"
+      compose:
+        patterns:
+          - "androidx.compose*"
+      hilt:
+        patterns:
+          - "com.google.dagger:hilt-*"
+          - "androidx.hilt:*"
+      test-libraries:
+        patterns:
+          - "org.junit*"
+          - "io.mockk:*"
+          - "app.cash.turbine:*"
+          - "org.robolectric:*"
+    labels:
+      - dependencies
+      - gradle
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - github-actions

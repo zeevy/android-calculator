@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  User-facing strings.
+
+  Conventions:
+    - Keep keys descriptive: `feature_action_modifier` (e.g. `basic_button_clear`).
+    - One file in `values/` (default English); translations live alongside in
+      `values-<locale>/strings.xml` (e.g. `values-hi/strings.xml`).
+    - Mark format strings with `xliff:g` so translators know not to alter
+      placeholders (added when the first formatted string is introduced).
+-->
+<resources>
+    <string name="app_name">Calculator</string>
+
+    <!-- Basic calculator -->
+    <string name="basic_button_clear">Clear</string>
+    <string name="basic_button_backspace">Backspace</string>
+    <string name="basic_button_equals">Equals</string>
+    <string name="basic_error_division_by_zero">Can\'t divide by zero</string>
+    <string name="basic_error_syntax">Check your expression</string>
+    <string name="basic_error_unknown_token">Unsupported character</string>
+</resources>
