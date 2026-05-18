@@ -33,6 +33,7 @@
             android:exported="true"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode"
             android:launchMode="singleTask"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.Calculator.Starting"
             android:windowSoftInputMode="adjustResize">
 

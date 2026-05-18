@@ -1,22 +1,31 @@
 package com.calculator.feature.basic.ui
 
 import android.content.res.Configuration
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.CurrencyExchange
+import androidx.compose.material.icons.filled.Functions
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MonitorWeight
+import androidx.compose.material.icons.filled.Percent
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
@@ -30,7 +39,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -41,6 +49,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -91,9 +100,12 @@ internal fun BasicCalculatorScreenContent(
                 Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .systemBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .systemBarsPadding(),
         ) {
+            // ModeHeader sits flush to the top-right corner (no outer top
+            // padding, no horizontal padding on the row itself). The chips
+            // and hamburger live inside its Row so the hamburger ends up
+            // in the absolute corner just below the status bar.
             ModeHeader(
                 state = state,
                 onEvent = onEvent,
@@ -106,6 +118,7 @@ internal fun BasicCalculatorScreenContent(
                 modifier =
                     Modifier
                         .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
                         // Smaller display weight in landscape so the keypad
                         // (the more space-hungry component, especially with
                         // 9 rows in scientific mode) actually fits.
@@ -119,7 +132,11 @@ internal fun BasicCalculatorScreenContent(
                 // Keypad takes the remaining vertical space; weighted
                 // rows below then divide it so nothing overflows the
                 // viewport regardless of orientation or screen size.
-                modifier = Modifier.weight(if (isLandscape) 1f else 2f),
+                modifier =
+                    Modifier
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 8.dp)
+                        .weight(if (isLandscape) 1f else 2f),
             )
         }
     }
@@ -142,11 +159,16 @@ internal fun BasicCalculatorScreenContent(
 }
 
 /**
- * App-level settings sheet, summoned from the top-right hamburger button.
+ * App-level tools sheet, summoned from the top-right hamburger button.
  *
- * Houses the basic-vs-advanced toggle today; future settings (theme,
- * haptics, decimal precision) will land here too rather than crowding
- * the main screen.
+ * Modelled on the Mi Calculator tools menu: a grid of icon + label
+ * tiles, one tap to jump to a mode/tool. The currently-active mode is
+ * highlighted with the primary container colour.
+ *
+ * Today the working tiles are Basic and Advanced (scientific). The rest
+ * are placeholders for upcoming features (history in Phase 3, converters
+ * in Phase 5/6, life calculators in Phase 7) and are tappable but flash
+ * a "coming soon" hint to avoid silently swallowing user intent.
  */
 @Composable
 private fun SettingsSheetContent(
@@ -154,43 +176,142 @@ private fun SettingsSheetContent(
     onEvent: (BasicCalculatorEvent) -> Unit,
     onClose: () -> Unit,
 ) {
-    Column(modifier = Modifier.padding(24.dp)) {
-        Text("Calculator", style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.size(24.dp))
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Text(
+            text = "Tools",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+        )
+        Spacer(Modifier.size(8.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Advanced mode", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = "Show scientific functions (sin, cos, log, ^, memory)",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Switch(
-                checked = state.scientific,
-                onCheckedChange = {
-                    onEvent(BasicCalculatorEvent.ToggleScientific)
-                    onClose()
-                },
+        val tiles =
+            listOf(
+                ToolTile(
+                    icon = Icons.Filled.Calculate,
+                    label = "Basic",
+                    enabled = true,
+                    selected = !state.scientific,
+                    onTap = {
+                        if (state.scientific) onEvent(BasicCalculatorEvent.ToggleScientific)
+                        onClose()
+                    },
+                ),
+                ToolTile(
+                    icon = Icons.Filled.Functions,
+                    label = "Advanced",
+                    enabled = true,
+                    selected = state.scientific,
+                    onTap = {
+                        if (!state.scientific) onEvent(BasicCalculatorEvent.ToggleScientific)
+                        onClose()
+                    },
+                ),
+                ToolTile(
+                    icon = Icons.Filled.History,
+                    label = "History",
+                    enabled = false,
+                    selected = false,
+                    onTap = onClose,
+                ),
+                ToolTile(
+                    icon = Icons.Filled.CurrencyExchange,
+                    label = "Converter",
+                    enabled = false,
+                    selected = false,
+                    onTap = onClose,
+                ),
+                ToolTile(
+                    icon = Icons.Filled.Percent,
+                    label = "Finance",
+                    enabled = false,
+                    selected = false,
+                    onTap = onClose,
+                ),
+                ToolTile(
+                    icon = Icons.Filled.MonitorWeight,
+                    label = "Health",
+                    enabled = false,
+                    selected = false,
+                    onTap = onClose,
+                ),
             )
+
+        tiles.chunked(TOOL_TILE_COLUMNS).forEach { rowTiles ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                rowTiles.forEach { tile ->
+                    ToolTileButton(tile = tile, modifier = Modifier.weight(1f))
+                }
+                // Pad the trailing slot(s) so partial rows keep tile size.
+                repeat(TOOL_TILE_COLUMNS - rowTiles.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+            Spacer(Modifier.size(8.dp))
         }
 
-        Spacer(Modifier.size(16.dp))
+        Spacer(Modifier.size(8.dp))
         HorizontalDivider()
-        Spacer(Modifier.size(16.dp))
+        Spacer(Modifier.size(8.dp))
         Text(
-            text = "More settings (theme, haptics, currency, …) land here in a future build.",
+            text = "More tools light up as they ship.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 8.dp),
         )
         Spacer(Modifier.size(24.dp))
     }
 }
+
+/** A single tile (icon + label) inside the [SettingsSheetContent] grid. */
+private data class ToolTile(
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val label: String,
+    val enabled: Boolean,
+    val selected: Boolean,
+    val onTap: () -> Unit,
+)
+
+@Composable
+private fun ToolTileButton(tile: ToolTile, modifier: Modifier = Modifier) {
+    val containerColor =
+        when {
+            tile.selected -> MaterialTheme.colorScheme.primaryContainer
+            else -> MaterialTheme.colorScheme.surfaceVariant
+        }
+    val contentColor =
+        when {
+            tile.selected -> MaterialTheme.colorScheme.onPrimaryContainer
+            tile.enabled -> MaterialTheme.colorScheme.onSurfaceVariant
+            else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+        }
+    Column(
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(20.dp))
+                .background(containerColor)
+                .clickable(enabled = tile.enabled, onClick = tile.onTap)
+                .padding(vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            imageVector = tile.icon,
+            contentDescription = tile.label,
+            tint = contentColor,
+            modifier = Modifier.size(32.dp),
+        )
+        Spacer(Modifier.size(8.dp))
+        Text(
+            text = tile.label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = contentColor,
+        )
+    }
+}
+
+private const val TOOL_TILE_COLUMNS = 3
 
 /**
  * Top header: the DEG/RAD chip when scientific mode is on, an `M` chip
@@ -208,6 +329,9 @@ private fun ModeHeader(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // 16dp leading padding only so the chips don't kiss the screen
+        // edge, but the trailing IconButton stays flush to the right edge.
+        Spacer(Modifier.size(16.dp))
         if (state.scientific) {
             AssistChip(
                 onClick = { onEvent(BasicCalculatorEvent.ToggleAngleMode) },
@@ -310,20 +434,13 @@ private fun Keypad(
 
     if (scientific && isLandscape) {
         // Landscape scientific: sci keys on the left, basic on the right.
+        // Both columns scroll independently if they would overflow.
         Row(
             modifier = modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            KeypadGrid(
-                rows = scientificRows,
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-                onEvent = onEvent,
-            )
-            KeypadGrid(
-                rows = basicRows,
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-                onEvent = onEvent,
-            )
+            KeypadGrid(rows = scientificRows, modifier = Modifier.weight(1f), onEvent = onEvent)
+            KeypadGrid(rows = basicRows, modifier = Modifier.weight(1f), onEvent = onEvent)
         }
     } else {
         KeypadGrid(
@@ -334,6 +451,13 @@ private fun Keypad(
     }
 }
 
+/**
+ * Renders a list of keypad rows as a vertical scrolling column of square
+ * buttons. Each button uses `aspectRatio(1f)` so the keypad reads as a
+ * proper grid - and `verticalScroll` is the safety net for narrow
+ * viewports (short landscape, scientific mode on small phones) where the
+ * full square grid would otherwise overflow.
+ */
 @Composable
 private fun KeypadGrid(
     rows: List<List<Key>>,
@@ -341,27 +465,19 @@ private fun KeypadGrid(
     onEvent: (BasicCalculatorEvent) -> Unit,
 ) {
     Column(
-        modifier = modifier,
+        modifier = modifier.verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         rows.forEach { row ->
-            KeypadRow(
-                row = row,
-                modifier = Modifier.fillMaxWidth().weight(1f).heightIn(min = MIN_KEY_HEIGHT),
-                onEvent = onEvent,
-            )
+            KeypadRow(row = row, onEvent = onEvent)
         }
     }
 }
 
 @Composable
-private fun KeypadRow(
-    row: List<Key>,
-    modifier: Modifier,
-    onEvent: (BasicCalculatorEvent) -> Unit,
-) {
+private fun KeypadRow(row: List<Key>, onEvent: (BasicCalculatorEvent) -> Unit) {
     Row(
-        modifier = modifier,
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         row.forEach { key ->
@@ -371,7 +487,10 @@ private fun KeypadRow(
                 modifier =
                     Modifier
                         .weight(1f)
-                        .fillMaxHeight(),
+                        // 1.5:1 (wider than tall) gives the keypad a shorter,
+                        // calculator-style row height without losing horizontal
+                        // touch-target size on a 4-column grid.
+                        .aspectRatio(KEY_ASPECT_RATIO),
             )
         }
     }
@@ -507,18 +626,20 @@ private fun KeyButton(
 /** Labels of arithmetic-operator keys that get the bigger display type ramp. */
 private val OperatorLabels = setOf("+", "-", "×", "÷", "%", "^", "π", "e")
 
-/**
- * Minimum height per keypad row. 48dp matches the Material 3 touch-target
- * minimum so we never collapse below comfortable thumb-reach even on
- * tightly packed landscape devices.
- */
-private val MIN_KEY_HEIGHT = 48.dp
-
 // Weights for the Display vs Keypad split inside the screen Column. The
 // display is more flexible in portrait (more vertical real estate) and
-// is squeezed to a sliver in landscape so the keypad can breathe.
+// is squeezed to a sliver in landscape so the keypad can breathe. The
+// manifest pins the activity to portrait, so landscape branches stay as
+// a safety net for foldables / Samsung DeX / window-resize multi-window.
 private const val DISPLAY_WEIGHT_PORTRAIT = 1f
 private const val DISPLAY_WEIGHT_LANDSCAPE = 0.6f
+
+/**
+ * Width-to-height ratio for each keypad button. > 1 means wider than tall,
+ * giving the keypad a shorter, more rectangular row that matches what
+ * users expect from a physical calculator.
+ */
+private const val KEY_ASPECT_RATIO = 1.5f
 
 // ----- Previews -----
 
