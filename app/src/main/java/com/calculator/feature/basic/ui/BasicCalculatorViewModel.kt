@@ -1,5 +1,6 @@
 package com.calculator.feature.basic.ui
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import com.calculator.core.math.EvaluationResult
 import com.calculator.core.math.Evaluator
@@ -42,9 +43,30 @@ class BasicCalculatorViewModel
     @Inject
     constructor(
         private val evaluator: Evaluator,
+        private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
-        private val _state = MutableStateFlow(BasicCalculatorUiState())
+        // Restore from the SavedStateHandle so expression/error/repeat-token
+        // survive process death (Android killing the app in the background)
+        // and config changes. `liveResult` is derived from `expression`, so
+        // we recompute it rather than persist it.
+        private val _state = MutableStateFlow(loadFromSavedState())
         val state: StateFlow<BasicCalculatorUiState> = _state.asStateFlow()
+
+        private fun loadFromSavedState(): BasicCalculatorUiState {
+            val expression = savedStateHandle.get<String>(KEY_EXPRESSION).orEmpty()
+            return BasicCalculatorUiState(
+                expression = expression,
+                liveResult = preview(expression),
+                errorMessage = savedStateHandle.get<String>(KEY_ERROR),
+                pendingRepeat = savedStateHandle.get<String>(KEY_PENDING_REPEAT),
+            )
+        }
+
+        private fun persist(state: BasicCalculatorUiState) {
+            savedStateHandle[KEY_EXPRESSION] = state.expression
+            savedStateHandle[KEY_ERROR] = state.errorMessage
+            savedStateHandle[KEY_PENDING_REPEAT] = state.pendingRepeat
+        }
 
         /** Dispatch a user event - typically called from the UI on key press. */
         fun onEvent(event: BasicCalculatorEvent) {
@@ -59,13 +81,14 @@ class BasicCalculatorViewModel
         private fun append(symbol: String) =
             _state.update { current ->
                 val next = nextExpressionAfterAppend(current, symbol)
-                current.copy(
-                    expression = next,
-                    liveResult = preview(next),
-                    errorMessage = null,
-                    // Any non-`=` input breaks the repeat-equals chain.
-                    pendingRepeat = null,
-                )
+                current
+                    .copy(
+                        expression = next,
+                        liveResult = preview(next),
+                        errorMessage = null,
+                        // Any non-`=` input breaks the repeat-equals chain.
+                        pendingRepeat = null,
+                    ).also(::persist)
             }
 
         private fun nextExpressionAfterAppend(current: BasicCalculatorUiState, symbol: String): String {
@@ -104,15 +127,19 @@ class BasicCalculatorViewModel
         private fun backspace() =
             _state.update { current ->
                 val next = current.expression.dropLast(1)
-                current.copy(
-                    expression = next,
-                    liveResult = preview(next),
-                    errorMessage = null,
-                    pendingRepeat = null,
-                )
+                current
+                    .copy(
+                        expression = next,
+                        liveResult = preview(next),
+                        errorMessage = null,
+                        pendingRepeat = null,
+                    ).also(::persist)
             }
 
-        private fun clear() = _state.update { BasicCalculatorUiState() }
+        private fun clear() =
+            _state.update {
+                BasicCalculatorUiState().also(::persist)
+            }
 
         private fun commit() =
             _state.update { current ->
@@ -122,24 +149,26 @@ class BasicCalculatorViewModel
 
                 when (val result = evaluator.evaluate(toEvaluate)) {
                     is EvaluationResult.Success ->
-                        current.copy(
-                            // Replace the expression with the canonical result so the
-                            // user can keep chaining (e.g. press `+` after `=`).
-                            // `stripTrailingZeros` collapses `4.0` to `4` for display,
-                            // and `toPlainString` keeps it out of scientific notation so
-                            // the next keypress chains naturally.
-                            expression = result.value.stripTrailingZeros().toPlainString(),
-                            liveResult = null,
-                            errorMessage = null,
-                            pendingRepeat = repeatToken,
-                        )
+                        current
+                            .copy(
+                                // Replace the expression with the canonical result so the
+                                // user can keep chaining (e.g. press `+` after `=`).
+                                // `stripTrailingZeros` collapses `4.0` to `4` for display,
+                                // and `toPlainString` keeps it out of scientific notation so
+                                // the next keypress chains naturally.
+                                expression = result.value.stripTrailingZeros().toPlainString(),
+                                liveResult = null,
+                                errorMessage = null,
+                                pendingRepeat = repeatToken,
+                            ).also(::persist)
 
                     is EvaluationResult.Error ->
-                        current.copy(
-                            liveResult = null,
-                            errorMessage = errorToMessage(result),
-                            pendingRepeat = null,
-                        )
+                        current
+                            .copy(
+                                liveResult = null,
+                                errorMessage = errorToMessage(result),
+                                pendingRepeat = null,
+                            ).also(::persist)
                 }
             }
 
@@ -221,6 +250,10 @@ class BasicCalculatorViewModel
         }
 
         private companion object {
+            const val KEY_EXPRESSION = "calculator.expression"
+            const val KEY_ERROR = "calculator.error"
+            const val KEY_PENDING_REPEAT = "calculator.pendingRepeat"
+
             /** Characters the keypad treats as binary arithmetic operators. */
             val ArithmeticOperators = setOf('+', '-', '×', '÷', '*', '/')
 

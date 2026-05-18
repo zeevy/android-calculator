@@ -1,5 +1,6 @@
 package com.calculator.feature.basic.ui
 
+import androidx.lifecycle.SavedStateHandle
 import com.calculator.core.math.Evaluator
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -23,7 +24,8 @@ import org.junit.jupiter.api.Test
  * Tests are grouped by behaviour family so failures localise quickly.
  */
 class BasicCalculatorViewModelTest {
-    private val viewModel = BasicCalculatorViewModel(Evaluator())
+    private val savedStateHandle = SavedStateHandle()
+    private val viewModel = BasicCalculatorViewModel(Evaluator(), savedStateHandle)
 
     private fun type(vararg symbols: String) = symbols.forEach { viewModel.onEvent(BasicCalculatorEvent.Append(it)) }
 
@@ -392,6 +394,55 @@ class BasicCalculatorViewModelTest {
 
             type("3")
             assertNull(state.errorMessage)
+        }
+    }
+
+    @Nested
+    inner class ProcessDeathRestoration {
+        @Test
+        fun `state survives process death via the saved-state handle`() {
+            type("1", "+", "5")
+            equals()
+            assertEquals("6", state.expression)
+            assertEquals("+5", state.pendingRepeat)
+
+            // Simulate process death by spinning up a new ViewModel with the
+            // same SavedStateHandle - that's what the system does on restore.
+            val restored = BasicCalculatorViewModel(Evaluator(), savedStateHandle)
+
+            assertEquals("6", restored.state.value.expression)
+            assertEquals("+5", restored.state.value.pendingRepeat)
+            // Live preview is derived, so it gets recomputed on restore.
+            assertEquals("6", restored.state.value.liveResult)
+        }
+
+        @Test
+        fun `error message survives restoration`() {
+            type("5", "÷", "0")
+            equals()
+            val restored = BasicCalculatorViewModel(Evaluator(), savedStateHandle)
+            assertEquals("Can't divide by zero", restored.state.value.errorMessage)
+        }
+
+        @Test
+        fun `repeat-equals chain continues after restoration`() {
+            type("1", "+", "5")
+            equals()
+
+            val restored = BasicCalculatorViewModel(Evaluator(), savedStateHandle)
+            restored.onEvent(BasicCalculatorEvent.Equals)
+            assertEquals("11", restored.state.value.expression)
+        }
+
+        @Test
+        fun `clear is persisted across restoration`() {
+            type("1", "+", "5")
+            equals()
+            clear()
+
+            val restored = BasicCalculatorViewModel(Evaluator(), savedStateHandle)
+            assertEquals("", restored.state.value.expression)
+            assertNull(restored.state.value.pendingRepeat)
         }
     }
 
