@@ -576,6 +576,52 @@ class BasicCalculatorViewModelTest {
                 "expected π but got ${state.expression}"
             }
         }
+
+        // ----- Function key wiring -----
+
+        @Test
+        fun `function key appends keyword and open paren`() {
+            // The "sin" key in the keypad dispatches Append("sin(") - this
+            // is the gesture every scientific function (sin/cos/tan/asin/
+            // acos/atan/log/ln/sqrt/cbrt) relies on, so one assertion
+            // exercises the contract for all of them.
+            viewModel.onEvent(BasicCalculatorEvent.Append("sin("))
+            assertEquals("sin(", state.expression)
+        }
+
+        @Test
+        fun `function keyword chained after a digit inserts the function`() {
+            type("3")
+            viewModel.onEvent(BasicCalculatorEvent.Append("sin("))
+            // No implicit multiplication is injected; user gets exactly
+            // what they typed and is expected to add a × themselves.
+            assertEquals("3sin(", state.expression)
+        }
+
+        @Test
+        fun `backspace inside a function argument deletes one character`() {
+            type("s", "i", "n", "(", "3", "0")
+            // simpler: build the same state via Append; the keypad would
+            // dispatch this as Append("sin(") then digits, but we want to
+            // assert raw char-level backspace, so start with the full
+            // string already in place.
+            viewModel.onEvent(BasicCalculatorEvent.Clear)
+            viewModel.onEvent(BasicCalculatorEvent.Append("sin("))
+            type("3", "0")
+            viewModel.onEvent(BasicCalculatorEvent.Backspace)
+            assertEquals("sin(3", state.expression)
+        }
+
+        @Test
+        fun `backspace at the open paren of a function deletes only the paren`() {
+            // We intentionally do NOT treat "sin(" as one atomic token for
+            // backspace - users expect character-by-character deletion,
+            // which also matches how Android IME backspace works on text
+            // input fields.
+            viewModel.onEvent(BasicCalculatorEvent.Append("sin("))
+            viewModel.onEvent(BasicCalculatorEvent.Backspace)
+            assertEquals("sin", state.expression)
+        }
     }
 
     @Nested

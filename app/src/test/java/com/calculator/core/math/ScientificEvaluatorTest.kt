@@ -63,6 +63,50 @@ class ScientificEvaluatorTest {
         near(radEvaluator.evaluate("asin(sin(0.3))").success(), "0.3")
     }
 
+    @Test
+    fun cosineOfZeroIsOne() {
+        near(radEvaluator.evaluate("cos(0)").success(), "1")
+    }
+
+    @Test
+    fun arccosineRoundTrip() {
+        near(radEvaluator.evaluate("cos(acos(0.5))").success(), "0.5")
+    }
+
+    @Test
+    fun arctangentOfOneInDegreesIs45() {
+        near(degEvaluator.evaluate("atan(1)").success(), "45")
+    }
+
+    @Test
+    fun tangentOf45DegreesIsOne() {
+        near(degEvaluator.evaluate("tan(45)").success(), "1")
+    }
+
+    @Test
+    fun arcsinOfTwoIsDomainError() {
+        // |x| > 1 has no real arcsine.
+        val result = radEvaluator.evaluate("asin(2)")
+        assertInstanceOf(EvaluationResult.Error.Domain::class.java, result)
+    }
+
+    @Test
+    fun arccosOfMinusTwoIsDomainError() {
+        val result = radEvaluator.evaluate("acos(-2)")
+        assertInstanceOf(EvaluationResult.Error.Domain::class.java, result)
+    }
+
+    @Test
+    fun tangentNearHalfPiIsLarge() {
+        // Math.tan(pi/2) doesn't actually return infinity because pi/2 in
+        // Double isn't exactly pi/2 - it returns ~1.63e16. The calculator
+        // surfaces this as a Success with a very large number rather than
+        // a domain error, matching how desk calculators behave near the
+        // asymptote. We just assert the magnitude is huge.
+        val value = radEvaluator.evaluate("tan(π÷2)").success()
+        assert(value.abs().toDouble() > 1e10) { "expected huge tangent, got $value" }
+    }
+
     // ----- Logarithms -----
 
     @Test
@@ -84,6 +128,18 @@ class ScientificEvaluatorTest {
     @Test
     fun sqrtOfNegativeOneIsDomainError() {
         val result = radEvaluator.evaluate("sqrt(-1)")
+        assertInstanceOf(EvaluationResult.Error.Domain::class.java, result)
+    }
+
+    @Test
+    fun logOfZeroIsDomainError() {
+        val result = radEvaluator.evaluate("log(0)")
+        assertInstanceOf(EvaluationResult.Error.Domain::class.java, result)
+    }
+
+    @Test
+    fun naturalLogOfZeroIsDomainError() {
+        val result = radEvaluator.evaluate("ln(0)")
         assertInstanceOf(EvaluationResult.Error.Domain::class.java, result)
     }
 
@@ -113,6 +169,13 @@ class ScientificEvaluatorTest {
     @Test
     fun powerWithFractionalExponent() {
         near(radEvaluator.evaluate("8^(1÷3)").success(), "2", tolerance = 1e-9)
+    }
+
+    @Test
+    fun negativeBaseWithFractionalExponentIsDomainError() {
+        // (-2)^0.5 has no real root.
+        val result = radEvaluator.evaluate("(-2)^0.5")
+        assertInstanceOf(EvaluationResult.Error.Domain::class.java, result)
     }
 
     // ----- Constants -----

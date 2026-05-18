@@ -11,6 +11,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -61,8 +62,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -424,56 +430,124 @@ private fun Display(
         modifier = modifier,
         contentAlignment = Alignment.BottomEnd,
     ) {
-        Column(horizontalAlignment = Alignment.End) {
+        Column(horizontalAlignment = Alignment.End, modifier = Modifier.fillMaxWidth()) {
             // Top line: the expression in muted text. Only shown when
             // there's a result/preview underneath, so an empty calculator
-            // doesn't render two stacked "0"s.
+            // doesn't render two stacked "0"s. Also auto-shrinks so a
+            // long expression doesn't truncate before the user can see
+            // what they typed.
             if (preview != null || error != null) {
-                Text(
+                AutoSizeText(
                     text = expression.ifBlank { "0" },
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.End,
+                    maxFontSize = MaterialTheme.typography.headlineSmall.fontSize,
+                    minFontSize = DISPLAY_EXPRESSION_MIN_SIZE,
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.size(4.dp))
             }
             when {
                 error != null ->
-                    Text(
+                    AutoSizeText(
                         text = error,
                         style =
                             MaterialTheme.typography.displaySmall.copy(
                                 fontWeight = FontWeight.SemiBold,
                             ),
                         color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.End,
+                        maxFontSize = MaterialTheme.typography.displaySmall.fontSize,
+                        minFontSize = DISPLAY_RESULT_MIN_SIZE,
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 preview != null ->
-                    Text(
+                    AutoSizeText(
                         text = preview,
                         style =
                             MaterialTheme.typography.displayLarge.copy(
                                 fontWeight = FontWeight.Bold,
                             ),
                         color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.End,
+                        maxFontSize = MaterialTheme.typography.displayLarge.fontSize,
+                        minFontSize = DISPLAY_RESULT_MIN_SIZE,
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 else ->
                     // No preview yet - the expression itself is the
-                    // dominant element, rendered large and bold.
-                    Text(
+                    // dominant element, rendered large and bold and
+                    // shrunk to fit when it grows too wide.
+                    AutoSizeText(
                         text = expression.ifBlank { "0" },
                         style =
                             MaterialTheme.typography.displayLarge.copy(
                                 fontWeight = FontWeight.Bold,
                             ),
                         color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.End,
+                        maxFontSize = MaterialTheme.typography.displayLarge.fontSize,
+                        minFontSize = DISPLAY_RESULT_MIN_SIZE,
+                        modifier = Modifier.fillMaxWidth(),
                     )
             }
         }
     }
 }
+
+/**
+ * Right-aligned single-line text that scales its font size down until
+ * the string fits inside [Modifier]'s width. Measured once per
+ * (text, width) pair via a [TextMeasurer] so there's no recompose loop.
+ *
+ * Tries [maxFontSize] first, drops by 2sp until the rendered width is
+ * within the available constraints or [minFontSize] is reached - at
+ * that point the text is allowed to clip rather than shrink past the
+ * minimum (calculators that go too small are unreadable).
+ */
+@Composable
+private fun AutoSizeText(
+    text: String,
+    style: TextStyle,
+    color: Color,
+    maxFontSize: TextUnit,
+    minFontSize: TextUnit,
+    modifier: Modifier = Modifier,
+) {
+    val measurer = rememberTextMeasurer()
+    BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.BottomEnd) {
+        val maxWidthPx = constraints.maxWidth
+        // Linear shrink: walk down by AUTO_SIZE_STEP sp until the
+        // measured width fits or we hit the floor. Calculator strings
+        // are short so 6-10 measurements at most.
+        val fontSize =
+            remember(text, maxWidthPx, maxFontSize, minFontSize, style) {
+                var candidate = maxFontSize
+                while (candidate.value > minFontSize.value) {
+                    val measured =
+                        measurer.measure(
+                            text = AnnotatedString(text),
+                            style = style.copy(fontSize = candidate),
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    if (measured.size.width <= maxWidthPx) break
+                    candidate = (candidate.value - AUTO_SIZE_STEP_SP).sp
+                }
+                candidate
+            }
+        Text(
+            text = text,
+            style = style.copy(fontSize = fontSize),
+            color = color,
+            maxLines = 1,
+            softWrap = false,
+            textAlign = TextAlign.End,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+private const val AUTO_SIZE_STEP_SP = 2f
+private val DISPLAY_RESULT_MIN_SIZE = 28.sp
+private val DISPLAY_EXPRESSION_MIN_SIZE = 14.sp
 
 /**
  * Keypad. Always shows the 4-column basic grid; in scientific mode the
