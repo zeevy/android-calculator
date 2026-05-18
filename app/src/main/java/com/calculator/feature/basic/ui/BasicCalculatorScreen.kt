@@ -61,6 +61,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
@@ -428,7 +429,7 @@ private fun Display(
     modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier,
+        modifier = modifier.clipToBounds(),
         contentAlignment = Alignment.BottomEnd,
     ) {
         Column(horizontalAlignment = Alignment.End, modifier = Modifier.fillMaxWidth()) {
@@ -565,8 +566,13 @@ private fun AutoSizeText(
 }
 
 private const val AUTO_SIZE_STEP_SP = 2f
-private val DISPLAY_RESULT_MIN_SIZE = 28.sp
-private val DISPLAY_EXPRESSION_MIN_SIZE = 14.sp
+// Floors are deliberately small so the shrink loop can actually find
+// a size that fits in advanced mode (where the 9-row keypad leaves
+// only ~100dp for the entire display). A previous 28sp floor caused
+// the top of the wrapped result line to clip against the separator
+// because the loop bottomed out before finding a fit.
+private val DISPLAY_RESULT_MIN_SIZE = 16.sp
+private val DISPLAY_EXPRESSION_MIN_SIZE = 10.sp
 // Up to three lines for the big result line and two for the muted
 // expression-history line. Multi-line first, then font shrink - so a
 // long expression grows downward before any text gets smaller.
