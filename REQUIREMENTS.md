@@ -8,7 +8,7 @@
 
 ## 1. Product Vision
 
-A modern, offline-first, multi-purpose calculator for Android that bundles a standard calculator, scientific mode, unit/currency converters, and a suite of everyday "life" calculators (loan, GST, BMI, age, discount, date diff) into a single clean, fast, ad-free experience.
+A modern, offline-first, multi-purpose calculator for Android that bundles a standard calculator, scientific mode, unit/currency converters, and a suite of everyday "life" calculators (loan, GST, BMI, age, discount, date diff, ovulation) into a single clean, fast, ad-free experience.
 
 ## 2. Goals & Non-Goals
 
@@ -85,6 +85,7 @@ Each is a focused screen with its own inputs/outputs:
 - **Age** - DOB → years/months/days, next birthday countdown, weekday of birth.
 - **Discount** - MRP + discount % → savings + final price; reverse calc (final + MRP → %).
 - **Date Difference** - two dates → days/weeks/months/years; add/subtract days from a date.
+- **Ovulation** - last menstrual period (LMP) + average cycle length → predicted ovulation date, six-day fertile window, next period date, estimated due date (Naegele's rule). Educational estimate only with an in-screen disclaimer; explicitly not a contraception tool.
 
 ### 4.6 Cross-Cutting Features
 - Settings: theme (system / light / dark), dynamic color toggle, haptics, sound, decimal precision, default currency, default unit system, opt-in crash reporting.

@@ -460,7 +460,7 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ## Phase 7 - Life Calculators
 
-**Goal:** Six focused calculators: Loan/EMI, GST (India), BMI, Age, Discount, Date Difference.
+**Goal:** Seven focused calculators: Loan/EMI, GST (India), BMI, Age, Discount, Date Difference, Ovulation.
 
 ### Phase 7.1 - Loan / EMI deliverables
 
@@ -499,6 +499,19 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 - [ ] Mode 1: two dates → days/weeks/months/years
 - [ ] Mode 2: date + offset → resulting date
 
+### Phase 7.7 - Ovulation deliverables
+
+- [ ] `feature/health/ovulation/OvulationScreen.kt` + ViewModel
+- [ ] `core/domain/health/OvulationCalculator.kt` (pure Kotlin)
+- [ ] Inputs: last menstrual period (LMP) date + average cycle length (default 28, range 21-35)
+- [ ] Outputs:
+    - Next period start date (LMP + cycle length)
+    - Predicted ovulation date (next period - 14)
+    - Fertile window (ovulation - 5 to ovulation + 1, six-day span)
+    - Estimated due date if conception occurs this cycle (LMP + 280 days, Naegele's rule)
+- [ ] **Educational copy only.** Surface a one-line disclaimer that estimates are statistical and not a substitute for medical advice; not a contraception tool.
+- [ ] No data leaves the device; LMP is never persisted to history without an explicit "save" action (Phase 3 history layer).
+
 ### Phase 7 - Unit tests (one suite per calculator)
 
 - [ ] **EMI:** `P=100000, r=10%/yr, n=12` → EMI ≈ `8791.59`, sum of payments ≈ `105499.1`
@@ -514,6 +527,9 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 - [ ] **Discount reverse:** MRP `2000`, final `1500` → `25%`
 - [ ] **DateDiff:** `2024-02-29` to `2025-02-28` → `0y 11m 30d` (or document spec)
 - [ ] **DateDiff:** add `90d` to `2026-01-01` → `2026-04-01`
+- [ ] **Ovulation:** LMP `2026-05-01`, cycle `28` → ovulation `2026-05-15`, fertile `2026-05-10`..`2026-05-16`, next period `2026-05-29`, due date `2027-02-04`
+- [ ] **Ovulation:** non-default cycle length `35` → ovulation = LMP + 21 (next period - 14), fertile window shifts accordingly
+- [ ] **Ovulation:** rejects cycle length outside 21-35 with a typed error
 
 ### Phase 7 - Compose UI tests
 
