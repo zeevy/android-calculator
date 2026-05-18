@@ -40,8 +40,11 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 - [x] Backup policy: `backup_rules.xml`, `data_extraction_rules.xml`
 - [x] Static analysis config: `config/detekt.yml`
 - [x] CI workflow `.github/workflows/ci.yml` (build + unit tests + ktlint + detekt + lint)
-- [ ] Initialise repo as `git` and push to GitHub (currently not a git repo)
-- [ ] First green CI run on `main`
+- [x] Initialise repo as `git` and push to GitHub ([zeevy/android-calculator](https://github.com/zeevy/android-calculator))
+- [x] Open-source housekeeping: SECURITY.md, CODE_OF_CONDUCT.md, CHANGELOG.md, dependabot, issue/PR templates, CODEOWNERS, CodeQL workflow, release workflow
+- [x] Branch protection on `main` (required status check, linear history, no force-push, no deletions, conversation resolution required, stale reviews dismissed)
+- [x] Repo hardening (Dependabot alerts + security updates, secret scanning, push protection, squash-only merge, delete-branch-on-merge)
+- [ ] First green CI run on `main` (in progress - watch on GitHub Actions)
 
 ### Phase 0 - Test cases
 
