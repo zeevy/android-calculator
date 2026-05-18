@@ -1,11 +1,12 @@
 package com.calculator.feature.basic.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -28,8 +29,6 @@ import androidx.compose.material.icons.filled.MonitorWeight
 import androidx.compose.material.icons.filled.Percent
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -49,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -122,24 +122,18 @@ internal fun BasicCalculatorScreenContent(
                         .weight(1f),
             )
             Spacer(Modifier.size(8.dp))
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                shape = RoundedCornerShape(28.dp),
-            ) {
-                Keypad(
-                    scientific = state.scientific,
-                    onEvent = onEvent,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp)
-                            .padding(top = 16.dp)
-                            .windowInsetsPadding(WindowInsets.navigationBars)
-                            .padding(bottom = 12.dp),
-                )
-            }
-            Spacer(Modifier.size(8.dp))
+            // No keypad tray. iOS calculator puts keys directly on the
+            // screen background; the colored keys carry the visual
+            // structure on their own.
+            Keypad(
+                scientific = state.scientific,
+                onEvent = onEvent,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .windowInsetsPadding(WindowInsets.navigationBars)
+                        .padding(bottom = 12.dp),
+            )
         }
     }
 
@@ -482,9 +476,14 @@ private fun Keypad(
     onEvent: (BasicCalculatorEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // The standalone Clear (C) key is gone. Long-pressing the backspace
+    // key clears the whole expression - same gesture as a physical
+    // calculator's "Clear" press-and-hold on the C/CE key. This also
+    // matches the top row's column count to the rest of the keypad
+    // (4 columns everywhere) so the grid reads cleaner.
     val basicRows =
         listOf(
-            listOf(Key.Clear, Key.LeftParen, Key.RightParen, Key.Symbol("%"), Key.Symbol("÷")),
+            listOf(Key.LeftParen, Key.RightParen, Key.Symbol("%"), Key.Symbol("÷")),
             listOf(Key.Symbol("7"), Key.Symbol("8"), Key.Symbol("9"), Key.Symbol("×")),
             listOf(Key.Symbol("4"), Key.Symbol("5"), Key.Symbol("6"), Key.Symbol("-")),
             listOf(Key.Symbol("1"), Key.Symbol("2"), Key.Symbol("3"), Key.Symbol("+")),
@@ -609,6 +608,7 @@ private sealed interface Key {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun KeyButton(
     key: Key,
@@ -631,28 +631,36 @@ private fun KeyButton(
         }
     }
 
+    // Long-press wiring. Right now only Backspace defines a long-press
+    // action (it clears the whole expression - the standalone C key was
+    // removed in favour of this gesture). Per-key long-press semantics
+    // can be added here without touching the Box-based render below.
+    val longClick: (() -> Unit)? =
+        when (key) {
+            Key.Backspace -> { { onEvent(BasicCalculatorEvent.Clear) } }
+            else -> null
+        }
+
     val category = keyCategoryOf(key)
     val keyShape = RoundedCornerShape(20.dp)
 
-    // Color hierarchy: equals is the loudest (solid primary), arithmetic
-    // operators are mid-emphasis (primary container), modifiers and
-    // functions get distinct accent tints, digits stay quiet. The user's
-    // eye lands on the bold equals first, then operators, then digits.
+    // iOS-style palette: dark-grey digits, light-grey modifiers (with
+    // black text), vivid orange operators and equals (white text). These
+    // are intentionally literal colors rather than theme tokens because
+    // the iOS look is recognisable specifically because of these hexes;
+    // M3 dynamic-color tokens would dilute the vibe.
     val containerColor =
         when (category) {
-            KeyCategory.Digit -> MaterialTheme.colorScheme.surfaceContainerHighest
-            KeyCategory.Operator -> MaterialTheme.colorScheme.primaryContainer
-            KeyCategory.Modifier -> MaterialTheme.colorScheme.tertiaryContainer
-            KeyCategory.Function -> MaterialTheme.colorScheme.secondaryContainer
-            KeyCategory.Equals -> MaterialTheme.colorScheme.primary
+            KeyCategory.Digit -> Color(0xFF505050)
+            KeyCategory.Function -> Color(0xFF707070)
+            KeyCategory.Modifier -> Color(0xFFA5A5A5)
+            KeyCategory.Operator, KeyCategory.Equals -> Color(0xFFFF9F0A)
         }
     val contentColor =
         when (category) {
-            KeyCategory.Digit -> MaterialTheme.colorScheme.onSurface
-            KeyCategory.Operator -> MaterialTheme.colorScheme.onPrimaryContainer
-            KeyCategory.Modifier -> MaterialTheme.colorScheme.onTertiaryContainer
-            KeyCategory.Function -> MaterialTheme.colorScheme.onSecondaryContainer
-            KeyCategory.Equals -> MaterialTheme.colorScheme.onPrimary
+            KeyCategory.Digit, KeyCategory.Function -> Color.White
+            KeyCategory.Modifier -> Color.Black
+            KeyCategory.Operator, KeyCategory.Equals -> Color.White
         }
 
     // Operators and equals get the larger display ramp so the action keys
@@ -667,20 +675,26 @@ private fun KeyButton(
         }
     val labelWeight = if (category == KeyCategory.Equals) FontWeight.Bold else FontWeight.Medium
 
-    Button(
-        onClick = click,
-        modifier = modifier,
-        shape = keyShape,
-        contentPadding = PaddingValues(0.dp),
-        colors =
-            ButtonDefaults.buttonColors(
-                containerColor = containerColor,
-                contentColor = contentColor,
-            ),
+    // Box + combinedClickable instead of Material's Button because Button
+    // doesn't expose onLongClick. The ripple still fires via the
+    // clickable modifier; we just lose the Button's intrinsic state-layer
+    // tint on press (acceptable - color contrast already differentiates
+    // each key).
+    Box(
+        modifier =
+            modifier
+                .clip(keyShape)
+                .background(containerColor)
+                .combinedClickable(
+                    onClick = click,
+                    onLongClick = longClick,
+                ),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = key.label,
             style = labelStyle.copy(fontWeight = labelWeight),
+            color = contentColor,
         )
     }
 }
