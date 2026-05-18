@@ -1,6 +1,5 @@
 package com.calculator.feature.basic.ui
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,7 +31,6 @@ import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -108,33 +107,21 @@ internal fun BasicCalculatorScreenContent(
                     .padding(horizontal = 12.dp)
                     .padding(top = 8.dp),
         ) {
-            // Two stacked cards. Display gets an outlined treatment
-            // (transparent fill + 1dp border) so it reads as a defined
-            // region without competing with the keypad's tonal fill.
-            // Keypad uses surfaceContainerHigh - one step brighter than
-            // the screen background - so the interactive layer is the
-            // visually heavier one.
-            Surface(
+            // Display sits directly on the screen background - no card,
+            // no border. The typographic hierarchy inside (small muted
+            // expression line, big bold result) carries the visual
+            // weight on its own, and the gap before the keypad tray
+            // does the section separation.
+            DisplaySection(
+                state = state,
+                onEvent = onEvent,
+                onOpenMenu = { menuOpen = true },
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                color = MaterialTheme.colorScheme.surface,
-                shape = RoundedCornerShape(28.dp),
-                border =
-                    BorderStroke(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                    ),
-            ) {
-                DisplaySection(
-                    state = state,
-                    onEvent = onEvent,
-                    onOpenMenu = { menuOpen = true },
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-            Spacer(Modifier.size(12.dp))
+            )
+            Spacer(Modifier.size(8.dp))
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -405,8 +392,13 @@ private fun DisplaySection(
 }
 
 /**
- * Result display: the entered expression up top, with a smaller live
- * preview (or error) beneath it.
+ * Result display: a typographic hierarchy where the entered expression
+ * sits muted up top and the live result (or just the expression when
+ * there's nothing to preview) reads in large bold type below.
+ *
+ * The dominant element is always the bottom line - that's what the user
+ * is actually looking at - and it's right-aligned so digits line up with
+ * how they were typed.
  */
 @Composable
 private fun Display(
@@ -420,23 +412,50 @@ private fun Display(
         contentAlignment = Alignment.BottomEnd,
     ) {
         Column(horizontalAlignment = Alignment.End) {
-            Text(
-                text = expression.ifBlank { "0" },
-                style = MaterialTheme.typography.displayMedium,
-                textAlign = TextAlign.End,
-            )
+            // Top line: the expression in muted text. Only shown when
+            // there's a result/preview underneath, so an empty calculator
+            // doesn't render two stacked "0"s.
+            if (preview != null || error != null) {
+                Text(
+                    text = expression.ifBlank { "0" },
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.End,
+                )
+                Spacer(Modifier.size(4.dp))
+            }
             when {
                 error != null ->
                     Text(
                         text = error,
-                        style = MaterialTheme.typography.titleMedium,
+                        style =
+                            MaterialTheme.typography.displaySmall.copy(
+                                fontWeight = FontWeight.SemiBold,
+                            ),
                         color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.End,
                     )
                 preview != null ->
                     Text(
-                        text = "= $preview",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = preview,
+                        style =
+                            MaterialTheme.typography.displayLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                            ),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.End,
+                    )
+                else ->
+                    // No preview yet - the expression itself is the
+                    // dominant element, rendered large and bold.
+                    Text(
+                        text = expression.ifBlank { "0" },
+                        style =
+                            MaterialTheme.typography.displayLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                            ),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.End,
                     )
             }
         }
@@ -612,51 +631,73 @@ private fun KeyButton(
         }
     }
 
-    // Rounded-square keys: 20dp radius keeps the soft Material 3 feel while
-    // reading as a square rather than the default near-circular pill shape.
+    val category = keyCategoryOf(key)
     val keyShape = RoundedCornerShape(20.dp)
 
-    // Operators and the equals key get a larger type ramp than digits so the
-    // calculator's "action" keys read as visually heavier; functions and
-    // memory keys use a slightly smaller style so longer labels still fit.
-    val labelStyle = when {
-        key is Key.Symbol && key.label in OperatorLabels -> MaterialTheme.typography.displaySmall
-        key is Key.Equals -> MaterialTheme.typography.displaySmall
-        key is Key.Function -> MaterialTheme.typography.titleLarge
-        key is Key.MemoryClear ||
-            key is Key.MemoryRecall ||
-            key is Key.MemoryAdd ||
-            key is Key.MemorySubtract -> MaterialTheme.typography.titleLarge
-        else -> MaterialTheme.typography.headlineLarge
-    }
+    // Color hierarchy: equals is the loudest (solid primary), arithmetic
+    // operators are mid-emphasis (primary container), modifiers and
+    // functions get distinct accent tints, digits stay quiet. The user's
+    // eye lands on the bold equals first, then operators, then digits.
+    val containerColor =
+        when (category) {
+            KeyCategory.Digit -> MaterialTheme.colorScheme.surfaceContainerHighest
+            KeyCategory.Operator -> MaterialTheme.colorScheme.primaryContainer
+            KeyCategory.Modifier -> MaterialTheme.colorScheme.tertiaryContainer
+            KeyCategory.Function -> MaterialTheme.colorScheme.secondaryContainer
+            KeyCategory.Equals -> MaterialTheme.colorScheme.primary
+        }
+    val contentColor =
+        when (category) {
+            KeyCategory.Digit -> MaterialTheme.colorScheme.onSurface
+            KeyCategory.Operator -> MaterialTheme.colorScheme.onPrimaryContainer
+            KeyCategory.Modifier -> MaterialTheme.colorScheme.onTertiaryContainer
+            KeyCategory.Function -> MaterialTheme.colorScheme.onSecondaryContainer
+            KeyCategory.Equals -> MaterialTheme.colorScheme.onPrimary
+        }
 
-    when (key) {
-        Key.Equals ->
-            Button(
-                onClick = click,
-                modifier = modifier,
-                shape = keyShape,
-                contentPadding = PaddingValues(0.dp),
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ),
-            ) { Text(key.label, style = labelStyle) }
+    // Operators and equals get the larger display ramp so the action keys
+    // read as visually heavier than digits; functions and memory use a
+    // slightly tighter ramp because their labels are longer (sin⁻¹, M+).
+    val labelStyle =
+        when (category) {
+            KeyCategory.Operator, KeyCategory.Equals -> MaterialTheme.typography.displaySmall
+            KeyCategory.Function -> MaterialTheme.typography.titleLarge
+            KeyCategory.Modifier -> MaterialTheme.typography.headlineSmall
+            KeyCategory.Digit -> MaterialTheme.typography.headlineLarge
+        }
+    val labelWeight = if (category == KeyCategory.Equals) FontWeight.Bold else FontWeight.Medium
 
-        else ->
-            FilledTonalButton(
-                onClick = click,
-                modifier = modifier,
-                shape = keyShape,
-                contentPadding = PaddingValues(0.dp),
-            ) {
-                Text(key.label, style = labelStyle)
-            }
+    Button(
+        onClick = click,
+        modifier = modifier,
+        shape = keyShape,
+        contentPadding = PaddingValues(0.dp),
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = containerColor,
+                contentColor = contentColor,
+            ),
+    ) {
+        Text(
+            text = key.label,
+            style = labelStyle.copy(fontWeight = labelWeight),
+        )
     }
 }
 
-/** Labels of arithmetic-operator keys that get the bigger display type ramp. */
+private enum class KeyCategory { Digit, Operator, Modifier, Function, Equals }
+
+private fun keyCategoryOf(key: Key): KeyCategory =
+    when (key) {
+        Key.Equals -> KeyCategory.Equals
+        Key.Clear, Key.LeftParen, Key.RightParen, Key.Backspace -> KeyCategory.Modifier
+        Key.MemoryClear, Key.MemoryRecall, Key.MemoryAdd, Key.MemorySubtract -> KeyCategory.Function
+        is Key.Function -> KeyCategory.Function
+        is Key.Symbol ->
+            if (key.label in OperatorLabels) KeyCategory.Operator else KeyCategory.Digit
+    }
+
+/** Labels of arithmetic-operator keys that get the operator color treatment. */
 private val OperatorLabels = setOf("+", "-", "×", "÷", "%", "^", "π", "e")
 
 // Width-to-height ratio for every keypad button. 1.6 gives a clean
