@@ -659,6 +659,20 @@ class BasicCalculatorViewModelTest {
         }
 
         @Test
+        fun `MR is a no-op when memory is empty so the expression doesn't build 0x0x0`() {
+            // Regression: previously MR with memory=0 would append "0",
+            // then on the next tap "x0", eventually "0x0x0x0..." - the
+            // standard auto-times rule between two numeric tokens. Now
+            // MR before any M+ does nothing.
+            assertEquals("", state.expression)
+            viewModel.onEvent(BasicCalculatorEvent.MemoryRecall)
+            viewModel.onEvent(BasicCalculatorEvent.MemoryRecall)
+            viewModel.onEvent(BasicCalculatorEvent.MemoryRecall)
+            assertEquals("", state.expression)
+            assertEquals("0", state.memory.toPlainString())
+        }
+
+        @Test
         fun `MR after an operator appends without inserting an extra times`() {
             type("4", "2")
             equals()

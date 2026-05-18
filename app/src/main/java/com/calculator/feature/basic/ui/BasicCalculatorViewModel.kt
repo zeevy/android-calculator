@@ -243,6 +243,12 @@ class BasicCalculatorViewModel
 
         private fun memoryRecall() =
             _state.update { current ->
+                // Empty memory means M+/M- was never pressed (or MC was).
+                // Recalling it would just append "0" - and on the next
+                // tap "×0", building "0×0×0×..." indefinitely. Treat it
+                // as a no-op instead so MR is harmless before any value
+                // is stored.
+                if (current.memory.signum() == 0) return@update current
                 val mem = current.memory.stripTrailingZeros().toPlainString()
                 val next =
                     when {

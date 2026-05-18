@@ -601,23 +601,41 @@ private fun Keypad(
 ) {
     // The standalone Clear (C) key is gone. Long-pressing the backspace
     // key clears the whole expression - same gesture as a physical
-    // calculator's "Clear" press-and-hold on the C/CE key. This also
-    // matches the top row's column count to the rest of the keypad
-    // (4 columns everywhere) so the grid reads cleaner.
+    // calculator's "Clear" press-and-hold on the C/CE key.
+    //
+    // Memory keys live in basicRows so they show in both modes. They
+    // are flagged compact, along with the scientific function rows, so
+    // those rows render shorter than the digit/operator rows - giving
+    // the display more vertical room in advanced mode without changing
+    // the basic layout's proportions much.
+    val memoryRow =
+        KeypadRowSpec(
+            keys = listOf(Key.MemoryClear, Key.MemoryRecall, Key.MemoryAdd, Key.MemorySubtract),
+            compact = true,
+        )
     val basicRows =
         listOf(
-            listOf(Key.LeftParen, Key.RightParen, Key.Symbol("%"), Key.Symbol("÷")),
-            listOf(Key.Symbol("7"), Key.Symbol("8"), Key.Symbol("9"), Key.Symbol("×")),
-            listOf(Key.Symbol("4"), Key.Symbol("5"), Key.Symbol("6"), Key.Symbol("-")),
-            listOf(Key.Symbol("1"), Key.Symbol("2"), Key.Symbol("3"), Key.Symbol("+")),
-            listOf(Key.Backspace, Key.Symbol("0"), Key.Symbol("."), Key.Equals),
+            memoryRow,
+            KeypadRowSpec(listOf(Key.LeftParen, Key.RightParen, Key.Symbol("%"), Key.Symbol("÷"))),
+            KeypadRowSpec(listOf(Key.Symbol("7"), Key.Symbol("8"), Key.Symbol("9"), Key.Symbol("×"))),
+            KeypadRowSpec(listOf(Key.Symbol("4"), Key.Symbol("5"), Key.Symbol("6"), Key.Symbol("-"))),
+            KeypadRowSpec(listOf(Key.Symbol("1"), Key.Symbol("2"), Key.Symbol("3"), Key.Symbol("+"))),
+            KeypadRowSpec(listOf(Key.Backspace, Key.Symbol("0"), Key.Symbol("."), Key.Equals)),
         )
     val scientificRows =
         listOf(
-            listOf(Key.Function("sin"), Key.Function("cos"), Key.Function("tan"), Key.Function("sqrt", "√")),
-            listOf(Key.Function("asin", "sin⁻¹"), Key.Function("acos", "cos⁻¹"), Key.Function("atan", "tan⁻¹"), Key.Symbol("^")),
-            listOf(Key.Function("log"), Key.Function("ln"), Key.Symbol("π"), Key.Symbol("e")),
-            listOf(Key.MemoryClear, Key.MemoryRecall, Key.MemoryAdd, Key.MemorySubtract),
+            KeypadRowSpec(
+                listOf(Key.Function("sin"), Key.Function("cos"), Key.Function("tan"), Key.Function("sqrt", "√")),
+                compact = true,
+            ),
+            KeypadRowSpec(
+                listOf(Key.Function("asin", "sin⁻¹"), Key.Function("acos", "cos⁻¹"), Key.Function("atan", "tan⁻¹"), Key.Symbol("^")),
+                compact = true,
+            ),
+            KeypadRowSpec(
+                listOf(Key.Function("log"), Key.Function("ln"), Key.Symbol("π"), Key.Symbol("e")),
+                compact = true,
+            ),
         )
 
     KeypadGrid(
@@ -627,9 +645,12 @@ private fun Keypad(
     )
 }
 
+/** A keypad row + per-row layout hints. [compact] uses a wider aspect ratio so the row is shorter. */
+private data class KeypadRowSpec(val keys: List<Key>, val compact: Boolean = false)
+
 @Composable
 private fun KeypadGrid(
-    rows: List<List<Key>>,
+    rows: List<KeypadRowSpec>,
     modifier: Modifier,
     onEvent: (BasicCalculatorEvent) -> Unit,
 ) {
@@ -637,9 +658,11 @@ private fun KeypadGrid(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        rows.forEach { row ->
+        rows.forEach { spec ->
             KeypadRow(
-                row = row,
+                row = spec.keys,
+                aspectRatio =
+                    if (spec.compact) BUTTON_ASPECT_RATIO_COMPACT else BUTTON_ASPECT_RATIO,
                 modifier = Modifier.fillMaxWidth(),
                 onEvent = onEvent,
             )
@@ -650,6 +673,7 @@ private fun KeypadGrid(
 @Composable
 private fun KeypadRow(
     row: List<Key>,
+    aspectRatio: Float,
     modifier: Modifier,
     onEvent: (BasicCalculatorEvent) -> Unit,
 ) {
@@ -664,7 +688,7 @@ private fun KeypadRow(
                 modifier =
                     Modifier
                         .weight(1f)
-                        .aspectRatio(BUTTON_ASPECT_RATIO),
+                        .aspectRatio(aspectRatio),
             )
         }
     }
@@ -979,6 +1003,10 @@ private val OperatorLabels = setOf("+", "-", "×", "÷", "%", "^", "π", "e")
 // shape physical desk calculators use. Tweaking this is the single
 // knob for "make keys taller / shorter" without touching layout code.
 private const val BUTTON_ASPECT_RATIO = 1.6f
+// Wider aspect ratio for scientific-function and memory rows: same
+// width, smaller height, so those rows are visibly less prominent than
+// the digit/operator rows and free up vertical space for the display.
+private const val BUTTON_ASPECT_RATIO_COMPACT = 2.6f
 
 // iOS palette tokens, used by both the keypad and the tools sheet so
 // the calculator reads as a single visual system. Literal colors rather
