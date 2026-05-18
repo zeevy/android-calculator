@@ -9,15 +9,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.CurrencyExchange
@@ -102,26 +101,18 @@ internal fun BasicCalculatorScreenContent(
                     .padding(padding)
                     .systemBarsPadding(),
         ) {
-            // ModeHeader sits flush to the top-right corner (no outer top
-            // padding, no horizontal padding on the row itself). The chips
-            // and hamburger live inside its Row so the hamburger ends up
-            // in the absolute corner just below the status bar.
-            ModeHeader(
+            // The display area carries the mode chips and the hamburger
+            // icon as overlays: chips top-left, hamburger top-right,
+            // expression bottom-right. No separate header row means the
+            // icon sits flush against the status bar with no wasted
+            // vertical space above it.
+            DisplaySection(
                 state = state,
                 onEvent = onEvent,
                 onOpenMenu = { menuOpen = true },
-            )
-            Display(
-                expression = state.expression,
-                preview = state.liveResult,
-                error = state.errorMessage,
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        // Smaller display weight in landscape so the keypad
-                        // (the more space-hungry component, especially with
-                        // 9 rows in scientific mode) actually fits.
                         .weight(if (isLandscape) DISPLAY_WEIGHT_LANDSCAPE else DISPLAY_WEIGHT_PORTRAIT),
             )
             Spacer(Modifier.size(8.dp))
@@ -129,14 +120,11 @@ internal fun BasicCalculatorScreenContent(
                 scientific = state.scientific,
                 isLandscape = isLandscape,
                 onEvent = onEvent,
-                // Keypad takes the remaining vertical space; weighted
-                // rows below then divide it so nothing overflows the
-                // viewport regardless of orientation or screen size.
                 modifier =
                     Modifier
                         .padding(horizontal = 16.dp)
                         .padding(bottom = 8.dp)
-                        .weight(if (isLandscape) 1f else 2f),
+                        .weight(if (isLandscape) KEYPAD_WEIGHT_LANDSCAPE else KEYPAD_WEIGHT_PORTRAIT),
             )
         }
     }
@@ -314,43 +302,57 @@ private fun ToolTileButton(tile: ToolTile, modifier: Modifier = Modifier) {
 private const val TOOL_TILE_COLUMNS = 3
 
 /**
- * Top header: the DEG/RAD chip when scientific mode is on, an `M` chip
- * when memory holds a non-zero value, and a hamburger icon on the right
- * that opens the settings bottom sheet.
+ * Display section: expression + live preview bottom-right, mode chips
+ * top-left, hamburger icon top-right. Implemented as a Box so each
+ * piece sits exactly where it should without padding rows wasting space.
  */
 @Composable
-private fun ModeHeader(
+private fun DisplaySection(
     state: BasicCalculatorUiState,
     onEvent: (BasicCalculatorEvent) -> Unit,
     onOpenMenu: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        // 16dp leading padding only so the chips don't kiss the screen
-        // edge, but the trailing IconButton stays flush to the right edge.
-        Spacer(Modifier.size(16.dp))
-        if (state.scientific) {
-            AssistChip(
-                onClick = { onEvent(BasicCalculatorEvent.ToggleAngleMode) },
-                label = { Text(if (state.angleMode == AngleMode.Degree) "DEG" else "RAD") },
-            )
+    Box(modifier = modifier) {
+        Display(
+            expression = state.expression,
+            preview = state.liveResult,
+            error = state.errorMessage,
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 56.dp),
+        )
+
+        Row(
+            modifier = Modifier.align(Alignment.TopStart).padding(start = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (state.scientific) {
+                AssistChip(
+                    onClick = { onEvent(BasicCalculatorEvent.ToggleAngleMode) },
+                    label = { Text(if (state.angleMode == AngleMode.Degree) "DEG" else "RAD") },
+                )
+            }
+            if (state.memory != BigDecimal.ZERO) {
+                AssistChip(
+                    onClick = { onEvent(BasicCalculatorEvent.MemoryRecall) },
+                    label = { Text("M") },
+                    colors =
+                        AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            labelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        ),
+                )
+            }
         }
-        if (state.memory != BigDecimal.ZERO) {
-            AssistChip(
-                onClick = { onEvent(BasicCalculatorEvent.MemoryRecall) },
-                label = { Text("M") },
-                colors =
-                    AssistChipDefaults.assistChipColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        labelColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    ),
-            )
-        }
-        Spacer(Modifier.weight(1f))
-        IconButton(onClick = onOpenMenu) {
+
+        IconButton(
+            onClick = onOpenMenu,
+            modifier = Modifier.align(Alignment.TopEnd),
+        ) {
             Icon(imageVector = Icons.Filled.Menu, contentDescription = "Open menu")
         }
     }
@@ -452,11 +454,15 @@ private fun Keypad(
 }
 
 /**
- * Renders a list of keypad rows as a vertical scrolling column of square
- * buttons. Each button uses `aspectRatio(1f)` so the keypad reads as a
- * proper grid - and `verticalScroll` is the safety net for narrow
- * viewports (short landscape, scientific mode on small phones) where the
- * full square grid would otherwise overflow.
+ * Renders a list of keypad rows as an equal-height grid that always
+ * fills the available vertical space. No fixed aspect ratio - rows
+ * divide whatever height the keypad container has, so basic mode
+ * (5 rows) doesn't leave a gap at the bottom and scientific mode
+ * (9 rows) doesn't overflow into a scroll.
+ *
+ * The button proportions naturally widen as more rows are added, which
+ * matches what a physical scientific calculator feels like: more keys,
+ * each key gets a touch smaller.
  */
 @Composable
 private fun KeypadGrid(
@@ -465,19 +471,31 @@ private fun KeypadGrid(
     onEvent: (BasicCalculatorEvent) -> Unit,
 ) {
     Column(
-        modifier = modifier.verticalScroll(rememberScrollState()),
+        modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         rows.forEach { row ->
-            KeypadRow(row = row, onEvent = onEvent)
+            KeypadRow(
+                row = row,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .heightIn(min = MIN_KEY_HEIGHT),
+                onEvent = onEvent,
+            )
         }
     }
 }
 
 @Composable
-private fun KeypadRow(row: List<Key>, onEvent: (BasicCalculatorEvent) -> Unit) {
+private fun KeypadRow(
+    row: List<Key>,
+    modifier: Modifier,
+    onEvent: (BasicCalculatorEvent) -> Unit,
+) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         row.forEach { key ->
@@ -487,10 +505,7 @@ private fun KeypadRow(row: List<Key>, onEvent: (BasicCalculatorEvent) -> Unit) {
                 modifier =
                     Modifier
                         .weight(1f)
-                        // 1.5:1 (wider than tall) gives the keypad a shorter,
-                        // calculator-style row height without losing horizontal
-                        // touch-target size on a 4-column grid.
-                        .aspectRatio(KEY_ASPECT_RATIO),
+                        .fillMaxHeight(),
             )
         }
     }
@@ -627,19 +642,20 @@ private fun KeyButton(
 private val OperatorLabels = setOf("+", "-", "×", "÷", "%", "^", "π", "e")
 
 // Weights for the Display vs Keypad split inside the screen Column. The
-// display is more flexible in portrait (more vertical real estate) and
-// is squeezed to a sliver in landscape so the keypad can breathe. The
-// manifest pins the activity to portrait, so landscape branches stay as
-// a safety net for foldables / Samsung DeX / window-resize multi-window.
-private const val DISPLAY_WEIGHT_PORTRAIT = 1f
+// display is intentionally short (~25% of usable height) so the keypad
+// dominates the screen the way physical calculators do; the display has
+// only a line of result text and an optional preview line beneath, so
+// the extra space above would just read as wasted.
+//
+// The manifest pins the activity to portrait, so the landscape branch
+// is just a safety net for foldables / DeX / multi-window.
+private const val DISPLAY_WEIGHT_PORTRAIT = 0.5f
 private const val DISPLAY_WEIGHT_LANDSCAPE = 0.6f
+private const val KEYPAD_WEIGHT_PORTRAIT = 2f
+private const val KEYPAD_WEIGHT_LANDSCAPE = 1f
 
-/**
- * Width-to-height ratio for each keypad button. > 1 means wider than tall,
- * giving the keypad a shorter, more rectangular row that matches what
- * users expect from a physical calculator.
- */
-private const val KEY_ASPECT_RATIO = 1.5f
+/** Minimum touch-target height per keypad row, per Material 3 guidance. */
+private val MIN_KEY_HEIGHT = 48.dp
 
 // ----- Previews -----
 
