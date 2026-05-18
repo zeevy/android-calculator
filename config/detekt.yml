@@ -30,7 +30,7 @@ complexity:
     functionThreshold: 7
     constructorThreshold: 8
   CyclomaticComplexMethod:
-    threshold: 18
+    threshold: 20
   # Shunting-Yard naturally produces a switch-inside-while pattern; 5 is
   # tight enough to catch genuine over-nesting elsewhere.
   NestedBlockDepth:

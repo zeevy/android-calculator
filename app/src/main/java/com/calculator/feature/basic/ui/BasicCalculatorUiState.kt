@@ -21,6 +21,14 @@ data class BasicCalculatorUiState(
     val expression: String = "",
     val liveResult: String? = null,
     val errorMessage: String? = null,
+    /**
+     * Trailing `op + operand` from the most recent successful evaluation.
+     *
+     * Re-applied on every subsequent `=` press so the user can chain
+     * `1 + 5 = = =` to get `6, 11, 16, ...`. Any other input
+     * (digit, operator, backspace, clear) resets this back to `null`.
+     */
+    val pendingRepeat: String? = null,
 )
 
 /**

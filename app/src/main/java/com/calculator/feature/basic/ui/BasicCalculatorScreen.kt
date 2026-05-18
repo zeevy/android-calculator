@@ -145,13 +145,10 @@ private fun Keypad(onEvent: (BasicCalculatorEvent) -> Unit) {
                     KeyButton(
                         key = key,
                         onEvent = onEvent,
-                        // 1.5:1 aspect (wider than tall) gives the keypad a
-                        // shorter, calculator-style row height without losing
-                        // touch-target size on a 4-column grid.
                         modifier =
                             Modifier
                                 .weight(1f)
-                                .aspectRatio(1.5f),
+                                .aspectRatio(KEY_ASPECT_RATIO),
                     )
                 }
             }
@@ -252,6 +249,12 @@ private fun KeyButton(
 
 /** Labels of arithmetic-operator keys that get the bigger display type ramp. */
 private val OperatorLabels = setOf("+", "-", "×", "÷", "%")
+
+/**
+ * Width-to-height ratio for each keypad button. >1 means wider than tall,
+ * giving the keypad a shorter, more rectangular row.
+ */
+private const val KEY_ASPECT_RATIO = 1.5f
 
 // ----- Previews -----
 
