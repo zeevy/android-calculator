@@ -11,18 +11,22 @@
 -->
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Splash screen theme. Inherits from the platform Material SplashScreen. -->
+    <!-- Splash screen theme. Inherits from the platform Material SplashScreen.
+         Background is the calculator's black canvas so the splash hands
+         off into the running app without a colour flash. -->
     <style name="Theme.Calculator.Starting" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
         <item name="postSplashScreenTheme">@style/Theme.Calculator</item>
     </style>
 
-    <!-- App theme after splash hands off. Compose owns colors/typography. -->
+    <!-- App theme after splash hands off. Compose owns colors/typography.
+         windowLightStatusBar=false because the app's background is dark;
+         the system status-bar icons need to render light against it. -->
     <style name="Theme.Calculator" parent="android:Theme.Material.NoActionBar">
         <item name="android:statusBarColor" tools:targetApi="l">@android:color/transparent</item>
         <item name="android:navigationBarColor" tools:targetApi="l">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
         <item name="android:enforceNavigationBarContrast" tools:targetApi="29">false</item>
     </style>
 

@@ -10,4 +10,8 @@
 -->
 <resources>
     <color name="ic_launcher_background">#6750A4</color>
+    <!-- Splash screen background. Matches the iOS-palette calculator's
+         black canvas so the splash hands off into the running app
+         without a colour flash. -->
+    <color name="splash_background">#000000</color>
 </resources>

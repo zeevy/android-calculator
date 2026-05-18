@@ -308,16 +308,16 @@ private fun ToolTileButton(tile: ToolTile, modifier: Modifier = Modifier) {
                 .clip(RoundedCornerShape(20.dp))
                 .background(containerColor)
                 .clickable(enabled = tile.enabled, onClick = tile.onTap)
-                .padding(vertical = 16.dp),
+                .padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(
             imageVector = tile.icon,
             contentDescription = tile.label,
             tint = contentColor,
-            modifier = Modifier.size(32.dp),
+            modifier = Modifier.size(24.dp),
         )
-        Spacer(Modifier.size(8.dp))
+        Spacer(Modifier.size(6.dp))
         Text(
             text = tile.label,
             style = MaterialTheme.typography.bodyMedium,
