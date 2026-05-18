@@ -30,13 +30,16 @@ complexity:
     functionThreshold: 7
     constructorThreshold: 8
   CyclomaticComplexMethod:
-    threshold: 20
+    # Tokenizer + ViewModel append rule grow with each input class supported;
+    # 25 leaves room without letting genuine spaghetti through.
+    threshold: 25
   # Shunting-Yard naturally produces a switch-inside-while pattern; 5 is
   # tight enough to catch genuine over-nesting elsewhere.
   NestedBlockDepth:
     threshold: 5
   TooManyFunctions:
-    thresholdInClasses: 20
+    thresholdInClasses: 30
+    thresholdInFiles: 18
     thresholdInInterfaces: 15
     thresholdInObjects: 15
     thresholdInEnums: 15

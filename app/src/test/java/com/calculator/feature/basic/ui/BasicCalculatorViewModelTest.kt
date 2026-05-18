@@ -1,7 +1,7 @@
 package com.calculator.feature.basic.ui
 
 import androidx.lifecycle.SavedStateHandle
-import com.calculator.core.math.Evaluator
+import com.calculator.core.math.AngleMode
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test
  */
 class BasicCalculatorViewModelTest {
     private val savedStateHandle = SavedStateHandle()
-    private val viewModel = BasicCalculatorViewModel(Evaluator(), savedStateHandle)
+    private val viewModel = BasicCalculatorViewModel(savedStateHandle)
 
     private fun type(vararg symbols: String) = symbols.forEach { viewModel.onEvent(BasicCalculatorEvent.Append(it)) }
 
@@ -409,7 +409,7 @@ class BasicCalculatorViewModelTest {
 
             // Simulate process death by spinning up a new ViewModel with the
             // same SavedStateHandle - that's what the system does on restore.
-            val restored = BasicCalculatorViewModel(Evaluator(), savedStateHandle)
+            val restored = BasicCalculatorViewModel(savedStateHandle)
 
             assertEquals("6", restored.state.value.expression)
             assertEquals("+5", restored.state.value.pendingRepeat)
@@ -421,7 +421,7 @@ class BasicCalculatorViewModelTest {
         fun `error message survives restoration`() {
             type("5", "÷", "0")
             equals()
-            val restored = BasicCalculatorViewModel(Evaluator(), savedStateHandle)
+            val restored = BasicCalculatorViewModel(savedStateHandle)
             assertEquals("Can't divide by zero", restored.state.value.errorMessage)
         }
 
@@ -430,7 +430,7 @@ class BasicCalculatorViewModelTest {
             type("1", "+", "5")
             equals()
 
-            val restored = BasicCalculatorViewModel(Evaluator(), savedStateHandle)
+            val restored = BasicCalculatorViewModel(savedStateHandle)
             restored.onEvent(BasicCalculatorEvent.Equals)
             assertEquals("11", restored.state.value.expression)
         }
@@ -441,7 +441,7 @@ class BasicCalculatorViewModelTest {
             equals()
             clear()
 
-            val restored = BasicCalculatorViewModel(Evaluator(), savedStateHandle)
+            val restored = BasicCalculatorViewModel(savedStateHandle)
             assertEquals("", restored.state.value.expression)
             assertNull(restored.state.value.pendingRepeat)
         }
@@ -528,6 +528,133 @@ class BasicCalculatorViewModelTest {
             type("1", "0", "0", "×", "1", "0", "%")
             equals()
             assertEquals("10", state.expression)
+        }
+    }
+
+    @Nested
+    inner class ScientificMode {
+        @Test
+        fun `toggle scientific flips the flag`() {
+            assertEquals(false, state.scientific)
+            viewModel.onEvent(BasicCalculatorEvent.ToggleScientific)
+            assertEquals(true, state.scientific)
+            viewModel.onEvent(BasicCalculatorEvent.ToggleScientific)
+            assertEquals(false, state.scientific)
+        }
+
+        @Test
+        fun `toggle angle mode cycles RAD and DEG`() {
+            assertEquals(AngleMode.Radian, state.angleMode)
+            viewModel.onEvent(BasicCalculatorEvent.ToggleAngleMode)
+            assertEquals(AngleMode.Degree, state.angleMode)
+            viewModel.onEvent(BasicCalculatorEvent.ToggleAngleMode)
+            assertEquals(AngleMode.Radian, state.angleMode)
+        }
+
+        @Test
+        fun `sin(30 deg) evaluates to one half in degree mode`() {
+            viewModel.onEvent(BasicCalculatorEvent.ToggleAngleMode)
+            type("sin(", "3", "0", ")")
+            equals()
+            assertEquals("0.5", state.expression)
+        }
+
+        @Test
+        fun `auto-close brings sin(30 ) home without explicit closer`() {
+            viewModel.onEvent(BasicCalculatorEvent.ToggleAngleMode)
+            type("sin(", "3", "0")
+            equals()
+            assertEquals("0.5", state.expression)
+        }
+
+        @Test
+        fun `pi key recalls the constant`() {
+            type("π")
+            equals()
+            // Match against Math.PI within DECIMAL64 precision.
+            assert(state.expression.startsWith("3.14159265")) {
+                "expected π but got ${state.expression}"
+            }
+        }
+    }
+
+    @Nested
+    inner class Memory {
+        @Test
+        fun `M plus stores the current result`() {
+            type("1", "+", "5")
+            equals()
+            viewModel.onEvent(BasicCalculatorEvent.MemoryAdd)
+            assertEquals("6", state.memory.toPlainString())
+        }
+
+        @Test
+        fun `M minus subtracts from memory`() {
+            type("1", "0")
+            equals()
+            viewModel.onEvent(BasicCalculatorEvent.MemoryAdd)
+            // Clear before typing the next number, otherwise the post-equals
+            // append rule treats the `3` as a continuation (giving 103) which
+            // is not what `M -` should subtract.
+            viewModel.onEvent(BasicCalculatorEvent.Clear)
+            type("3")
+            viewModel.onEvent(BasicCalculatorEvent.MemorySubtract)
+            assertEquals("7", state.memory.toPlainString())
+        }
+
+        @Test
+        fun `MR appends the stored value to the expression`() {
+            type("4", "2")
+            equals()
+            viewModel.onEvent(BasicCalculatorEvent.MemoryAdd)
+            viewModel.onEvent(BasicCalculatorEvent.Clear)
+            viewModel.onEvent(BasicCalculatorEvent.MemoryRecall)
+            assertEquals("42", state.expression)
+        }
+
+        @Test
+        fun `MR after an operator appends without inserting an extra times`() {
+            type("4", "2")
+            equals()
+            viewModel.onEvent(BasicCalculatorEvent.MemoryAdd)
+            viewModel.onEvent(BasicCalculatorEvent.Clear)
+            type("1", "0", "+")
+            viewModel.onEvent(BasicCalculatorEvent.MemoryRecall)
+            equals()
+            assertEquals("52", state.expression)
+        }
+
+        @Test
+        fun `MR after a number multiplies through`() {
+            type("4", "2")
+            equals()
+            viewModel.onEvent(BasicCalculatorEvent.MemoryAdd)
+            viewModel.onEvent(BasicCalculatorEvent.Clear)
+            type("2")
+            viewModel.onEvent(BasicCalculatorEvent.MemoryRecall)
+            equals()
+            assertEquals("84", state.expression)
+        }
+
+        @Test
+        fun `MC zeroes the stored value`() {
+            type("4", "2")
+            equals()
+            viewModel.onEvent(BasicCalculatorEvent.MemoryAdd)
+            viewModel.onEvent(BasicCalculatorEvent.MemoryClear)
+            assertEquals("0", state.memory.toPlainString())
+        }
+
+        @Test
+        fun `clear preserves memory and angle mode`() {
+            viewModel.onEvent(BasicCalculatorEvent.ToggleAngleMode)
+            type("4", "2")
+            equals()
+            viewModel.onEvent(BasicCalculatorEvent.MemoryAdd)
+            viewModel.onEvent(BasicCalculatorEvent.Clear)
+            assertEquals("42", state.memory.toPlainString())
+            assertEquals(AngleMode.Degree, state.angleMode)
+            assertEquals("", state.expression)
         }
     }
 

@@ -19,15 +19,30 @@ import java.util.ArrayDeque
  * needs different precision (e.g. financial calculators rounding to
  * 2 dp) should construct its own [Evaluator] instance.
  *
+ * Transcendental functions (`sin`, `log`, …) operate on bounded [Double]
+ * under the hood (BigDecimal has no native trig/log) and are rounded
+ * back to [mathContext] precision before being pushed on the value stack.
+ *
  * Thread-safety: each call to [evaluate] is self-contained, so the
  * same instance may be shared across threads.
  *
  * @property mathContext Precision and rounding mode used for arithmetic.
+ * @property angleMode Interpretation of trig function inputs/outputs.
  */
 class Evaluator(
     private val mathContext: MathContext = MathContext.DECIMAL64,
+    private val angleMode: AngleMode = AngleMode.Radian,
 ) {
     private val tokenizer = Tokenizer()
+
+    // Aggressive context applied only after transcendental ops to collapse
+    // double-precision floating-point noise (e.g. sin(π) → 1.2e-16) into a
+    // clean value the calculator can display.
+    private val transcendentalContext =
+        MathContext(
+            (mathContext.precision - 2).coerceAtLeast(1),
+            mathContext.roundingMode,
+        )
 
     /**
      * Evaluate the given expression.
@@ -56,6 +71,8 @@ class Evaluator(
 
         return try {
             EvaluationResult.Success(computeRpn(rpn))
+        } catch (e: DomainException) {
+            EvaluationResult.Error.Domain(e.message ?: "out of domain")
         } catch (e: ArithmeticException) {
             // BigDecimal.divide throws ArithmeticException on /0 - turn it into a typed error.
             if (e.message?.contains("Division by zero", ignoreCase = true) == true ||
@@ -74,11 +91,14 @@ class Evaluator(
      * Convert infix tokens to postfix (RPN) using Shunting-Yard.
      *
      * The algorithm:
-     *  - Numbers are emitted directly to the output queue.
-     *  - Operators pop from the operator stack while the top of the stack
-     *    has higher (or equal, for left-associative ops) precedence.
+     *  - Numbers go straight to the output queue.
+     *  - Function tokens are pushed onto the operator stack, and pop to
+     *    the output queue when their `)` is consumed.
+     *  - Operators pop from the operator stack while the top has higher
+     *    precedence (or equal precedence for left-associative ops).
      *  - `(` is pushed unconditionally.
-     *  - `)` pops operators until the matching `(` is found.
+     *  - `)` pops operators until the matching `(`; if a function token
+     *    sits below the `(`, it pops too so it lands next to its argument.
      */
     private fun toReversePolishNotation(tokens: List<Token>): List<Token> {
         val output = mutableListOf<Token>()
@@ -88,14 +108,13 @@ class Evaluator(
             when (token) {
                 is Token.Number -> output += token
 
+                is Token.Function -> operators.push(token)
+
                 is Token.Op -> {
                     while (operators.isNotEmpty()) {
                         val top = operators.peek()
-                        if (top !is Token.Op) break
-                        val popTop =
-                            top.operator.precedence > token.operator.precedence ||
-                                (top.operator.precedence == token.operator.precedence && !token.operator.rightAssociative)
-                        if (popTop) output += operators.pop() else break
+                        if (!shouldPopForOperator(top, token.operator)) break
+                        output += operators.pop()
                     }
                     operators.push(token)
                 }
@@ -113,6 +132,10 @@ class Evaluator(
                         output += top
                     }
                     check(matched) { "mismatched parentheses: ')' without matching '('" }
+                    // A function token immediately under the matched `(` is
+                    // its applicator; pop it now so it appears in RPN right
+                    // after its argument.
+                    if (operators.peek() is Token.Function) output += operators.pop()
                 }
             }
         }
@@ -128,12 +151,27 @@ class Evaluator(
     }
 
     /**
+     * Should the top-of-stack operator be popped before pushing [incoming]?
+     * Functions always pop first (they bind tighter than any binary op).
+     */
+    private fun shouldPopForOperator(top: Token, incoming: Operator): Boolean =
+        when (top) {
+            is Token.Function -> true
+            is Token.Op ->
+                top.operator.precedence > incoming.precedence ||
+                    (top.operator.precedence == incoming.precedence && !incoming.rightAssociative)
+            else -> false
+        }
+
+    /**
      * Fold an RPN token list to a final [BigDecimal].
      *
      * @throws IllegalStateException when the expression is malformed
      *   (e.g. operator with no operands).
      * @throws ArithmeticException on division by zero - caller wraps this
      *   into [EvaluationResult.Error.DivisionByZero].
+     * @throws DomainException when a function receives an out-of-domain
+     *   argument (e.g. `log(-1)`, `sqrt(-1)`).
      */
     private fun computeRpn(rpn: List<Token>): BigDecimal {
         val stack = ArrayDeque<BigDecimal>()
@@ -145,6 +183,10 @@ class Evaluator(
                     val right = stack.pop()
                     val left = stack.pop()
                     stack.push(apply(token.operator, left, right))
+                }
+                is Token.Function -> {
+                    check(stack.isNotEmpty()) { "function '${token.func.keyword}' missing argument" }
+                    stack.push(applyFunction(token.func, stack.pop()))
                 }
                 Token.LeftParen, Token.RightParen ->
                     error("parenthesis leaked into RPN output: $token")
@@ -168,5 +210,52 @@ class Evaluator(
                 // which we always provide. Division by zero is rethrown as ArithmeticException.
                 left.divide(right, mathContext)
             }
+            Operator.Power -> powerOf(left, right)
         }
+
+    /**
+     * `x^y` via bounded Double. Integer-only `y` could stay in BigDecimal
+     * via `pow(int)`, but the calculator's user-facing power button can be
+     * invoked with fractional exponents (`8^(1/3)`), so we go through Double
+     * for the general case and round back via [mathContext].
+     */
+    private fun powerOf(base: BigDecimal, exp: BigDecimal): BigDecimal {
+        val raw = Math.pow(base.toDouble(), exp.toDouble())
+        if (raw.isNaN()) throw DomainException("invalid power: $base^$exp")
+        if (raw.isInfinite()) throw DomainException("power overflow: $base^$exp")
+        return BigDecimal(raw).round(mathContext)
+    }
+
+    private fun applyFunction(func: FunctionId, arg: BigDecimal): BigDecimal {
+        val raw = arg.toDouble()
+        val out =
+            when (func) {
+                FunctionId.Sin -> Math.sin(toRadians(raw))
+                FunctionId.Cos -> Math.cos(toRadians(raw))
+                FunctionId.Tan -> Math.tan(toRadians(raw))
+                FunctionId.Asin -> fromRadians(Math.asin(raw))
+                FunctionId.Acos -> fromRadians(Math.acos(raw))
+                FunctionId.Atan -> fromRadians(Math.atan(raw))
+                FunctionId.Log -> Math.log10(raw)
+                FunctionId.Ln -> Math.log(raw)
+                FunctionId.Sqrt -> Math.sqrt(raw)
+                FunctionId.Cbrt -> Math.cbrt(raw)
+            }
+        if (out.isNaN()) throw DomainException("${func.keyword}($arg) is undefined")
+        if (out.isInfinite()) throw DomainException("${func.keyword}($arg) is infinite")
+        // Trim the last two digits of Double noise: `sin(π)` returns
+        // 1.2246e-16, `sin(30°)` returns 0.49999999999999994, etc. Rounding
+        // to 14 significant figures collapses those to 0 and 0.5 without
+        // sacrificing user-meaningful precision.
+        return BigDecimal(out).round(transcendentalContext)
+    }
+
+    private fun toRadians(value: Double): Double =
+        if (angleMode == AngleMode.Degree) Math.toRadians(value) else value
+
+    private fun fromRadians(value: Double): Double =
+        if (angleMode == AngleMode.Degree) Math.toDegrees(value) else value
 }
+
+/** Signals an out-of-domain argument to a function (e.g. `log(-1)`). */
+private class DomainException(message: String) : RuntimeException(message)

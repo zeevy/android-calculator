@@ -43,6 +43,26 @@ class Tokenizer {
                     index += consumed
                 }
 
+                c == 'π' || c == 'Π' -> {
+                    tokens += Token.Number(BigDecimal(Math.PI))
+                    index++
+                }
+
+                c.isLetter() -> {
+                    val (keyword, consumed) = readIdentifier(expression, index)
+                    tokens +=
+                        when {
+                            keyword == "e" -> Token.Number(BigDecimal(Math.E))
+                            keyword == "pi" -> Token.Number(BigDecimal(Math.PI))
+                            else ->
+                                FunctionId.fromKeyword(keyword)?.let(Token::Function)
+                                    ?: throw TokenizationException(
+                                        "Unknown identifier '$keyword' at index $index",
+                                    )
+                        }
+                    index += consumed
+                }
+
                 c == '-' && isUnaryMinusContext(tokens) -> {
                     val nextIdx = index + 1
                     val nextChar = expression.getOrNull(nextIdx)
@@ -132,9 +152,27 @@ class Tokenizer {
      */
     private fun isUnaryMinusContext(soFar: List<Token>): Boolean =
         when (soFar.lastOrNull()) {
-            null, is Token.Op, Token.LeftParen -> true
+            null, is Token.Op, Token.LeftParen, is Token.Function -> true
             else -> false
         }
+
+    /**
+     * Read a lower-case keyword (function name or constant) starting at [start].
+     *
+     * Identifiers are restricted to ASCII letters; the tokenizer treats
+     * non-letter characters as a hard stop so `sin30` lexes as `sin` plus
+     * the number `30`.
+     */
+    private fun readIdentifier(
+        source: String,
+        start: Int,
+    ): Pair<String, Int> {
+        var end = start
+        while (end < source.length && source[end].isLetter()) {
+            end++
+        }
+        return source.substring(start, end).lowercase() to (end - start)
+    }
 
     private companion object {
         /** Divisor used to rewrite postfix `%`: `N%` becomes `N ÷ 100`. */

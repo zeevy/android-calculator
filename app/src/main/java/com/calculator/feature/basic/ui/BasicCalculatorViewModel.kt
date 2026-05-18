@@ -2,6 +2,7 @@ package com.calculator.feature.basic.ui
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import com.calculator.core.math.AngleMode
 import com.calculator.core.math.EvaluationResult
 import com.calculator.core.math.Evaluator
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -9,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.math.BigDecimal
 import javax.inject.Inject
 
 /**
@@ -18,13 +20,11 @@ import javax.inject.Inject
  * Design notes:
  *  - State is exposed as a single [StateFlow] of [BasicCalculatorUiState];
  *    the UI collects it with `collectAsStateWithLifecycle()`.
- *  - The evaluator is injected as a dependency rather than constructed
- *    inline, so tests can substitute a fake (e.g. to inject deterministic
- *    error outcomes without crafting input strings).
+ *  - A fresh [Evaluator] is constructed per evaluation with the current
+ *    [AngleMode] so the trig functions react to the DEG/RAD toggle without
+ *    plumbing the mode through every call site.
  *  - The evaluation engine is synchronous and microsecond-fast for any
- *    realistic expression length, so no coroutine dispatch is needed
- *    here. If we ever add long-running operations (currency fetch, big
- *    matrix math), they should be dispatched off the main thread.
+ *    realistic expression length, so no coroutine dispatch is needed.
  *
  * UX rules baked in (match common physical/iOS-style calculators):
  *  - Consecutive operators collapse: typing `1 + + ×` ends up as `1×`.
@@ -34,31 +34,45 @@ import javax.inject.Inject
  *  - Pressing a digit right after `=` starts a fresh expression.
  *  - Pressing an operator right after `=` chains on the result.
  *  - Pressing `=` with a trailing operator auto-completes the missing
- *    operand from the first number (`1 + =` → `1 + 1 = 2`).
- *  - Pressing `=` repeatedly re-applies the last `op + operand`
- *    (`1 + 5 = = =` → `6, 11, 16`).
+ *    operand from the last typed number (`1 + =` → `1 + 1 = 2`).
+ *  - Pressing `=` repeatedly re-applies the last `op + operand`.
+ *  - Memory keys M+, M-, MR, MC operate on a single stored value.
+ *
+ * Process-death survival: expression, error, repeat token, scientific
+ * toggle, angle mode, and memory are all persisted via [SavedStateHandle].
  */
 @HiltViewModel
 class BasicCalculatorViewModel
     @Inject
     constructor(
-        private val evaluator: Evaluator,
         private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
-        // Restore from the SavedStateHandle so expression/error/repeat-token
-        // survive process death (Android killing the app in the background)
-        // and config changes. `liveResult` is derived from `expression`, so
-        // we recompute it rather than persist it.
+        // Restore from the SavedStateHandle so calculator state survives
+        // process death and config changes. `liveResult` is derived from
+        // `expression`, so we recompute it rather than persist it.
         private val _state = MutableStateFlow(loadFromSavedState())
         val state: StateFlow<BasicCalculatorUiState> = _state.asStateFlow()
 
         private fun loadFromSavedState(): BasicCalculatorUiState {
             val expression = savedStateHandle.get<String>(KEY_EXPRESSION).orEmpty()
+            val angleMode =
+                savedStateHandle
+                    .get<String>(KEY_ANGLE_MODE)
+                    ?.let { runCatching { AngleMode.valueOf(it) }.getOrNull() }
+                    ?: AngleMode.Radian
+            val memory =
+                savedStateHandle
+                    .get<String>(KEY_MEMORY)
+                    ?.let { runCatching { BigDecimal(it) }.getOrNull() }
+                    ?: BigDecimal.ZERO
             return BasicCalculatorUiState(
                 expression = expression,
-                liveResult = preview(expression),
+                liveResult = preview(expression, angleMode),
                 errorMessage = savedStateHandle.get<String>(KEY_ERROR),
                 pendingRepeat = savedStateHandle.get<String>(KEY_PENDING_REPEAT),
+                scientific = savedStateHandle.get<Boolean>(KEY_SCIENTIFIC) ?: false,
+                angleMode = angleMode,
+                memory = memory,
             )
         }
 
@@ -66,6 +80,9 @@ class BasicCalculatorViewModel
             savedStateHandle[KEY_EXPRESSION] = state.expression
             savedStateHandle[KEY_ERROR] = state.errorMessage
             savedStateHandle[KEY_PENDING_REPEAT] = state.pendingRepeat
+            savedStateHandle[KEY_SCIENTIFIC] = state.scientific
+            savedStateHandle[KEY_ANGLE_MODE] = state.angleMode.name
+            savedStateHandle[KEY_MEMORY] = state.memory.toPlainString()
         }
 
         /** Dispatch a user event - typically called from the UI on key press. */
@@ -75,6 +92,12 @@ class BasicCalculatorViewModel
                 BasicCalculatorEvent.Backspace -> backspace()
                 BasicCalculatorEvent.Clear -> clear()
                 BasicCalculatorEvent.Equals -> commit()
+                BasicCalculatorEvent.ToggleScientific -> toggleScientific()
+                BasicCalculatorEvent.ToggleAngleMode -> toggleAngleMode()
+                BasicCalculatorEvent.MemoryAdd -> memoryDelta(addToMemory = true)
+                BasicCalculatorEvent.MemorySubtract -> memoryDelta(addToMemory = false)
+                BasicCalculatorEvent.MemoryRecall -> memoryRecall()
+                BasicCalculatorEvent.MemoryClear -> memoryClear()
             }
         }
 
@@ -84,7 +107,7 @@ class BasicCalculatorViewModel
                 current
                     .copy(
                         expression = next,
-                        liveResult = preview(next),
+                        liveResult = preview(next, current.angleMode),
                         errorMessage = null,
                         // Any non-`=` input breaks the repeat-equals chain.
                         pendingRepeat = null,
@@ -92,17 +115,18 @@ class BasicCalculatorViewModel
             }
 
         private fun nextExpressionAfterAppend(current: BasicCalculatorUiState, symbol: String): String {
-            // After `=`, the next input either starts a new calculation
-            // (digit / `.`) or chains on the current result (operator).
             current.pendingRepeat?.let { return appendAfterEquals(current.expression, symbol) }
-
             return appendDuringEdit(current.expression, symbol)
         }
 
         private fun appendAfterEquals(expr: String, symbol: String): String {
+            // After `=`, a number/decimal starts fresh; an operator or a
+            // function name chains on the result.
             val isOperator = symbol.length == 1 && symbol[0] in ArithmeticOperators
+            val startsFunction = symbol.length > 1 && symbol.last() == '('
             return when {
                 isOperator -> expr + symbol
+                startsFunction -> symbol
                 symbol == "." -> "0."
                 else -> symbol
             }
@@ -115,7 +139,7 @@ class BasicCalculatorViewModel
                 isOperator && expr.isNotEmpty() && expr.last() in ArithmeticOperators ->
                     expr.dropLast(1) + symbol
 
-                // Drop a stray leading `+`, `×`, `÷` (but allow leading `-` for negation).
+                // Drop a stray leading `+`, `×`, `÷`, `^` (but allow leading `-` for negation).
                 isOperator && expr.isEmpty() && symbol != "-" -> expr
 
                 // Decimal-point rules.
@@ -130,9 +154,7 @@ class BasicCalculatorViewModel
         }
 
         private fun appendDecimal(expr: String): String {
-            // Only one `.` per number segment.
             if (currentNumberHasDot(expr)) return expr
-            // Auto-prefix `0` so `.5` reads as `0.5` and `1+.5` reads as `1+0.5`.
             val needsZeroPrefix = expr.isEmpty() || expr.last() in ArithmeticOperators || expr.last() == '('
             return if (needsZeroPrefix) "$expr${"0."}" else "$expr."
         }
@@ -143,15 +165,21 @@ class BasicCalculatorViewModel
                 current
                     .copy(
                         expression = next,
-                        liveResult = preview(next),
+                        liveResult = preview(next, current.angleMode),
                         errorMessage = null,
                         pendingRepeat = null,
                     ).also(::persist)
             }
 
         private fun clear() =
-            _state.update {
-                BasicCalculatorUiState().also(::persist)
+            _state.update { current ->
+                // Clear wipes the expression and error/repeat, but keeps user
+                // preferences (scientific mode, angle mode, memory).
+                BasicCalculatorUiState(
+                    scientific = current.scientific,
+                    angleMode = current.angleMode,
+                    memory = current.memory,
+                ).also(::persist)
             }
 
         private fun commit() =
@@ -160,7 +188,7 @@ class BasicCalculatorViewModel
 
                 val (toEvaluate, repeatToken) = buildEquationToEvaluate(current)
 
-                when (val result = evaluator.evaluate(toEvaluate)) {
+                when (val result = evaluatorFor(current.angleMode).evaluate(toEvaluate)) {
                     is EvaluationResult.Success ->
                         current
                             .copy(
@@ -183,6 +211,59 @@ class BasicCalculatorViewModel
                                 pendingRepeat = null,
                             ).also(::persist)
                 }
+            }
+
+        private fun toggleScientific() =
+            _state.update { current ->
+                current.copy(scientific = !current.scientific).also(::persist)
+            }
+
+        private fun toggleAngleMode() =
+            _state.update { current ->
+                val next =
+                    when (current.angleMode) {
+                        AngleMode.Radian -> AngleMode.Degree
+                        AngleMode.Degree -> AngleMode.Radian
+                    }
+                current
+                    .copy(
+                        angleMode = next,
+                        liveResult = preview(current.expression, next),
+                    ).also(::persist)
+            }
+
+        /** Add or subtract the current display value to the stored memory. */
+        private fun memoryDelta(addToMemory: Boolean) =
+            _state.update { current ->
+                val currentValue = currentDisplayValue(current) ?: return@update current
+                val nextMemory =
+                    if (addToMemory) current.memory + currentValue else current.memory - currentValue
+                current.copy(memory = nextMemory).also(::persist)
+            }
+
+        private fun memoryRecall() =
+            _state.update { current ->
+                val mem = current.memory.stripTrailingZeros().toPlainString()
+                val next =
+                    when {
+                        current.pendingRepeat != null -> mem
+                        current.expression.isEmpty() -> mem
+                        current.expression.last() in ArithmeticOperators ||
+                            current.expression.last() == '(' -> current.expression + mem
+                        else -> current.expression + "×" + mem
+                    }
+                current
+                    .copy(
+                        expression = next,
+                        liveResult = preview(next, current.angleMode),
+                        errorMessage = null,
+                        pendingRepeat = null,
+                    ).also(::persist)
+            }
+
+        private fun memoryClear() =
+            _state.update { current ->
+                current.copy(memory = BigDecimal.ZERO).also(::persist)
             }
 
         /**
@@ -229,13 +310,21 @@ class BasicCalculatorViewModel
          * typing, and partial expressions like `5 +` should not light up
          * an error banner mid-input.
          */
-        private fun preview(expression: String): String? {
+        private fun preview(expression: String, angleMode: AngleMode): String? {
             if (expression.isBlank()) return null
-            return when (val result = evaluator.evaluate(expression)) {
-                is EvaluationResult.Success -> result.value.toPlainString()
+            return when (val result = evaluatorFor(angleMode).evaluate(expression)) {
+                is EvaluationResult.Success -> result.value.stripTrailingZeros().toPlainString()
                 is EvaluationResult.Error -> null
             }
         }
+
+        /** Build a fresh evaluator pinned to the current angle mode. */
+        private fun evaluatorFor(angleMode: AngleMode): Evaluator = Evaluator(angleMode = angleMode)
+
+        /** Best-effort current numeric value: the live result if available, else null. */
+        private fun currentDisplayValue(state: BasicCalculatorUiState): BigDecimal? =
+            state.liveResult?.let { runCatching { BigDecimal(it) }.getOrNull() }
+                ?: runCatching { BigDecimal(state.expression) }.getOrNull()
 
         /**
          * Translate engine errors to user-facing strings.
@@ -249,6 +338,7 @@ class BasicCalculatorViewModel
                 EvaluationResult.Error.DivisionByZero -> "Can't divide by zero"
                 is EvaluationResult.Error.Syntax -> "Check your expression"
                 is EvaluationResult.Error.UnknownToken -> "Unsupported character"
+                is EvaluationResult.Error.Domain -> "Math out of domain"
             }
 
         /**
@@ -291,18 +381,21 @@ class BasicCalculatorViewModel
             const val KEY_EXPRESSION = "calculator.expression"
             const val KEY_ERROR = "calculator.error"
             const val KEY_PENDING_REPEAT = "calculator.pendingRepeat"
+            const val KEY_SCIENTIFIC = "calculator.scientific"
+            const val KEY_ANGLE_MODE = "calculator.angleMode"
+            const val KEY_MEMORY = "calculator.memory"
 
             /** Characters the keypad treats as binary arithmetic operators. */
-            val ArithmeticOperators = setOf('+', '-', '×', '÷', '*', '/')
+            val ArithmeticOperators = setOf('+', '-', '×', '÷', '*', '/', '^')
 
             /** Trailing `op + operand` for repeat-equals. */
-            val TrailingOpRegex = Regex("([+\\-×÷*/])(\\d+(?:\\.\\d+)?)$")
+            val TrailingOpRegex = Regex("([+\\-×÷*/^])(\\d+(?:\\.\\d+)?)$")
 
             /**
              * The numeric literal sitting immediately before a trailing
              * operator. Used to auto-complete an incomplete expression on
              * `=` (e.g. `10-3×` → use `3`, the operand just entered).
              */
-            val PrecedingNumberRegex = Regex("(\\d+(?:\\.\\d+)?)[+\\-×÷*/]$")
+            val PrecedingNumberRegex = Regex("(\\d+(?:\\.\\d+)?)[+\\-×÷*/^]$")
         }
     }

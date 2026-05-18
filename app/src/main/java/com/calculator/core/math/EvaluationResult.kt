@@ -33,5 +33,13 @@ sealed interface EvaluationResult {
         data class UnknownToken(
             val reason: String,
         ) : Error
+
+        /**
+         * The input was well-formed but operated on a value outside its
+         * domain - e.g. `log(-1)`, `sqrt(-1)`, `(-1)!`.
+         */
+        data class Domain(
+            val reason: String,
+        ) : Error
     }
 }
