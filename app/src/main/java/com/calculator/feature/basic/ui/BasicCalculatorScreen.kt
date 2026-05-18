@@ -126,9 +126,12 @@ private fun Display(
  */
 @Composable
 private fun Keypad(onEvent: (BasicCalculatorEvent) -> Unit) {
+    // Top row has 5 keys to keep parens AND surface `%` without stealing
+    // a slot from the digit grid; rows 2-5 stay 4-wide so digits remain
+    // big and thumb-reachable.
     val rows =
         listOf(
-            listOf(Key.Clear, Key.LeftParen, Key.RightParen, Key.Symbol("÷")),
+            listOf(Key.Clear, Key.LeftParen, Key.RightParen, Key.Symbol("%"), Key.Symbol("÷")),
             listOf(Key.Symbol("7"), Key.Symbol("8"), Key.Symbol("9"), Key.Symbol("×")),
             listOf(Key.Symbol("4"), Key.Symbol("5"), Key.Symbol("6"), Key.Symbol("-")),
             listOf(Key.Symbol("1"), Key.Symbol("2"), Key.Symbol("3"), Key.Symbol("+")),

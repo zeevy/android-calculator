@@ -158,4 +158,75 @@ class EvaluatorTest {
         val result = evaluator.evaluate("1.2.3")
         assertInstanceOf(EvaluationResult.Error.UnknownToken::class.java, result)
     }
+
+    // ----- Unary minus inline -----
+
+    @Test
+    fun unaryMinusBeforeParensNegatesTheGroup() {
+        val result = evaluator.evaluate("-(2+3)")
+        assertInstanceOf(EvaluationResult.Success::class.java, result)
+        assertEquals(0, (result as EvaluationResult.Success).value.compareTo(BigDecimal("-5")))
+    }
+
+    @Test
+    fun unaryMinusAfterBinaryOperatorWorks() {
+        val result = evaluator.evaluate("2*-3")
+        assertInstanceOf(EvaluationResult.Success::class.java, result)
+        assertEquals(0, (result as EvaluationResult.Success).value.compareTo(BigDecimal("-6")))
+    }
+
+    @Test
+    fun unaryMinusAfterAddOperatorWorks() {
+        val result = evaluator.evaluate("5+-2")
+        assertInstanceOf(EvaluationResult.Success::class.java, result)
+        assertEquals(0, (result as EvaluationResult.Success).value.compareTo(BigDecimal("3")))
+    }
+
+    @Test
+    fun doubleUnaryMinusCancelsOut() {
+        val result = evaluator.evaluate("--5")
+        assertInstanceOf(EvaluationResult.Success::class.java, result)
+        assertEquals(0, (result as EvaluationResult.Success).value.compareTo(BigDecimal("5")))
+    }
+
+    @Test
+    fun unaryMinusBeforeParensWithChain() {
+        val result = evaluator.evaluate("10+-(2+3)")
+        assertInstanceOf(EvaluationResult.Success::class.java, result)
+        assertEquals(0, (result as EvaluationResult.Success).value.compareTo(BigDecimal("5")))
+    }
+
+    // ----- Percentage -----
+
+    @Test
+    fun standalonePercentDividesByHundred() {
+        val result = evaluator.evaluate("5%")
+        assertInstanceOf(EvaluationResult.Success::class.java, result)
+        assertEquals(0, (result as EvaluationResult.Success).value.compareTo(BigDecimal("0.05")))
+    }
+
+    @Test
+    fun percentAfterAddBehavesAsPostfixDivision() {
+        // `100+10%` = `100 + 10÷100` = 100.1 (postfix-divide semantics,
+        // not iOS-style `10% of 100`).
+        val result = evaluator.evaluate("100+10%")
+        assertInstanceOf(EvaluationResult.Success::class.java, result)
+        assertEquals(0, (result as EvaluationResult.Success).value.compareTo(BigDecimal("100.1")))
+    }
+
+    @Test
+    fun percentAfterMultiplyMatchesIosBehaviour() {
+        // `100×10%` = `100 × 10÷100` = 10. Same answer as iOS calculator
+        // since `÷100` and `×0.10` are equivalent for the `× %` case.
+        val result = evaluator.evaluate("100×10%")
+        assertInstanceOf(EvaluationResult.Success::class.java, result)
+        assertEquals(0, (result as EvaluationResult.Success).value.compareTo(BigDecimal("10")))
+    }
+
+    @Test
+    fun percentInsideParensDividesTheGroup() {
+        val result = evaluator.evaluate("(2+3)%")
+        assertInstanceOf(EvaluationResult.Success::class.java, result)
+        assertEquals(0, (result as EvaluationResult.Success).value.compareTo(BigDecimal("0.05")))
+    }
 }

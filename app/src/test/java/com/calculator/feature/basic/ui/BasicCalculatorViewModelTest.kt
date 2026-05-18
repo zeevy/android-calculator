@@ -380,8 +380,9 @@ class BasicCalculatorViewModelTest {
         }
 
         @Test
-        fun `mismatched parens surface a syntax message`() {
-            type("(", "1", "+", "2")
+        fun `mismatched closing paren surfaces a syntax message`() {
+            // Unmatched `)` cannot be auto-fixed (auto-close only adds `)`).
+            type("1", "+", "2", ")")
             equals()
             assertEquals("Check your expression", state.errorMessage)
         }
@@ -443,6 +444,114 @@ class BasicCalculatorViewModelTest {
             val restored = BasicCalculatorViewModel(Evaluator(), savedStateHandle)
             assertEquals("", restored.state.value.expression)
             assertNull(restored.state.value.pendingRepeat)
+        }
+    }
+
+    @Nested
+    inner class LeadingZeroTrim {
+        @Test
+        fun `typing a digit on a lone zero replaces it`() {
+            type("0", "5")
+            assertEquals("5", state.expression)
+        }
+
+        @Test
+        fun `lone zero stays until something replaces it`() {
+            type("0")
+            assertEquals("0", state.expression)
+        }
+
+        @Test
+        fun `zero followed by decimal is kept intact`() {
+            type("0", ".", "5")
+            assertEquals("0.5", state.expression)
+        }
+
+        @Test
+        fun `zero after an operator is trimmed by the next digit`() {
+            type("1", "+", "0", "5")
+            assertEquals("1+5", state.expression)
+        }
+
+        @Test
+        fun `zero after an operator followed by decimal is kept`() {
+            type("1", "+", "0", ".", "5")
+            assertEquals("1+0.5", state.expression)
+        }
+    }
+
+    @Nested
+    inner class UnaryMinusInline {
+        @Test
+        fun `unary minus before paren evaluates correctly`() {
+            type("-", "(", "2", "+", "3", ")")
+            equals()
+            assertEquals("-5", state.expression)
+        }
+
+        @Test
+        fun `consecutive operator-then-minus collapses to a single minus`() {
+            // The keypad's operator-collapse rule rewrites `2×-` to `2-`,
+            // so tapping `2 × - 3` yields `2-3 = -1`. For unary-minus on
+            // the second operand a user must use `2 × ( - 3 )`.
+            type("2", "×", "-", "3")
+            equals()
+            assertEquals("-1", state.expression)
+        }
+
+        @Test
+        fun `unary minus into open paren applies negation to the group`() {
+            type("2", "×", "(", "-", "3", ")")
+            equals()
+            assertEquals("-6", state.expression)
+        }
+    }
+
+    @Nested
+    inner class Percent {
+        @Test
+        fun `bare N percent equals N over 100`() {
+            type("5", "0", "%")
+            equals()
+            assertEquals("0.5", state.expression)
+        }
+
+        @Test
+        fun `percent after plus behaves as postfix divide`() {
+            type("1", "0", "0", "+", "1", "0", "%")
+            equals()
+            assertEquals("100.1", state.expression)
+        }
+
+        @Test
+        fun `percent after times matches iOS arithmetic`() {
+            type("1", "0", "0", "×", "1", "0", "%")
+            equals()
+            assertEquals("10", state.expression)
+        }
+    }
+
+    @Nested
+    inner class AutoCloseParens {
+        @Test
+        fun `unclosed paren is closed on equals`() {
+            type("(", "1", "+", "2")
+            equals()
+            assertEquals("3", state.expression)
+        }
+
+        @Test
+        fun `two unclosed parens are closed on equals`() {
+            type("(", "(", "5", "+", "1")
+            equals()
+            assertEquals("6", state.expression)
+        }
+
+        @Test
+        fun `balanced parens are unchanged`() {
+            type("(", "1", "+", "2", ")", "×", "4")
+            equals()
+            assertEquals("12", state.expression)
         }
     }
 

@@ -77,12 +77,13 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 - [x] `feature/basic/ui/BasicCalculatorScreen.kt` (Display + 4x5 rectangular keypad, `@PreviewLightDark`)
 - [x] **Real-calculator input rules**: consecutive-operator collapse, leading-operator drop with `-` exception, single decimal per number segment, leading-`.` auto-zero, after-`=` chain vs fresh-start, trailing-operator auto-complete, repeat-`=` re-applies last `op+operand` for `+ - × ÷`
 - [x] Result formatting: `stripTrailingZeros()` so `1.5+2.5` shows `4` not `4.0`
-- [ ] Unary-minus support beyond leading-digit position (currently only `-` immediately before a digit at the start of input or after an operator works; `2*-3` and `-(2+3)` should parse)
-- [ ] Percentage key (`%`) - postfix `÷100` semantics
+- [x] Unary-minus support: leading `-`, after an operator (`2*-3 = -6`, with the keypad's collapse rule the user types `2 × ( - 3 )`), before a paren (`-(2+3) = -5`), and chained (`--5 = 5` engine-level)
+- [x] Percentage key (`%`) - postfix `÷100` semantics; keypad has a `%` button in the top row
+- [x] Leading-zero trim (`05` → `5`, `1+05` → `1+5`, but `0.5` is preserved)
+- [x] Auto-close unbalanced parens on `=` (e.g. `(1+2` evaluates as `(1+2)`)
+- [x] Clear-on-error UX (digit/operator after an error message clears it - test in `Errors > error clears once the user starts typing again`)
+- [x] Process-death restoration via `SavedStateHandle` + `launchMode="singleTask"`
 - [ ] Locale-aware grouping/decimal separator at the UI boundary (engine stays canonical)
-- [ ] Clear-on-error UX: tapping a digit after an error replaces the expression, doesn't append (currently it does clear but only because `pendingRepeat` is null; lock this in with a test)
-- [ ] Leading-zero trim (`05` → `5`)
-- [ ] Auto-close unbalanced parens on `=`
 - [ ] Haptic feedback hook on key press (no-op until Phase 4 settings wire it up)
 
 ### Phase 1 - Unit tests (JUnit5, `app/src/test/`)
@@ -107,9 +108,13 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 - [x] Negative results render correctly (`2-10 = -8`)
 - [x] Zero accepted as an operand (`0+0 = 0`, `0×5 = 0`)
 - [x] Multiple decimal points in one number rejected → `Error.UnknownToken`
-- [ ] Inline unary minus: `2*-3 = -6`, `5+-2 = 3`
-- [ ] Chained unary minus: `--5 = 5`
-- [ ] Percentage: `200%` → `2`, `50+10%` → `55` (matches calculator convention TBD - document decision)
+- [x] Inline unary minus: `2*-3 = -6`, `5+-2 = 3`
+- [x] Chained unary minus: `--5 = 5`
+- [x] Unary minus before parens: `-(2+3) = -5`, `10+-(2+3) = 5`
+- [x] Percentage standalone: `5% = 0.05`
+- [x] Percentage with `+`: `100+10% = 100.1` (postfix-divide semantics, documented)
+- [x] Percentage with `×`: `100×10% = 10` (matches iOS for this case)
+- [x] Percentage inside parens: `(2+3)% = 0.05`
 - [ ] Locale formatting: `1234.5` rendered as `1,234.5` in en-IN, `1.234,5` in de-DE (UI layer)
 
 #### ViewModel tests (`BasicCalculatorViewModelTest`)
@@ -180,6 +185,39 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 - [x] Parens compose normally (`(2+3)×4 = 20`)
 - [x] Open paren followed by an operator is preserved (engine-level error path)
+
+##### Leading-zero trim
+
+- [x] Digit on a lone zero replaces it (`0` → `5` not `05`)
+- [x] Lone zero stays until something replaces it
+- [x] `0` followed by `.` is kept (`0.5` works)
+- [x] Zero after an operator is trimmed by the next digit (`1+0` → `1+5`)
+- [x] Zero after operator followed by `.` is kept (`1+0.5`)
+
+##### Inline unary minus (keypad path)
+
+- [x] Unary minus before paren evaluates correctly (`-(2+3) = -5`)
+- [x] Consecutive operator-then-minus collapses to single minus (keypad UX)
+- [x] Unary minus into open paren applies negation to the group (`2×(-3) = -6`)
+
+##### Percent
+
+- [x] Bare `N%` equals `N/100` (`50% = 0.5`)
+- [x] Percent after `+` behaves as postfix divide (`100+10% = 100.1`)
+- [x] Percent after `×` matches iOS arithmetic (`100×10% = 10`)
+
+##### Auto-close parens
+
+- [x] Unclosed paren is closed on `=` (`(1+2 = 3`)
+- [x] Two unclosed parens are closed on `=` (`((5+1 = 6`)
+- [x] Balanced parens are unchanged (`(1+2)×4 = 12`)
+
+##### Process-death restoration
+
+- [x] Expression survives process death via `SavedStateHandle`
+- [x] Error message survives restoration
+- [x] Repeat-equals chain continues after restoration
+- [x] Cleared state is persisted across restoration
 
 ### Phase 1 - Compose UI tests (JUnit4, `app/src/androidTest/`)
 

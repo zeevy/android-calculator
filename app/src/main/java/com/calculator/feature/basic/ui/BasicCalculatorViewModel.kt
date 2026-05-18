@@ -92,19 +92,24 @@ class BasicCalculatorViewModel
             }
 
         private fun nextExpressionAfterAppend(current: BasicCalculatorUiState, symbol: String): String {
-            val expr = current.expression
-            val isOperator = symbol.length == 1 && symbol[0] in ArithmeticOperators
-
             // After `=`, the next input either starts a new calculation
             // (digit / `.`) or chains on the current result (operator).
-            if (current.pendingRepeat != null) {
-                return when {
-                    isOperator -> expr + symbol
-                    symbol == "." -> "0."
-                    else -> symbol
-                }
-            }
+            current.pendingRepeat?.let { return appendAfterEquals(current.expression, symbol) }
 
+            return appendDuringEdit(current.expression, symbol)
+        }
+
+        private fun appendAfterEquals(expr: String, symbol: String): String {
+            val isOperator = symbol.length == 1 && symbol[0] in ArithmeticOperators
+            return when {
+                isOperator -> expr + symbol
+                symbol == "." -> "0."
+                else -> symbol
+            }
+        }
+
+        private fun appendDuringEdit(expr: String, symbol: String): String {
+            val isOperator = symbol.length == 1 && symbol[0] in ArithmeticOperators
             return when {
                 // Replace the trailing operator instead of stacking another.
                 isOperator && expr.isNotEmpty() && expr.last() in ArithmeticOperators ->
@@ -113,15 +118,23 @@ class BasicCalculatorViewModel
                 // Drop a stray leading `+`, `×`, `÷` (but allow leading `-` for negation).
                 isOperator && expr.isEmpty() && symbol != "-" -> expr
 
-                // Only one `.` per number segment.
-                symbol == "." && currentNumberHasDot(expr) -> expr
+                // Decimal-point rules.
+                symbol == "." -> appendDecimal(expr)
 
-                // Auto-prefix `0` so `.5` reads as `0.5` and `1+.5` reads as `1+0.5`.
-                symbol == "." && (expr.isEmpty() || expr.last() in ArithmeticOperators || expr.last() == '(') ->
-                    expr + "0."
+                // Leading-zero trim: replace a lone `0` segment with the typed digit.
+                symbol.length == 1 && symbol[0].isDigit() && currentNumberIsLoneZero(expr) ->
+                    expr.dropLast(1) + symbol
 
                 else -> expr + symbol
             }
+        }
+
+        private fun appendDecimal(expr: String): String {
+            // Only one `.` per number segment.
+            if (currentNumberHasDot(expr)) return expr
+            // Auto-prefix `0` so `.5` reads as `0.5` and `1+.5` reads as `1+0.5`.
+            val needsZeroPrefix = expr.isEmpty() || expr.last() in ArithmeticOperators || expr.last() == '('
+            return if (needsZeroPrefix) "$expr${"0."}" else "$expr."
         }
 
         private fun backspace() =
@@ -186,7 +199,9 @@ class BasicCalculatorViewModel
                 return (current.expression + repeat) to repeat
             }
 
-            val expr = current.expression
+            // Auto-close unbalanced opens before any other transformation.
+            // `(1+2` evaluates as `(1+2)` and `((5+1` as `((5+1))`.
+            val expr = autoCloseParens(current.expression)
 
             // Trailing operator: auto-complete with the operand the user just
             // typed (the number immediately before that operator). So `1+=`
@@ -247,6 +262,29 @@ class BasicCalculatorViewModel
                 if (c == '.') return true
             }
             return false
+        }
+
+        /**
+         * Return true if the current number segment is exactly `"0"`
+         * (i.e. ends in `0`, and the character before it - if any - is an
+         * operator or open paren). Used to power leading-zero trimming.
+         */
+        private fun currentNumberIsLoneZero(expr: String): Boolean {
+            if (expr.isEmpty() || expr.last() != '0') return false
+            val prev = expr.getOrNull(expr.length - 2) ?: return true
+            return prev in ArithmeticOperators || prev == '('
+        }
+
+        /**
+         * Append the matching `)` for every unbalanced `(` so `(1+2` reads
+         * as `(1+2)` when `=` fires. A naive paren count is enough: the
+         * tokenizer is the source of truth on mismatch, so this is just a
+         * convenience the user expects from a calculator.
+         */
+        private fun autoCloseParens(expr: String): String {
+            val opens = expr.count { it == '(' }
+            val closes = expr.count { it == ')' }
+            return if (opens > closes) expr + ")".repeat(opens - closes) else expr
         }
 
         private companion object {

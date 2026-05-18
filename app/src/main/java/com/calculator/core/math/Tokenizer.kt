@@ -44,10 +44,22 @@ class Tokenizer {
                 }
 
                 c == '-' && isUnaryMinusContext(tokens) -> {
-                    // Fold the sign into the following numeric literal.
-                    val (literal, consumed) = readNumber(expression, index + 1)
-                    tokens += Token.Number(BigDecimal("-$literal"))
-                    index += consumed + 1
+                    val nextIdx = index + 1
+                    val nextChar = expression.getOrNull(nextIdx)
+                    if (nextChar != null && (nextChar.isDigit() || nextChar == '.')) {
+                        // Common case: fold the sign into the following numeric literal.
+                        val (literal, consumed) = readNumber(expression, nextIdx)
+                        tokens += Token.Number(BigDecimal("-$literal"))
+                        index += consumed + 1
+                    } else {
+                        // Unary minus before `(` or another `-`: rewrite as
+                        // `-1 ×` so the existing binary-operator pipeline
+                        // handles it correctly. `-(2+3)` becomes `-1×(2+3) = -5`
+                        // and `--5` becomes `-1×-5 = 5`.
+                        tokens += Token.Number(BigDecimal.ONE.negate())
+                        tokens += Token.Op(Operator.Multiply)
+                        index++
+                    }
                 }
 
                 c == '(' -> {
@@ -57,6 +69,14 @@ class Tokenizer {
 
                 c == ')' -> {
                     tokens += Token.RightParen
+                    index++
+                }
+
+                c == '%' -> {
+                    // Postfix percentage: rewrite `N%` as `N ÷ 100`. So
+                    // `5%` → `0.05` and `100+10%` → `100 + 10÷100` → `100.1`.
+                    tokens += Token.Op(Operator.Divide)
+                    tokens += Token.Number(BigDecimal(PERCENT_DIVISOR))
                     index++
                 }
 
@@ -115,6 +135,11 @@ class Tokenizer {
             null, is Token.Op, Token.LeftParen -> true
             else -> false
         }
+
+    private companion object {
+        /** Divisor used to rewrite postfix `%`: `N%` becomes `N ÷ 100`. */
+        const val PERCENT_DIVISOR = "100"
+    }
 }
 
 /** Thrown when the input cannot be tokenized. */
