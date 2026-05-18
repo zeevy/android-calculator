@@ -663,6 +663,7 @@ private fun KeypadGrid(
                 row = spec.keys,
                 aspectRatio =
                     if (spec.compact) BUTTON_ASPECT_RATIO_COMPACT else BUTTON_ASPECT_RATIO,
+                compact = spec.compact,
                 modifier = Modifier.fillMaxWidth(),
                 onEvent = onEvent,
             )
@@ -674,6 +675,7 @@ private fun KeypadGrid(
 private fun KeypadRow(
     row: List<Key>,
     aspectRatio: Float,
+    compact: Boolean,
     modifier: Modifier,
     onEvent: (BasicCalculatorEvent) -> Unit,
 ) {
@@ -685,6 +687,7 @@ private fun KeypadRow(
             KeyButton(
                 key = key,
                 onEvent = onEvent,
+                compact = compact,
                 modifier =
                     Modifier
                         .weight(1f)
@@ -761,6 +764,7 @@ private fun KeyButton(
     key: Key,
     onEvent: (BasicCalculatorEvent) -> Unit,
     modifier: Modifier = Modifier,
+    compact: Boolean = false,
 ) {
     val tones = LocalKeyTones.current
     val rawClick: () -> Unit = {
@@ -828,12 +832,26 @@ private fun KeyButton(
     // Operators and equals get the larger display ramp so the action keys
     // read as visually heavier than digits; functions and memory use a
     // slightly tighter ramp because their labels are longer (sin⁻¹, M+).
+    // In compact rows (height ~33dp), the displaySmall ramp would
+    // exceed the button height and clip - so every category drops one
+    // step down in the type ramp when compact is true. This is what
+    // fixes "π" and "e" being half-cut: those keys are operator-color
+    // but live in a compact row.
     val labelStyle =
-        when (category) {
-            KeyCategory.Operator, KeyCategory.Equals -> MaterialTheme.typography.displaySmall
-            KeyCategory.Function -> MaterialTheme.typography.titleLarge
-            KeyCategory.Modifier -> MaterialTheme.typography.headlineSmall
-            KeyCategory.Digit -> MaterialTheme.typography.headlineLarge
+        if (compact) {
+            when (category) {
+                KeyCategory.Operator, KeyCategory.Equals -> MaterialTheme.typography.titleLarge
+                KeyCategory.Function -> MaterialTheme.typography.titleMedium
+                KeyCategory.Modifier -> MaterialTheme.typography.titleLarge
+                KeyCategory.Digit -> MaterialTheme.typography.titleLarge
+            }
+        } else {
+            when (category) {
+                KeyCategory.Operator, KeyCategory.Equals -> MaterialTheme.typography.displaySmall
+                KeyCategory.Function -> MaterialTheme.typography.titleLarge
+                KeyCategory.Modifier -> MaterialTheme.typography.headlineSmall
+                KeyCategory.Digit -> MaterialTheme.typography.headlineLarge
+            }
         }
     val labelWeight = if (category == KeyCategory.Equals) FontWeight.Bold else FontWeight.Medium
 
