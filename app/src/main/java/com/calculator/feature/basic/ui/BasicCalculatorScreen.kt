@@ -121,17 +121,34 @@ internal fun BasicCalculatorScreenContent(
                         .fillMaxWidth()
                         .weight(1f),
             )
-            Spacer(Modifier.size(4.dp))
-            Keypad(
-                scientific = state.scientific,
-                onEvent = onEvent,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .windowInsetsPadding(WindowInsets.navigationBars)
-                        .padding(bottom = 8.dp),
-            )
+            Spacer(Modifier.size(16.dp))
+            // Visual separation between display and keypad: a tinted
+            // surface with rounded top corners reads as a distinct "key
+            // tray" sitting under the result area - same idiom Mi
+            // Calculator uses. surfaceContainerHigh sits one step above
+            // the screen background in the M3 tonal hierarchy, enough
+            // contrast in both light and dark themes without a divider.
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                shape =
+                    RoundedCornerShape(
+                        topStart = 28.dp,
+                        topEnd = 28.dp,
+                    ),
+            ) {
+                Keypad(
+                    scientific = state.scientific,
+                    onEvent = onEvent,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .padding(top = 16.dp)
+                            .windowInsetsPadding(WindowInsets.navigationBars)
+                            .padding(bottom = 12.dp),
+                )
+            }
         }
     }
 
