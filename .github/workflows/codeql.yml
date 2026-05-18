@@ -52,7 +52,12 @@ jobs:
 
       - name: Build (manual mode)
         if: matrix.language == 'java-kotlin'
-        run: ./gradlew :app:assembleDebug --stacktrace -x lint -x ktlintCheck -x detekt
+        # CodeQL's tracer hooks compiler process invocations via LD_PRELOAD, so
+        # the build MUST actually run kotlinc/javac. --no-build-cache prevents
+        # compileDebugKotlin/JavaWithJavac from being served FROM-CACHE on warm
+        # runners; otherwise the tracer sees zero compilations and CodeQL fails
+        # with "no source code seen during build".
+        run: ./gradlew :app:assembleDebug --stacktrace --no-build-cache -x lint -x ktlintCheck -x detekt
 
       - name: Analyze
         uses: github/codeql-action/analyze@v4
