@@ -72,16 +72,22 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 - [x] `core/math/Evaluator.kt` (Shunting-Yard → RPN, `BigDecimal` with `MathContext.DECIMAL64`)
 - [x] `core/math/EvaluationResult.kt` (typed `Success` / `Error.{Syntax,UnknownToken,DivisionByZero}`)
 - [x] `core/math/di/MathModule.kt` (Hilt module exposing `Evaluator`)
-- [x] `feature/basic/ui/BasicCalculatorUiState.kt` (`expression`, `liveResult`, `errorMessage`)
-- [x] `feature/basic/ui/BasicCalculatorViewModel.kt` (StateFlow, `onEvent` reducer)
-- [x] `feature/basic/ui/BasicCalculatorScreen.kt` (Display + 4x5 keypad, `@PreviewLightDark`)
+- [x] `feature/basic/ui/BasicCalculatorUiState.kt` (`expression`, `liveResult`, `errorMessage`, `pendingRepeat`)
+- [x] `feature/basic/ui/BasicCalculatorViewModel.kt` (StateFlow, `onEvent` reducer, full input-rule set)
+- [x] `feature/basic/ui/BasicCalculatorScreen.kt` (Display + 4x5 rectangular keypad, `@PreviewLightDark`)
+- [x] **Real-calculator input rules**: consecutive-operator collapse, leading-operator drop with `-` exception, single decimal per number segment, leading-`.` auto-zero, after-`=` chain vs fresh-start, trailing-operator auto-complete, repeat-`=` re-applies last `op+operand` for `+ - × ÷`
+- [x] Result formatting: `stripTrailingZeros()` so `1.5+2.5` shows `4` not `4.0`
 - [ ] Unary-minus support beyond leading-digit position (currently only `-` immediately before a digit at the start of input or after an operator works; `2*-3` and `-(2+3)` should parse)
 - [ ] Percentage key (`%`) - postfix `÷100` semantics
-- [ ] Result formatting via locale-aware `NumberFormat` at UI boundary (engine stays canonical)
-- [ ] Clear-on-error UX: tapping a digit after an error replaces the expression, doesn't append
+- [ ] Locale-aware grouping/decimal separator at the UI boundary (engine stays canonical)
+- [ ] Clear-on-error UX: tapping a digit after an error replaces the expression, doesn't append (currently it does clear but only because `pendingRepeat` is null; lock this in with a test)
+- [ ] Leading-zero trim (`05` → `5`)
+- [ ] Auto-close unbalanced parens on `=`
 - [ ] Haptic feedback hook on key press (no-op until Phase 4 settings wire it up)
 
 ### Phase 1 - Unit tests (JUnit5, `app/src/test/`)
+
+#### Evaluator tests (`EvaluatorTest`)
 
 - [x] Precedence: `2+3×4 = 14`
 - [x] Parentheses: `(2+3)×4 = 20`
@@ -95,15 +101,85 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 - [x] Unknown character → `Error.UnknownToken`
 - [x] Whitespace is ignored
 - [x] ASCII (`*` `/`) and typographic (`×` `÷`) operators are equivalent
+- [x] Very large products are exact within DECIMAL64 (`99999999×99999999 = 9999999800000001`)
+- [x] Very small products preserve significant digits (`1e-7 × 1e-7 = 1e-14`)
+- [x] Chained division is left-associative (`24÷4÷2 = 3`)
+- [x] Negative results render correctly (`2-10 = -8`)
+- [x] Zero accepted as an operand (`0+0 = 0`, `0×5 = 0`)
+- [x] Multiple decimal points in one number rejected → `Error.UnknownToken`
 - [ ] Inline unary minus: `2*-3 = -6`, `5+-2 = 3`
 - [ ] Chained unary minus: `--5 = 5`
 - [ ] Percentage: `200%` → `2`, `50+10%` → `55` (matches calculator convention TBD - document decision)
 - [ ] Locale formatting: `1234.5` rendered as `1,234.5` in en-IN, `1.234,5` in de-DE (UI layer)
-- [ ] Very large numbers: `99999999×99999999` does not lose precision
-- [ ] Very small numbers: `0.0000001×0.0000001` preserves 14 significant digits
-- [ ] `BasicCalculatorViewModelTest`: typing `1+2=` emits `expression="1+2"` then `liveResult="3"` then on equals the result becomes the new expression
-- [ ] `BasicCalculatorViewModelTest`: `Clear` resets state to default
-- [ ] `BasicCalculatorViewModelTest`: `Backspace` on empty expression is a no-op
+
+#### ViewModel tests (`BasicCalculatorViewModelTest`)
+
+##### Operator collapse
+
+- [x] Consecutive plus operators collapse to one (`1+++5` → `1+5`)
+- [x] Swap retains the last operator pressed (`1+5` → `1+5×` → `1+5÷` → `1+5-`)
+- [x] Mixed operator run collapses to the last one (`9-×÷+3` → `9+3`)
+- [x] Swap works for all four operator pairs (`+`, `-`, `×`, `÷`)
+- [x] Leading `+`, `×`, `÷` are dropped
+- [x] Leading `-` is allowed for negation
+
+##### Decimal handling
+
+- [x] Only one decimal per number segment (`1.2.3` → `1.23`)
+- [x] Each number segment gets its own decimal (`1.5+2.5 = 4`)
+- [x] Leading decimal auto-prefixes zero (`.5` → `0.5`)
+- [x] Decimal after operator auto-prefixes zero (`1+.5` → `1+0.5`)
+- [x] Decimal after open paren auto-prefixes zero
+
+##### Equals (basic)
+
+- [x] Equals replaces expression with canonical result
+- [x] Equals on blank expression is a no-op
+- [x] Equals on a single number leaves it unchanged
+- [x] Digit after equals starts a fresh expression
+- [x] Decimal after equals starts a fresh `0.` number
+- [x] Operator after equals chains on the result
+
+##### Equals (repeat)
+
+- [x] Repeat-= replays trailing operator for `+` (`1+5=` → 6, 11, 16)
+- [x] Repeat-= replays for `-` (`10-3=` → 7, 4, 1)
+- [x] Repeat-= replays for `×` (`2×3=` → 6, 18, 54)
+- [x] Repeat-= replays for `÷` (`80÷2=` → 40, 20, 10)
+- [x] Trailing operator at = auto-completes for `+` (`1+=` → 2, 3, 4)
+- [x] Trailing operator at = auto-completes for `×` (`2×=` → 4, 8, 16, doubling)
+- [x] Trailing operator after a chain uses the operand just typed (`10-3×=` → `10-3×3 = 1`)
+- [x] Typing any other event breaks the repeat chain
+- [x] Backspace also breaks the repeat chain
+
+##### Backspace
+
+- [x] Backspace on empty expression is a no-op
+- [x] Backspace removes the last character
+- [x] Backspace updates the live preview (null on incomplete, value on complete)
+- [x] Backspace clears the error message
+
+##### Clear
+
+- [x] Clear resets every field to defaults
+
+##### Live preview
+
+- [x] Preview updates as the user types a complete expression
+- [x] Preview is null for an incomplete expression (trailing operator)
+- [x] Preview reflects a bare number
+- [x] Preview is null when expression is empty
+
+##### Errors
+
+- [x] Division by zero surfaces a typed message
+- [x] Mismatched parens surface a syntax message
+- [x] Error clears once the user starts typing again
+
+##### Parentheses
+
+- [x] Parens compose normally (`(2+3)×4 = 20`)
+- [x] Open paren followed by an operator is preserved (engine-level error path)
 
 ### Phase 1 - Compose UI tests (JUnit4, `app/src/androidTest/`)
 

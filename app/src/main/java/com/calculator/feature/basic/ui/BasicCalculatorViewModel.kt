@@ -125,7 +125,10 @@ class BasicCalculatorViewModel
                         current.copy(
                             // Replace the expression with the canonical result so the
                             // user can keep chaining (e.g. press `+` after `=`).
-                            expression = result.value.toPlainString(),
+                            // `stripTrailingZeros` collapses `4.0` to `4` for display,
+                            // and `toPlainString` keeps it out of scientific notation so
+                            // the next keypress chains naturally.
+                            expression = result.value.stripTrailingZeros().toPlainString(),
                             liveResult = null,
                             errorMessage = null,
                             pendingRepeat = repeatToken,

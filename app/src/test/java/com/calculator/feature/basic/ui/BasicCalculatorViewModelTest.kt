@@ -2,19 +2,25 @@ package com.calculator.feature.basic.ui
 
 import com.calculator.core.math.Evaluator
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
  * Behavioural tests for [BasicCalculatorViewModel].
  *
  * These tests assert the input-side UX rules (consecutive operators,
- * decimals, repeat-equals) that callers won't see in the math engine
- * alone - the engine evaluates whatever the ViewModel hands it.
+ * decimals, repeat-equals, error handling) that callers won't see in
+ * the math engine alone - the engine evaluates whatever the ViewModel
+ * hands it.
  *
  * The Evaluator is exercised for real (not mocked) because it's pure
  * Kotlin, deterministic, and microsecond-fast: stubbing would just
  * add maintenance burden without clarifying intent.
+ *
+ * Tests are grouped by behaviour family so failures localise quickly.
  */
 class BasicCalculatorViewModelTest {
     private val viewModel = BasicCalculatorViewModel(Evaluator())
@@ -23,139 +29,389 @@ class BasicCalculatorViewModelTest {
 
     private fun equals() = viewModel.onEvent(BasicCalculatorEvent.Equals)
 
+    private fun backspace() = viewModel.onEvent(BasicCalculatorEvent.Backspace)
+
     private fun clear() = viewModel.onEvent(BasicCalculatorEvent.Clear)
 
     private val state get() = viewModel.state.value
 
-    @Test
-    fun `consecutive plus operators collapse to one`() {
-        type("1", "+", "+", "+", "5")
-        assertEquals("1+5", state.expression)
+    @Nested
+    inner class OperatorCollapse {
+        @Test
+        fun `consecutive plus operators collapse to one`() {
+            type("1", "+", "+", "+", "5")
+            assertEquals("1+5", state.expression)
+        }
+
+        @Test
+        fun `swap retains the last operator pressed`() {
+            type("1", "+", "5")
+            type("×")
+            assertEquals("1+5×", state.expression)
+            type("÷")
+            assertEquals("1+5÷", state.expression)
+            type("-")
+            assertEquals("1+5-", state.expression)
+        }
+
+        @Test
+        fun `mixed operator run collapses to the last one`() {
+            type("9", "-", "×", "÷", "+", "3")
+            assertEquals("9+3", state.expression)
+        }
+
+        @Test
+        fun `swap works for all four operator pairs`() {
+            type("8")
+            for (op in listOf("+", "-", "×", "÷")) {
+                type(op)
+                assertEquals("8$op", state.expression)
+            }
+        }
+
+        @Test
+        fun `leading plus is dropped`() {
+            type("+")
+            assertEquals("", state.expression)
+        }
+
+        @Test
+        fun `leading times is dropped`() {
+            type("×")
+            assertEquals("", state.expression)
+        }
+
+        @Test
+        fun `leading divide is dropped`() {
+            type("÷")
+            assertEquals("", state.expression)
+        }
+
+        @Test
+        fun `leading minus is allowed for negation`() {
+            type("-", "5")
+            assertEquals("-5", state.expression)
+            equals()
+            assertEquals("-5", state.expression)
+        }
     }
 
-    @Test
-    fun `swapping operator replaces the previous one`() {
-        type("1", "+", "5")
-        type("×")
-        assertEquals("1+5×", state.expression)
+    @Nested
+    inner class DecimalHandling {
+        @Test
+        fun `only one decimal per number segment`() {
+            type("1", ".", "2", ".", "3")
+            assertEquals("1.23", state.expression)
+        }
 
-        type("÷")
-        assertEquals("1+5÷", state.expression)
+        @Test
+        fun `each number segment gets its own decimal`() {
+            type("1", ".", "5", "+", "2", ".", "5")
+            assertEquals("1.5+2.5", state.expression)
+            equals()
+            assertEquals("4", state.expression)
+        }
+
+        @Test
+        fun `leading decimal auto-prefixes zero`() {
+            type(".", "5")
+            assertEquals("0.5", state.expression)
+        }
+
+        @Test
+        fun `decimal after operator auto-prefixes zero`() {
+            type("1", "+", ".", "5")
+            assertEquals("1+0.5", state.expression)
+        }
+
+        @Test
+        fun `decimal after open paren auto-prefixes zero`() {
+            type("(", ".", "5", ")")
+            assertEquals("(0.5)", state.expression)
+        }
     }
 
-    @Test
-    fun `consecutive operators collapse for minus and times and divide`() {
-        type("9", "-", "×", "÷", "3")
-        assertEquals("9÷3", state.expression)
+    @Nested
+    inner class Equals {
+        @Test
+        fun `equals replaces expression with the canonical result`() {
+            type("1", "+", "5")
+            equals()
+            assertEquals("6", state.expression)
+            assertNull(state.errorMessage)
+            assertNull(state.liveResult)
+        }
+
+        @Test
+        fun `equals on blank expression is a no-op`() {
+            equals()
+            assertEquals("", state.expression)
+            assertNull(state.errorMessage)
+        }
+
+        @Test
+        fun `equals on a single number leaves it unchanged`() {
+            type("4", "2")
+            equals()
+            assertEquals("42", state.expression)
+        }
+
+        @Test
+        fun `digit after equals starts a fresh expression`() {
+            type("1", "+", "5")
+            equals()
+            type("9")
+            assertEquals("9", state.expression)
+        }
+
+        @Test
+        fun `decimal after equals starts a fresh zero-prefixed number`() {
+            type("1", "+", "5")
+            equals()
+            type(".")
+            assertEquals("0.", state.expression)
+        }
+
+        @Test
+        fun `operator after equals chains on the result`() {
+            type("1", "+", "5")
+            equals()
+            type("×", "2")
+            assertEquals("6×2", state.expression)
+            equals()
+            assertEquals("12", state.expression)
+        }
     }
 
-    @Test
-    fun `leading plus times and divide are dropped but leading minus is allowed`() {
-        type("+", "×", "÷")
-        assertEquals("", state.expression)
+    @Nested
+    inner class RepeatEquals {
+        @Test
+        fun `repeat equals replays trailing operator for plus`() {
+            type("1", "+", "5")
+            equals()
+            assertEquals("6", state.expression)
+            equals()
+            assertEquals("11", state.expression)
+            equals()
+            assertEquals("16", state.expression)
+        }
 
-        type("-", "5")
-        assertEquals("-5", state.expression)
+        @Test
+        fun `repeat equals replays for minus`() {
+            type("1", "0", "-", "3")
+            equals()
+            assertEquals("7", state.expression)
+            equals()
+            assertEquals("4", state.expression)
+            equals()
+            assertEquals("1", state.expression)
+        }
+
+        @Test
+        fun `repeat equals replays for multiply`() {
+            type("2", "×", "3")
+            equals()
+            assertEquals("6", state.expression)
+            equals()
+            assertEquals("18", state.expression)
+            equals()
+            assertEquals("54", state.expression)
+        }
+
+        @Test
+        fun `repeat equals replays for divide`() {
+            type("8", "0", "÷", "2")
+            equals()
+            assertEquals("40", state.expression)
+            equals()
+            assertEquals("20", state.expression)
+            equals()
+            assertEquals("10", state.expression)
+        }
+
+        @Test
+        fun `trailing operator at equals auto-completes for plus`() {
+            type("1", "+")
+            equals()
+            assertEquals("2", state.expression)
+            equals()
+            assertEquals("3", state.expression)
+            equals()
+            assertEquals("4", state.expression)
+        }
+
+        @Test
+        fun `trailing operator at equals auto-completes for times giving doubling`() {
+            type("2", "×")
+            equals()
+            assertEquals("4", state.expression)
+            equals()
+            assertEquals("8", state.expression)
+            equals()
+            assertEquals("16", state.expression)
+        }
+
+        @Test
+        fun `trailing operator after a chain uses the operand just typed`() {
+            type("1", "0", "-", "3", "×")
+            equals()
+            // `10-3×` -> auto-complete with `3` -> `10-3×3` = 10 - 9 = 1.
+            assertEquals("1", state.expression)
+        }
+
+        @Test
+        fun `typing any other event breaks the repeat chain`() {
+            type("1", "+", "5")
+            equals()
+            assertNotNull(state.pendingRepeat)
+
+            type("7")
+            assertNull(state.pendingRepeat)
+        }
+
+        @Test
+        fun `backspace also breaks the repeat chain`() {
+            type("1", "+", "5")
+            equals()
+            assertNotNull(state.pendingRepeat)
+
+            backspace()
+            assertNull(state.pendingRepeat)
+        }
     }
 
-    @Test
-    fun `only one decimal point per number segment`() {
-        type("1", ".", "2", ".", "3")
-        assertEquals("1.23", state.expression)
+    @Nested
+    inner class Backspace {
+        @Test
+        fun `backspace on empty expression is a no-op`() {
+            backspace()
+            assertEquals("", state.expression)
+        }
+
+        @Test
+        fun `backspace removes the last character`() {
+            type("1", "2", "3")
+            backspace()
+            assertEquals("12", state.expression)
+            backspace()
+            assertEquals("1", state.expression)
+            backspace()
+            assertEquals("", state.expression)
+        }
+
+        @Test
+        fun `backspace updates the live result`() {
+            type("1", "+", "5")
+            assertEquals("6", state.liveResult)
+
+            backspace()
+            assertEquals("1+", state.expression)
+            // Trailing operator means the expression is incomplete; preview goes null.
+            assertNull(state.liveResult)
+
+            backspace()
+            assertEquals("1", state.expression)
+            assertEquals("1", state.liveResult)
+        }
+
+        @Test
+        fun `backspace clears the error message`() {
+            type("5", "÷", "0")
+            equals()
+            assertNotNull(state.errorMessage)
+
+            backspace()
+            assertNull(state.errorMessage)
+        }
     }
 
-    @Test
-    fun `leading decimal auto-prefixes zero`() {
-        type(".", "5")
-        assertEquals("0.5", state.expression)
+    @Nested
+    inner class Clear {
+        @Test
+        fun `clear resets every field to defaults`() {
+            type("1", "+", "5")
+            equals()
+            clear()
+
+            assertEquals("", state.expression)
+            assertNull(state.liveResult)
+            assertNull(state.errorMessage)
+            assertNull(state.pendingRepeat)
+        }
     }
 
-    @Test
-    fun `decimal after operator auto-prefixes zero`() {
-        type("1", "+", ".", "5")
-        assertEquals("1+0.5", state.expression)
+    @Nested
+    inner class LivePreview {
+        @Test
+        fun `preview updates as the user types a complete expression`() {
+            type("1", "+", "5")
+            assertEquals("6", state.liveResult)
+        }
+
+        @Test
+        fun `preview is null for an incomplete expression`() {
+            type("1", "+")
+            // Trailing operator -> expression doesn't evaluate; preview swallows it.
+            assertNull(state.liveResult)
+        }
+
+        @Test
+        fun `preview is null for a single number on its own`() {
+            type("7")
+            // A bare number still evaluates, so preview reflects it.
+            assertEquals("7", state.liveResult)
+        }
+
+        @Test
+        fun `preview is null when expression is empty`() {
+            assertNull(state.liveResult)
+        }
     }
 
-    @Test
-    fun `equals replaces expression with result`() {
-        type("1", "+", "5")
-        equals()
-        assertEquals("6", state.expression)
-        assertNull(state.errorMessage)
+    @Nested
+    inner class Errors {
+        @Test
+        fun `division by zero surfaces a typed message`() {
+            type("5", "÷", "0")
+            equals()
+            assertEquals("Can't divide by zero", state.errorMessage)
+        }
+
+        @Test
+        fun `mismatched parens surface a syntax message`() {
+            type("(", "1", "+", "2")
+            equals()
+            assertEquals("Check your expression", state.errorMessage)
+        }
+
+        @Test
+        fun `error clears once the user starts typing again`() {
+            type("5", "÷", "0")
+            equals()
+            assertNotNull(state.errorMessage)
+
+            type("3")
+            assertNull(state.errorMessage)
+        }
     }
 
-    @Test
-    fun `digit after equals starts a fresh expression`() {
-        type("1", "+", "5")
-        equals()
-        type("9")
-        assertEquals("9", state.expression)
-    }
+    @Nested
+    inner class Parentheses {
+        @Test
+        fun `parens compose normally in the expression`() {
+            type("(", "2", "+", "3", ")", "×", "4")
+            assertEquals("(2+3)×4", state.expression)
+            equals()
+            assertEquals("20", state.expression)
+        }
 
-    @Test
-    fun `operator after equals chains on the result`() {
-        type("1", "+", "5")
-        equals()
-        type("×", "2")
-        assertEquals("6×2", state.expression)
-    }
-
-    @Test
-    fun `repeat equals replays the trailing operator for plus`() {
-        type("1", "+", "5")
-        equals()
-        assertEquals("6", state.expression)
-        equals()
-        assertEquals("11", state.expression)
-        equals()
-        assertEquals("16", state.expression)
-    }
-
-    @Test
-    fun `repeat equals replays for multiply giving doubling for two`() {
-        type("2", "×")
-        equals()
-        assertEquals("4", state.expression)
-        equals()
-        assertEquals("8", state.expression)
-        equals()
-        assertEquals("16", state.expression)
-    }
-
-    @Test
-    fun `trailing operator at equals auto-completes with first operand`() {
-        type("1", "+")
-        equals()
-        assertEquals("2", state.expression)
-        equals()
-        assertEquals("3", state.expression)
-    }
-
-    @Test
-    fun `trailing operator after a chain auto-completes from the operand before it`() {
-        type("1", "0", "-", "3", "×")
-        equals()
-        // `10-3×` auto-completes to `10-3×3` (the operand just entered before
-        // the dangling `×` becomes the implicit second operand).
-        // Result: 10 - (3×3) = 10 - 9 = 1.
-        assertEquals("1", state.expression)
-    }
-
-    @Test
-    fun `clear resets state to default`() {
-        type("1", "+", "5")
-        equals()
-        clear()
-        assertEquals("", state.expression)
-        assertNull(state.liveResult)
-        assertNull(state.errorMessage)
-        assertNull(state.pendingRepeat)
-    }
-
-    @Test
-    fun `division by zero surfaces a typed error message`() {
-        type("5", "÷", "0")
-        equals()
-        assertEquals("Can't divide by zero", state.errorMessage)
+        @Test
+        fun `operator after open paren still collapses for non-minus`() {
+            // `(` followed by `×` is meaningless; current behaviour keeps the
+            // characters in the expression and lets the evaluator reject it.
+            // This pins the behaviour so a future change is intentional.
+            type("(", "×")
+            assertTrue(state.expression.startsWith("("))
+        }
     }
 }

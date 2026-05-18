@@ -99,4 +99,63 @@ class EvaluatorTest {
             0,
         )
     }
+
+    @Test
+    fun veryLargeProductsAreExactWithinDecimal64() {
+        // 99999999 × 99999999 = 9999999800000001 - fits within DECIMAL64's
+        // 16-digit precision and must be exact, no rounding.
+        val result = evaluator.evaluate("99999999×99999999")
+        assertInstanceOf(EvaluationResult.Success::class.java, result)
+        assertEquals(
+            0,
+            (result as EvaluationResult.Success).value.compareTo(BigDecimal("9999999800000001")),
+        )
+    }
+
+    @Test
+    fun verySmallProductsPreserveSignificantDigits() {
+        // 1e-7 × 1e-7 = 1e-14 - within DECIMAL64's representable range.
+        val result = evaluator.evaluate("0.0000001×0.0000001")
+        assertInstanceOf(EvaluationResult.Success::class.java, result)
+        assertEquals(
+            0,
+            (result as EvaluationResult.Success).value.compareTo(BigDecimal("1E-14")),
+        )
+    }
+
+    @Test
+    fun chainedDivisionFollowsLeftToRightAssociativity() {
+        // 24÷4÷2 should evaluate left-to-right (24÷4)÷2 = 3, not 24÷(4÷2) = 12.
+        val result = evaluator.evaluate("24÷4÷2")
+        assertInstanceOf(EvaluationResult.Success::class.java, result)
+        assertEquals(0, (result as EvaluationResult.Success).value.compareTo(BigDecimal("3")))
+    }
+
+    @Test
+    fun negativeResultsAreRepresented() {
+        val result = evaluator.evaluate("2-10")
+        assertInstanceOf(EvaluationResult.Success::class.java, result)
+        assertEquals(0, (result as EvaluationResult.Success).value.compareTo(BigDecimal("-8")))
+    }
+
+    @Test
+    fun zeroIsAcceptedAsAnOperand() {
+        val result = evaluator.evaluate("0+0")
+        assertInstanceOf(EvaluationResult.Success::class.java, result)
+        assertEquals(0, (result as EvaluationResult.Success).value.compareTo(BigDecimal.ZERO))
+    }
+
+    @Test
+    fun zeroTimesAnythingIsZeroNotDivisionByZero() {
+        // Make sure `0×5` doesn't accidentally hit the division-by-zero path.
+        val result = evaluator.evaluate("0×5")
+        assertInstanceOf(EvaluationResult.Success::class.java, result)
+        assertEquals(0, (result as EvaluationResult.Success).value.compareTo(BigDecimal.ZERO))
+    }
+
+    @Test
+    fun multipleDecimalPointsInOneNumberAreRejected() {
+        val result = evaluator.evaluate("1.2.3")
+        assertInstanceOf(EvaluationResult.Error.UnknownToken::class.java, result)
+    }
 }
