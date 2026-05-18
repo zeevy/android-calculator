@@ -1,6 +1,5 @@
 package com.calculator.feature.basic.ui
 
-import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -9,13 +8,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
@@ -49,7 +50,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -90,22 +90,28 @@ internal fun BasicCalculatorScreenContent(
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
 
-    val configuration = LocalConfiguration.current
-    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-
-    Scaffold { padding ->
+    Scaffold(
+        // Scaffold defaults to padding its content by the system-bar insets;
+        // that would push the hamburger 24-28dp below the status bar before
+        // its own 48dp tap target adds another 12dp. Zero the Scaffold's
+        // insets and hand them out per-child instead - chips and display
+        // text get the status-bar inset, the hamburger doesn't.
+        contentWindowInsets = WindowInsets(0.dp),
+    ) { padding ->
         Column(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(padding)
-                    .systemBarsPadding(),
+                    .padding(padding),
         ) {
-            // The display area carries the mode chips and the hamburger
-            // icon as overlays: chips top-left, hamburger top-right,
-            // expression bottom-right. No separate header row means the
-            // icon sits flush against the status bar with no wasted
-            // vertical space above it.
+            // Display fills whatever room the keypad doesn't take.
+            // The hamburger icon lives at the absolute top of this
+            // section (no status-bar inset on the section itself) so
+            // its 48dp tap target starts at screen top - the icon
+            // glyph's built-in 12dp internal padding then centers it
+            // right at the edge of the status bar with no visible gap.
+            // Only the display *text* and the chips opt into the
+            // status-bar inset so they don't draw behind it.
             DisplaySection(
                 state = state,
                 onEvent = onEvent,
@@ -113,18 +119,18 @@ internal fun BasicCalculatorScreenContent(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .weight(if (isLandscape) DISPLAY_WEIGHT_LANDSCAPE else DISPLAY_WEIGHT_PORTRAIT),
+                        .weight(1f),
             )
-            Spacer(Modifier.size(8.dp))
+            Spacer(Modifier.size(4.dp))
             Keypad(
                 scientific = state.scientific,
-                isLandscape = isLandscape,
                 onEvent = onEvent,
                 modifier =
                     Modifier
+                        .fillMaxWidth()
                         .padding(horizontal = 16.dp)
-                        .padding(bottom = 8.dp)
-                        .weight(if (isLandscape) KEYPAD_WEIGHT_LANDSCAPE else KEYPAD_WEIGHT_PORTRAIT),
+                        .windowInsetsPadding(WindowInsets.navigationBars)
+                        .padding(bottom = 8.dp),
             )
         }
     }
@@ -321,12 +327,17 @@ private fun DisplaySection(
             modifier =
                 Modifier
                     .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.statusBars)
                     .padding(horizontal = 16.dp)
-                    .padding(top = 56.dp),
+                    .padding(top = 48.dp),
         )
 
         Row(
-            modifier = Modifier.align(Alignment.TopStart).padding(start = 8.dp),
+            modifier =
+                Modifier
+                    .align(Alignment.TopStart)
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(start = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -349,11 +360,25 @@ private fun DisplaySection(
             }
         }
 
-        IconButton(
-            onClick = onOpenMenu,
-            modifier = Modifier.align(Alignment.TopEnd),
+        // Hamburger: status-bar inset keeps it below the system icons, then
+        // a 40dp box (vs IconButton's default 48dp) trims the visible gap
+        // between status bar and glyph from ~12dp to ~8dp.
+        Box(
+            modifier =
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(end = 4.dp, top = 4.dp)
+                    .size(40.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .clickable(onClick = onOpenMenu),
+            contentAlignment = Alignment.Center,
         ) {
-            Icon(imageVector = Icons.Filled.Menu, contentDescription = "Open menu")
+            Icon(
+                imageVector = Icons.Filled.Menu,
+                contentDescription = "Open menu",
+                modifier = Modifier.size(24.dp),
+            )
         }
     }
 }
@@ -398,23 +423,22 @@ private fun Display(
 }
 
 /**
- * Keypad. Always shows the 4-column basic grid; in scientific mode adds
- * trig/log/power/memory keys.
+ * Keypad. Always shows the 4-column basic grid; in scientific mode the
+ * trig/log/power/memory rows stack above the basic rows.
  *
- * Layout adapts to orientation:
- *  - **Portrait**: scientific rows stack on top of the basic rows.
- *  - **Landscape**: scientific block sits to the left of the basic
- *    block so neither overflows when the viewport is short.
+ * Sizing strategy: every key is a fixed-aspect-ratio rectangle (width
+ * derived from the 4-column grid, height = width / [BUTTON_ASPECT_RATIO]).
+ * The keypad therefore wraps its own height, and the display above it
+ * gets `weight(1f)` to absorb whatever's left. This is what keeps buttons
+ * looking like proper horizontal rectangles instead of squares or tall
+ * vertical bars, regardless of how many rows the current mode has.
  *
- * Rows use `Modifier.weight(1f)` so they always divide the available
- * vertical space, never the other way around - this is what stops the
- * keypad from blowing through the viewport when the height shrinks
- * (landscape, foldables, small phones).
+ * Portrait is enforced by the manifest, so no landscape branch lives
+ * here - foldables / multi-window get the same vertical stacking.
  */
 @Composable
 private fun Keypad(
     scientific: Boolean,
-    isLandscape: Boolean,
     onEvent: (BasicCalculatorEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -434,36 +458,13 @@ private fun Keypad(
             listOf(Key.MemoryClear, Key.MemoryRecall, Key.MemoryAdd, Key.MemorySubtract),
         )
 
-    if (scientific && isLandscape) {
-        // Landscape scientific: sci keys on the left, basic on the right.
-        // Both columns scroll independently if they would overflow.
-        Row(
-            modifier = modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            KeypadGrid(rows = scientificRows, modifier = Modifier.weight(1f), onEvent = onEvent)
-            KeypadGrid(rows = basicRows, modifier = Modifier.weight(1f), onEvent = onEvent)
-        }
-    } else {
-        KeypadGrid(
-            rows = if (scientific) scientificRows + basicRows else basicRows,
-            modifier = modifier.fillMaxWidth(),
-            onEvent = onEvent,
-        )
-    }
+    KeypadGrid(
+        rows = if (scientific) scientificRows + basicRows else basicRows,
+        modifier = modifier,
+        onEvent = onEvent,
+    )
 }
 
-/**
- * Renders a list of keypad rows as an equal-height grid that always
- * fills the available vertical space. No fixed aspect ratio - rows
- * divide whatever height the keypad container has, so basic mode
- * (5 rows) doesn't leave a gap at the bottom and scientific mode
- * (9 rows) doesn't overflow into a scroll.
- *
- * The button proportions naturally widen as more rows are added, which
- * matches what a physical scientific calculator feels like: more keys,
- * each key gets a touch smaller.
- */
 @Composable
 private fun KeypadGrid(
     rows: List<List<Key>>,
@@ -477,11 +478,7 @@ private fun KeypadGrid(
         rows.forEach { row ->
             KeypadRow(
                 row = row,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .heightIn(min = MIN_KEY_HEIGHT),
+                modifier = Modifier.fillMaxWidth(),
                 onEvent = onEvent,
             )
         }
@@ -505,7 +502,7 @@ private fun KeypadRow(
                 modifier =
                     Modifier
                         .weight(1f)
-                        .fillMaxHeight(),
+                        .aspectRatio(BUTTON_ASPECT_RATIO),
             )
         }
     }
@@ -641,21 +638,11 @@ private fun KeyButton(
 /** Labels of arithmetic-operator keys that get the bigger display type ramp. */
 private val OperatorLabels = setOf("+", "-", "×", "÷", "%", "^", "π", "e")
 
-// Weights for the Display vs Keypad split inside the screen Column. The
-// display is intentionally short (~25% of usable height) so the keypad
-// dominates the screen the way physical calculators do; the display has
-// only a line of result text and an optional preview line beneath, so
-// the extra space above would just read as wasted.
-//
-// The manifest pins the activity to portrait, so the landscape branch
-// is just a safety net for foldables / DeX / multi-window.
-private const val DISPLAY_WEIGHT_PORTRAIT = 0.5f
-private const val DISPLAY_WEIGHT_LANDSCAPE = 0.6f
-private const val KEYPAD_WEIGHT_PORTRAIT = 2f
-private const val KEYPAD_WEIGHT_LANDSCAPE = 1f
-
-/** Minimum touch-target height per keypad row, per Material 3 guidance. */
-private val MIN_KEY_HEIGHT = 48.dp
+// Width-to-height ratio for every keypad button. 1.6 gives a clean
+// "horizontal rectangle" silhouette - wider than tall by ~60%, the
+// shape physical desk calculators use. Tweaking this is the single
+// knob for "make keys taller / shorter" without touching layout code.
+private const val BUTTON_ASPECT_RATIO = 1.6f
 
 // ----- Previews -----
 
