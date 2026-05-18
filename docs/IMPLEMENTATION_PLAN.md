@@ -53,7 +53,7 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 - [x] `./gradlew ktlintCheck` passes
 - [x] `./gradlew detekt` passes
 - [x] `./gradlew lint` passes with no `error` severity findings
-- [ ] App installs and launches to a blank Compose screen on an API 31 emulator (manual; deferred until an emulator is wired up)
+- [x] App installs and launches without crash (verified on a connected Pixel 6a running Android 16 / API 36; Material You dynamic color active, keypad renders and responds)
 
 ### Phase 0 - Exit criteria
 
