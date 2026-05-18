@@ -3,6 +3,7 @@ package com.calculator.feature.basic.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -144,10 +145,13 @@ private fun Keypad(onEvent: (BasicCalculatorEvent) -> Unit) {
                     KeyButton(
                         key = key,
                         onEvent = onEvent,
+                        // 1.5:1 aspect (wider than tall) gives the keypad a
+                        // shorter, calculator-style row height without losing
+                        // touch-target size on a 4-column grid.
                         modifier =
                             Modifier
                                 .weight(1f)
-                                .aspectRatio(1f),
+                                .aspectRatio(1.5f),
                     )
                 }
             }
@@ -212,29 +216,42 @@ private fun KeyButton(
     // that Material 3 buttons fall into at small aspect-ratio sizes.
     val keyShape = RoundedCornerShape(20.dp)
 
+    // Operators and the equals key get a larger type ramp than digits so the
+    // calculator's "action" keys read as visually heavier.
+    val labelStyle = when {
+        key is Key.Symbol && key.label in OperatorLabels -> MaterialTheme.typography.displaySmall
+        key is Key.Equals -> MaterialTheme.typography.displaySmall
+        else -> MaterialTheme.typography.headlineLarge
+    }
+
     when (key) {
         Key.Equals ->
             Button(
                 onClick = click,
                 modifier = modifier,
                 shape = keyShape,
+                contentPadding = PaddingValues(0.dp),
                 colors =
                     ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
                     ),
-            ) { Text(key.label, style = MaterialTheme.typography.headlineSmall) }
+            ) { Text(key.label, style = labelStyle) }
 
         else ->
             FilledTonalButton(
                 onClick = click,
                 modifier = modifier,
                 shape = keyShape,
+                contentPadding = PaddingValues(0.dp),
             ) {
-                Text(key.label, style = MaterialTheme.typography.headlineSmall)
+                Text(key.label, style = labelStyle)
             }
     }
 }
+
+/** Labels of arithmetic-operator keys that get the bigger display type ramp. */
+private val OperatorLabels = setOf("+", "-", "×", "÷", "%")
 
 // ----- Previews -----
 
