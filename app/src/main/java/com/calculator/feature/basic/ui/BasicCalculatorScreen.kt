@@ -67,6 +67,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -443,6 +444,7 @@ private fun Display(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxFontSize = MaterialTheme.typography.headlineSmall.fontSize,
                     minFontSize = DISPLAY_EXPRESSION_MIN_SIZE,
+                    maxLines = DISPLAY_EXPRESSION_MAX_LINES,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.size(4.dp))
@@ -458,6 +460,7 @@ private fun Display(
                         color = MaterialTheme.colorScheme.error,
                         maxFontSize = MaterialTheme.typography.displaySmall.fontSize,
                         minFontSize = DISPLAY_RESULT_MIN_SIZE,
+                        maxLines = DISPLAY_RESULT_MAX_LINES,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 preview != null ->
@@ -470,12 +473,14 @@ private fun Display(
                         color = MaterialTheme.colorScheme.onSurface,
                         maxFontSize = MaterialTheme.typography.displayLarge.fontSize,
                         minFontSize = DISPLAY_RESULT_MIN_SIZE,
+                        maxLines = DISPLAY_RESULT_MAX_LINES,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 else ->
                     // No preview yet - the expression itself is the
-                    // dominant element, rendered large and bold and
-                    // shrunk to fit when it grows too wide.
+                    // dominant element. Auto-shrinks AND wraps so a
+                    // long expression can grow vertically before any
+                    // font shrink kicks in.
                     AutoSizeText(
                         text = expression.ifBlank { "0" },
                         style =
@@ -485,6 +490,7 @@ private fun Display(
                         color = MaterialTheme.colorScheme.onSurface,
                         maxFontSize = MaterialTheme.typography.displayLarge.fontSize,
                         minFontSize = DISPLAY_RESULT_MIN_SIZE,
+                        maxLines = DISPLAY_RESULT_MAX_LINES,
                         modifier = Modifier.fillMaxWidth(),
                     )
             }
@@ -493,14 +499,19 @@ private fun Display(
 }
 
 /**
- * Right-aligned single-line text that scales its font size down until
- * the string fits inside [Modifier]'s width. Measured once per
- * (text, width) pair via a [TextMeasurer] so there's no recompose loop.
+ * Right-aligned auto-sizing text. Wraps to up to [maxLines] lines and
+ * scales the font size down only when even the full line count would
+ * overflow the available width. Measured once per
+ * (text, width, lines) tuple via a [TextMeasurer] so there's no
+ * recompose loop.
  *
- * Tries [maxFontSize] first, drops by 2sp until the rendered width is
- * within the available constraints or [minFontSize] is reached - at
- * that point the text is allowed to clip rather than shrink past the
- * minimum (calculators that go too small are unreadable).
+ * Strategy:
+ *  1. Try the max font size with up to maxLines of soft-wrapped text.
+ *  2. If that still overflows width OR needs more than maxLines, drop
+ *     [AUTO_SIZE_STEP_SP] and re-measure.
+ *  3. Stop at [minFontSize] - if the string still doesn't fit there,
+ *     the trailing characters clip (the alternative is illegible 8sp
+ *     text, which is worse than clipping).
  */
 @Composable
 private fun AutoSizeText(
@@ -509,26 +520,26 @@ private fun AutoSizeText(
     color: Color,
     maxFontSize: TextUnit,
     minFontSize: TextUnit,
+    maxLines: Int = 1,
     modifier: Modifier = Modifier,
 ) {
     val measurer = rememberTextMeasurer()
     BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.BottomEnd) {
         val maxWidthPx = constraints.maxWidth
-        // Linear shrink: walk down by AUTO_SIZE_STEP sp until the
-        // measured width fits or we hit the floor. Calculator strings
-        // are short so 6-10 measurements at most.
+        val widthConstraints = Constraints(maxWidth = maxWidthPx)
         val fontSize =
-            remember(text, maxWidthPx, maxFontSize, minFontSize, style) {
+            remember(text, maxWidthPx, maxLines, maxFontSize, minFontSize, style) {
                 var candidate = maxFontSize
                 while (candidate.value > minFontSize.value) {
                     val measured =
                         measurer.measure(
                             text = AnnotatedString(text),
                             style = style.copy(fontSize = candidate),
-                            maxLines = 1,
-                            softWrap = false,
+                            maxLines = maxLines,
+                            softWrap = maxLines > 1,
+                            constraints = widthConstraints,
                         )
-                    if (measured.size.width <= maxWidthPx) break
+                    if (!measured.didOverflowWidth && !measured.didOverflowHeight) break
                     candidate = (candidate.value - AUTO_SIZE_STEP_SP).sp
                 }
                 candidate
@@ -537,8 +548,8 @@ private fun AutoSizeText(
             text = text,
             style = style.copy(fontSize = fontSize),
             color = color,
-            maxLines = 1,
-            softWrap = false,
+            maxLines = maxLines,
+            softWrap = maxLines > 1,
             textAlign = TextAlign.End,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -548,6 +559,11 @@ private fun AutoSizeText(
 private const val AUTO_SIZE_STEP_SP = 2f
 private val DISPLAY_RESULT_MIN_SIZE = 28.sp
 private val DISPLAY_EXPRESSION_MIN_SIZE = 14.sp
+// Up to three lines for the big result line and two for the muted
+// expression-history line. Multi-line first, then font shrink - so a
+// long expression grows downward before any text gets smaller.
+private const val DISPLAY_RESULT_MAX_LINES = 3
+private const val DISPLAY_EXPRESSION_MAX_LINES = 2
 
 /**
  * Keypad. Always shows the 4-column basic grid; in scientific mode the
