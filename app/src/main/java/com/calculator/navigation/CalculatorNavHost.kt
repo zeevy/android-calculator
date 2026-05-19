@@ -5,6 +5,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.calculator.feature.basic.ui.BasicCalculatorScreen
+import com.calculator.feature.converter.unit.UnitConverterScreen
 
 /**
  * Root navigation host.
@@ -25,10 +26,13 @@ fun CalculatorNavHost() {
         startDestination = BasicCalculatorRoute,
     ) {
         composable<BasicCalculatorRoute> {
-            BasicCalculatorScreen()
+            BasicCalculatorScreen(
+                onOpenUnitConverter = { navController.navigate(UnitConverterRoute) },
+            )
         }
 
-        // Add new destinations here as features come online:
-        // composable<SettingsRoute> { SettingsScreen(onUp = navController::popBackStack) }
+        composable<UnitConverterRoute> {
+            UnitConverterScreen(onUp = navController::popBackStack)
+        }
     }
 }

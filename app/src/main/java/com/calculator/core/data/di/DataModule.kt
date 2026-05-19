@@ -5,6 +5,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
+import com.calculator.core.data.converter.RoomUnitConverterRepository
+import com.calculator.core.data.converter.UnitConverterRepository
 import com.calculator.core.data.db.CalculatorDatabase
 import com.calculator.core.data.db.HistoryDao
 import com.calculator.core.data.history.HistoryRepository
@@ -44,11 +46,22 @@ object DataModule {
             context,
             CalculatorDatabase::class.java,
             CalculatorDatabase.NAME,
-        ).build()
+        )
+            // Acceptable while no public release has shipped. Pre-release
+            // builds reset their on-device DB across schema bumps; once
+            // we ship to Play, every schema bump must come with a
+            // Migration object.
+            .fallbackToDestructiveMigration()
+            .build()
 
     @Provides
     @Singleton
     fun provideHistoryDao(db: CalculatorDatabase): HistoryDao = db.historyDao()
+
+    @Provides
+    @Singleton
+    fun provideRecentUnitPairDao(db: CalculatorDatabase): com.calculator.core.data.db.RecentUnitPairDao =
+        db.recentUnitPairDao()
 
     @Provides
     @Singleton
@@ -72,4 +85,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindSettingsRepository(impl: DataStoreSettingsRepository): SettingsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindUnitConverterRepository(impl: RoomUnitConverterRepository): UnitConverterRepository
 }

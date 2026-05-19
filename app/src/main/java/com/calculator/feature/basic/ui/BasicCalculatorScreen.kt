@@ -91,9 +91,16 @@ import java.math.BigDecimal
  * possible without a ViewModel and makes UI tests straightforward.
  */
 @Composable
-fun BasicCalculatorScreen(viewModel: BasicCalculatorViewModel = hiltViewModel()) {
+fun BasicCalculatorScreen(
+    onOpenUnitConverter: () -> Unit = {},
+    viewModel: BasicCalculatorViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    BasicCalculatorScreenContent(state = state, onEvent = viewModel::onEvent)
+    BasicCalculatorScreenContent(
+        state = state,
+        onEvent = viewModel::onEvent,
+        onOpenUnitConverter = onOpenUnitConverter,
+    )
 }
 
 /**
@@ -108,6 +115,7 @@ fun BasicCalculatorScreen(viewModel: BasicCalculatorViewModel = hiltViewModel())
 internal fun BasicCalculatorScreenContent(
     state: BasicCalculatorUiState,
     onEvent: (BasicCalculatorEvent) -> Unit,
+    onOpenUnitConverter: () -> Unit = {},
 ) {
     var openSheet by remember { mutableStateOf<MenuSheet?>(null) }
     val sheetState = rememberModalBottomSheetState()
@@ -197,6 +205,11 @@ internal fun BasicCalculatorScreenContent(
                         onEvent = onEvent,
                         onOpenHistory = { openSheet = MenuSheet.History },
                         onOpenSettings = { openSheet = MenuSheet.Settings },
+                        onOpenUnitConverter = {
+                            scope.launch { sheetState.hide() }
+                            openSheet = null
+                            onOpenUnitConverter()
+                        },
                         onClose = {
                             scope.launch { sheetState.hide() }
                             openSheet = null
@@ -248,6 +261,7 @@ private fun ToolsSheetContent(
     onEvent: (BasicCalculatorEvent) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenUnitConverter: () -> Unit,
     onClose: () -> Unit,
 ) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
@@ -283,9 +297,9 @@ private fun ToolsSheetContent(
                 ToolTile(
                     icon = Icons.Filled.CurrencyExchange,
                     label = "Converter",
-                    enabled = false,
+                    enabled = true,
                     selected = false,
-                    onTap = onClose,
+                    onTap = onOpenUnitConverter,
                 ),
                 ToolTile(
                     icon = Icons.Filled.Percent,
