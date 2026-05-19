@@ -31,6 +31,13 @@ sealed interface Token {
 
     /** Closing parenthesis `)`. */
     data object RightParen : Token
+
+    /**
+     * Postfix factorial (`!`). Operates on the value immediately
+     * preceding it: `5! = 120`, `(3+2)! = 120`, etc. Like a function,
+     * it consumes exactly one value off the RPN stack.
+     */
+    data object Factorial : Token
 }
 
 /**

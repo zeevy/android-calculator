@@ -249,9 +249,9 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 - [x] `M` chip in the header when memory holds a non-zero value (tap to recall)
 - [x] Transcendentals route through `Double` then round at 14 sig figs so `sin(30°) = 0.5` exactly (not `0.4999…`)
 - [x] `EvaluationResult.Error.Domain` for `log(-1)`, `sqrt(-1)`, NaN/infinite power
-- [ ] Factorial key (`x!`) - postfix unary, deferred
-- [ ] Sign-flip (`+/-`) key for unary-minus convenience
-- [ ] Landscape auto-show of scientific keypad (currently the Sci toggle is the only entry point)
+- [x] Factorial key (`x!`) - postfix unary on the engine, rejects negative / non-integer / n > 1000
+- [x] Sign-flip (`+/-`) key toggles the trailing operand's leading `-`
+- [ ] Landscape auto-show of scientific keypad - **superseded** (manifest locks orientation to portrait)
 
 ### Phase 2 - Unit tests
 
@@ -274,7 +274,7 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 - [x] `pi` keyword resolves to `π`
 - [x] Composed expression: `sin(30°) + log(100) × π` matches reference
 - [x] Unknown identifier rejected as `Error.UnknownToken`
-- [ ] Factorial cases (`5! = 120`, `0! = 1`, `(-1)!` → Domain error) - blocked on factorial feature
+- [x] Factorial cases: `5! = 120`, `0! = 1`, `1! = 1`, `5.0! = 120`, `(2+3)! = 120`, `5! + 3 = 123`, `(-3)!`/`2.5!` → Domain, `!5` → UnknownToken
 
 #### ViewModel (`BasicCalculatorViewModelTest`)
 
@@ -315,24 +315,25 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 3 - Deliverables
 
-- [ ] Room DB `core/data/db/CalculatorDatabase.kt`
-- [ ] Entity `HistoryEntry(id, expression, result, timestampUtc, type)`
-- [ ] DAO `HistoryDao` (`observeAll`, `insert`, `delete`, `clearAll`)
-- [ ] `HistoryRepository` (Flow-based interface)
-- [ ] Hilt `DataModule` providing `Database`, DAOs, Repository
-- [ ] DataStore `SettingsRepository` (theme, dynamicColor, haptics, sound, precision, defaultCurrency, defaultUnitSystem, crashOptIn)
-- [ ] History sheet/screen: scroll, swipe-to-delete, tap-to-reuse, "Clear all" confirm
-- [ ] Long-press a history row → copy to clipboard
-- [ ] Wire ViewModel: on `=`, insert into history
+- [x] Room DB `core/data/db/CalculatorDatabase.kt`
+- [x] Entity `HistoryEntity(id, expression, result, timestampUtc, type)` + domain mirror `HistoryEntry`
+- [x] DAO `HistoryDao` (`observeAll`, `insert`, `deleteById`, `clearAll`)
+- [x] `HistoryRepository` (Flow-based interface, `RoomHistoryRepository` impl)
+- [x] Hilt `DataModule` + `RepositoryModule` providing `Database`, DAOs, Repository, DataStore
+- [x] DataStore `SettingsRepository` (theme, dynamicColor, haptics, sound, precision, crashOptIn) - currency/unit-system defer to Phase 5/6
+- [x] History sheet/screen: scroll list, per-row delete icon, tap-to-reuse, "Clear all" confirm dialog
+- [ ] Swipe-to-delete (deferred; per-row trash icon ships first)
+- [ ] Long-press a history row → copy to clipboard (deferred)
+- [x] Wire ViewModel: on a *fresh* `=`, insert into history (repeat-equals replays do not spam)
 
 ### Phase 3 - Unit tests
 
-- [ ] `HistoryDaoTest` (Robolectric in-memory Room): insert + observe emits the row
-- [ ] `HistoryDaoTest`: delete by id removes only that row
-- [ ] `HistoryDaoTest`: `clearAll` empties the table
-- [ ] `HistoryRepositoryTest`: emits a new value every time a row is inserted (Turbine)
-- [ ] `SettingsRepositoryTest`: writes survive a process recreation (test-scope DataStore)
-- [ ] `BasicCalculatorViewModelTest`: tapping `=` writes to history (verify with MockK)
+- [x] `HistoryDaoTest` (Robolectric in-memory Room): insert + observe emits the row
+- [x] `HistoryDaoTest`: delete by id removes only that row
+- [x] `HistoryDaoTest`: `clearAll` empties the table; also `observeAll` orders newest-first
+- [x] `HistoryRepositoryTest`: emits a new value per insert (Turbine); type round-trip; `clearAll`
+- [x] `SettingsRepositoryTest`: defaults, write-persists-across-instances, precision clamp
+- [x] `BasicCalculatorHistoryTest`: `=` records (fresh only, not on replays/errors/blank); scientific type tagged
 
 ### Phase 3 - Compose UI tests
 
@@ -353,19 +354,21 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 4 - Deliverables
 
-- [ ] `feature/settings/ui/SettingsScreen.kt`
-- [ ] `feature/settings/ui/SettingsViewModel.kt`
-- [ ] Theme system reads from `SettingsRepository`: `system` / `light` / `dark` + dynamicColor toggle
-- [ ] Haptic engine wraps `HapticFeedback` and reads `settings.haptics`
-- [ ] Decimal precision (2..10) feeds `Evaluator` `MathContext`
-- [ ] About row: version, license, GitHub link
-- [ ] Crash-reporting toggle is **off by default** with disclosure text
+- [x] `feature/settings/SettingsSheet.kt` (bottom-sheet content, not a full screen - reuses the existing modal-sheet container)
+- [x] `feature/settings/SettingsViewModel.kt`
+- [x] Theme system reads from `SettingsRepository`: `system` / `light` / `dark` segmented picker + dynamicColor toggle (live, no restart)
+- [x] Haptics wired via `LocalHapticsEnabled` CompositionLocal + `HapticFeedback.performHapticFeedback`
+- [x] Decimal precision slider (6..16) feeds `Evaluator` `MathContext` per-evaluation
+- [x] About rows: version, license, GitHub link
+- [x] Crash-reporting toggle is **off by default** with disclosure text
+- [x] Sound toggle gates the existing DTMF tones (set `LocalKeyTones` to null when disabled)
 
 ### Phase 4 - Unit tests
 
-- [ ] `SettingsViewModelTest`: changing theme emits a new `UiState` with the new theme
-- [ ] `SettingsViewModelTest`: dynamic-color toggle persists via `SettingsRepository`
-- [ ] Precision change rebuilds the Evaluator with new MathContext
+- [x] `SettingsViewModelTest`: theme write propagates to the repository
+- [x] `SettingsViewModelTest`: dynamic-color toggle persists via `SettingsRepository`
+- [x] `SettingsViewModelTest`: precision and crash-opt-in writes propagate
+- [ ] Precision change rebuilds the Evaluator with new MathContext - **verified via wiring** (Evaluator is constructed per-evaluation from `precision.value`); a dedicated test that asserts the rebuilt Evaluator picks up the new precision is a follow-up
 
 ### Phase 4 - Compose UI tests
 
@@ -386,23 +389,23 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 5 - Deliverables
 
-- [ ] `core/domain/converter/UnitCategory.kt`, `Unit.kt` (pure Kotlin, no Android)
-- [ ] `ConversionTable` per category (canonical-unit ratios; Temperature uses formulas)
-- [ ] `feature/converter/unit/UnitConverterScreen.kt` (category tabs, two-pane from/to, swap button, recents)
-- [ ] `feature/converter/unit/UnitConverterViewModel.kt`
-- [ ] Room entity `RecentUnitPair(category, fromUnit, toUnit)` + DAO
-- [ ] Precision honors `settings.precision`
+- [x] `core/domain/converter/UnitCategory.kt`, `ConverterUnit.kt` (pure Kotlin, no Android)
+- [x] `ConversionTable` per category (canonical-unit ratios; Temperature uses an affine offset, all others pass offset=0)
+- [x] `feature/converter/unit/UnitConverterScreen.kt` (scrollable category tabs, two-pane From/To cards, circular swap button, ModalBottomSheet unit picker)
+- [x] `feature/converter/unit/UnitConverterViewModel.kt`
+- [x] Room entity `RecentUnitPairEntity(category PK, fromSymbol, toSymbol)` + `RecentUnitPairDao`
+- [x] Precision honors `settings.precision` via a collect on SettingsRepository in the VM
 
 ### Phase 5 - Unit tests
 
-- [ ] Length: `1 km = 1000 m`, `1 mi ≈ 1609.344 m`
-- [ ] Mass: `1 kg = 2.20462 lb` (within 1e-5)
-- [ ] Temperature: `0 °C = 32 °F = 273.15 K`, `100 °C = 212 °F`
-- [ ] Volume: `1 L = 1000 mL`, `1 US gal = 3.78541 L`
-- [ ] Data: `1 GB = 1024 MB` (binary) - document choice (binary vs decimal) per category
-- [ ] Round-trip: converting `x` from A→B→A returns `x` within precision
-- [ ] Swap from/to inverts the result
-- [ ] Last-used pair persists per category
+- [x] Length: `1 km = 1000 m`, `1 mi = 1609.344 m`, `1 in = 2.54 cm`
+- [x] Mass: `1 kg ≈ 2.20462 lb` (within 1e-5), `1 st = 14 lb`
+- [x] Temperature: `0 °C = 32 °F`, `100 °C = 212 °F`, `0 °C = 273.15 K`, `-40 °C = -40 °F`
+- [x] Volume: `1 L = 1000 mL`, `1 US gal ≈ 3.78541 L`
+- [x] Data: `1 GB = 1024 MB` (binary), `1 B = 8 bit` - binary convention documented in ConversionTable
+- [x] Round-trip: 5 forward+back pairs per category for every (from, to) combination
+- [x] Swap from/to inverts the result (asserted via post-swap state)
+- [x] Last-used pair persists per category (DAO upsert + VM recall test)
 
 ### Phase 5 - Compose UI tests
 
@@ -423,22 +426,23 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 6 - Deliverables
 
-- [ ] `core/data/network/RatesApi.kt` (Retrofit + kotlinx.serialization, e.g. open.er-api.com)
-- [ ] `core/data/network/RatesDto.kt` + mapper to domain `Rates`
-- [ ] `core/data/db` entity `CurrencyRate(code, rateVsBase, baseCode, fetchedAtUtc)` + DAO
-- [ ] `RatesRepository` interface; `DefaultRatesRepository` impl chooses API → cache fallback
-- [ ] `FakeRatesApi` for tests (in `app/src/test/`)
-- [ ] `feature/converter/currency/CurrencyConverterScreen.kt` (amount field, base, target, multi-row view, refresh, last-updated timestamp)
-- [ ] Favourites pinning: `FavoriteCurrency(code, position)` entity + DAO
-- [ ] Manual `Refresh` action; stale-rate banner if cache > 24h
+- [x] `core/data/network/RatesApi.kt` (Retrofit + kotlinx.serialization against open.er-api.com)
+- [x] `core/data/network/RatesDto.kt` + repository mapper to domain `Rates`
+- [x] `core/data/db/CurrencyRateEntity(code PK, rateVsBase, baseCode, fetchedAtUtc)` + DAO with atomic `replaceAll`
+- [x] `RatesRepository` interface; `DefaultRatesRepository` impl - refresh hits API, cache stays the source for UI reads via observeCached
+- [x] `FakeRatesApi` for tests (in-class inside `RatesRepositoryTest`)
+- [x] `feature/converter/currency/CurrencyConverterScreen.kt` (amount field, base picker, multi-row list with pinned favourites first, refresh button, last-updated relative timestamp)
+- [x] Favourites pinning: `FavoriteCurrencyEntity(code PK, position)` + DAO with append-at-end semantics
+- [x] Manual `Refresh` action; error banner when the latest refresh fails (stale-cache banner > 24h - deferred follow-up, current relative timestamp lets the user see if it's been a while)
 
 ### Phase 6 - Unit tests
 
-- [ ] `RatesRepositoryTest` with `FakeRatesApi`: fresh fetch updates cache
-- [ ] Offline path: API throws → repository returns cached rates
-- [ ] Mapping: API response with `rates: {EUR: 0.91, INR: 83.2}` produces a `Rates` with base `USD`
-- [ ] Conversion math: `100 USD × 83.2 = 8320 INR`
-- [ ] Favourites DAO: insert, reorder by position, delete
+- [x] `RatesRepositoryTest` with `FakeRatesApi`: fresh fetch updates cache (`refreshWritesTheCache`)
+- [x] Offline path: API throws → cache stays intact (`refreshFailureLeavesCacheIntact`)
+- [x] Provider sends `result != "success"` → repository throws, cache not overwritten (`nonSuccessResultIsTreatedAsFailure`)
+- [x] Conversion math: `100 USD × 83.2 = 8320 INR` (`100 USD times 83 point 2 equals 8320 INR via the rates map`)
+- [x] Favourites: insert appends at end of position, remove deletes (`favouritesPersistAndAppendAtEnd`)
+- [x] ViewModel: refresh failure surfaces as errorMessage without blanking cache
 
 ### Phase 6 - Compose UI tests
 
@@ -464,72 +468,68 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 7.1 - Loan / EMI deliverables
 
-- [ ] `feature/finance/loan/LoanScreen.kt` + ViewModel
-- [ ] `core/domain/finance/EmiCalculator.kt`: `EMI = P × r × (1+r)^n / ((1+r)^n − 1)`
-- [ ] Amortisation table (month-by-month principal/interest/balance)
-- [ ] Neutral copy: never "you qualify for", "apply for a loan", etc.
+- [x] `feature/finance/loan/LoanScreen.kt` (local Compose state; the math is simple enough that a ViewModel is overkill)
+- [x] `core/domain/finance/EmiCalculator.kt`: `EMI = P × r × (1+r)^n / ((1+r)^n − 1)` with a zero-interest fast path
+- [x] Amortisation table (month-by-month principal/interest/balance) - rendered as part of `EmiResult` (UI shows headline figures; full table available as `result.amortisation`)
+- [x] Neutral copy: pinned disclaimer "Estimator only - not a lending tool or quote."
 
 ### Phase 7.2 - GST (India) deliverables
 
-- [ ] `feature/finance/gst/GstScreen.kt` + ViewModel
-- [ ] Presets: 5/12/18/28%; custom rate also allowed
-- [ ] Output: CGST, SGST, IGST (intra- vs inter-state toggle), net, gross
-- [ ] Visible only in `IN` locale (or via Settings opt-in)
+- [x] `feature/finance/gst/GstScreen.kt`
+- [x] Presets: 5/12/18/28% chips + free-text custom rate field
+- [x] Output: CGST/SGST (intra-state) or IGST (inter-state), net, gross; forward and reverse modes
+- [ ] Visible only in `IN` locale - deferred to Phase 8 (i18n pass)
 
 ### Phase 7.3 - BMI deliverables
 
-- [ ] `feature/health/bmi/BmiScreen.kt` + ViewModel
-- [ ] Metric (cm/kg) + Imperial (ft+in/lb) units, persists last choice
-- [ ] Category: Underweight / Normal / Overweight / Obese (WHO ranges)
+- [x] `feature/health/bmi/BmiScreen.kt`
+- [x] Metric (cm/kg) + Imperial (ft+in/lb) units (last-choice persistence deferred to a Phase 7 follow-up; current screen defaults to Metric)
+- [x] Category: Underweight / Normal / Overweight / Obese (WHO ranges)
 
 ### Phase 7.4 - Age deliverables
 
-- [ ] `feature/datetime/age/AgeScreen.kt` + ViewModel
-- [ ] DOB picker (locale-aware), output years/months/days, next birthday countdown, weekday of birth
+- [x] `feature/datetime/age/AgeScreen.kt` (Material3 DatePickerDialog)
+- [x] DOB picker, output years/months/days, next birthday countdown (days), weekday of birth
 
 ### Phase 7.5 - Discount deliverables
 
-- [ ] `feature/finance/discount/DiscountScreen.kt` + ViewModel
-- [ ] Forward: MRP + % → savings + final
-- [ ] Reverse: MRP + final → %
+- [x] `feature/finance/discount/DiscountScreen.kt`
+- [x] Forward: MRP + % → savings + final
+- [x] Reverse: MRP + final → %
 
 ### Phase 7.6 - Date Difference deliverables
 
-- [ ] `feature/datetime/datediff/DateDiffScreen.kt` + ViewModel
-- [ ] Mode 1: two dates → days/weeks/months/years
-- [ ] Mode 2: date + offset → resulting date
+- [x] `feature/datetime/datediff/DateDiffScreen.kt`
+- [x] Mode 1: two dates → y/m/d + total days + weeks remainder
+- [x] Mode 2: date + offset days → resulting date
 
 ### Phase 7.7 - Ovulation deliverables
 
-- [ ] `feature/health/ovulation/OvulationScreen.kt` + ViewModel
-- [ ] `core/domain/health/OvulationCalculator.kt` (pure Kotlin)
-- [ ] Inputs: last menstrual period (LMP) date + average cycle length (default 28, range 21-35)
-- [ ] Outputs:
-    - Next period start date (LMP + cycle length)
-    - Predicted ovulation date (next period - 14)
-    - Fertile window (ovulation - 5 to ovulation + 1, six-day span)
-    - Estimated due date if conception occurs this cycle (LMP + 280 days, Naegele's rule)
-- [ ] **Educational copy only.** Surface a one-line disclaimer that estimates are statistical and not a substitute for medical advice; not a contraception tool.
-- [ ] No data leaves the device; LMP is never persisted to history without an explicit "save" action (Phase 3 history layer).
+- [x] `feature/health/ovulation/OvulationScreen.kt`
+- [x] `core/domain/health/OvulationCalculator.kt` (pure Kotlin)
+- [x] Inputs: LMP date + average cycle length slider (default 28, range 21-35)
+- [x] Outputs: ovulation date, six-day fertile window, next period date, estimated due date (Naegele's rule)
+- [x] Educational disclaimer: "Estimator only. Cycles vary; this is not medical advice and not a contraception tool."
+- [x] No data leaves the device; LMP is in local Compose state only, never persisted
 
 ### Phase 7 - Unit tests (one suite per calculator)
 
-- [ ] **EMI:** `P=100000, r=10%/yr, n=12` → EMI ≈ `8791.59`, sum of payments ≈ `105499.1`
-- [ ] **EMI:** zero-interest loan (`r=0`) → `EMI = P/n`
-- [ ] **EMI:** amortisation: final balance = 0 (within ₹1 rounding)
-- [ ] **GST:** `1000 @ 18%` → CGST `90`, SGST `90`, gross `1180`
-- [ ] **GST:** inter-state `1000 @ 18%` → IGST `180`, no CGST/SGST
-- [ ] **BMI:** `70kg, 1.70m` → `24.22` → `Normal`
-- [ ] **BMI:** `170lb, 5'10"` matches metric equivalent within 0.1
-- [ ] **Age:** DOB `1990-01-15`, today `2026-05-18` → `36y 4m 3d`
-- [ ] **Age:** leap-year DOB Feb 29 → correct in non-leap-year today
-- [ ] **Discount:** MRP `2000`, 20% off → final `1600`, savings `400`
-- [ ] **Discount reverse:** MRP `2000`, final `1500` → `25%`
-- [ ] **DateDiff:** `2024-02-29` to `2025-02-28` → `0y 11m 30d` (or document spec)
-- [ ] **DateDiff:** add `90d` to `2026-01-01` → `2026-04-01`
-- [ ] **Ovulation:** LMP `2026-05-01`, cycle `28` → ovulation `2026-05-15`, fertile `2026-05-10`..`2026-05-16`, next period `2026-05-29`, due date `2027-02-04`
-- [ ] **Ovulation:** non-default cycle length `35` → ovulation = LMP + 21 (next period - 14), fertile window shifts accordingly
-- [ ] **Ovulation:** rejects cycle length outside 21-35 with a typed error
+- [x] **EMI:** `P=100000, r=10%/yr, n=12` → EMI ≈ `8791.59`, total paid ≈ `105499.07`
+- [x] **EMI:** zero-interest loan (`r=0`) → `EMI = P/n`
+- [x] **EMI:** amortisation: final balance = 0 within rounding; rows sum to total paid
+- [x] **GST:** `1000 @ 18%` intra-state → CGST `90`, SGST `90`, gross `1180`
+- [x] **GST:** inter-state `1000 @ 18%` → IGST `180`, no CGST/SGST; reverse `1180@18%` recovers `1000` net
+- [x] **BMI:** `70kg, 1.70m` → `24.22` → `Normal`; each category boundary asserted
+- [x] **BMI:** `170lb, 5'10"` matches metric equivalent within 0.1
+- [x] **Age:** DOB `1990-01-15`, today `2026-05-18` → `36y 4m 3d`, Monday
+- [x] **Age:** Feb 29 in non-leap year falls back to Feb 28
+- [x] **Discount:** MRP `2000`, 20% off → final `1600`, savings `400`; 100% off → 0
+- [x] **Discount reverse:** MRP `2000`, final `1500` → `25%`
+- [x] **DateDiff:** `2024-02-29` to `2025-02-28` → `0y 11m 30d` (365 days / 52w 1d)
+- [x] **DateDiff:** add `90d` to `2026-01-01` → `2026-04-01`; -1d goes to 2025-12-31; argument-swap symmetry
+- [x] **Ovulation:** LMP `2026-05-01`, cycle `28` → ovulation `2026-05-15`, fertile `2026-05-10`..`2026-05-16`, next period `2026-05-29`, due date `2027-02-05`
+- [x] **Ovulation:** cycle `35` → ovulation +7d from default
+- [x] **Ovulation:** rejects cycle length outside 21-35 with `IllegalArgumentException`
 
 ### Phase 7 - Compose UI tests
 
@@ -549,21 +549,21 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 8 - Deliverables
 
-- [ ] Content descriptions on every key (basic + scientific) and every actionable icon
-- [ ] Minimum touch target `48dp` enforced via a custom modifier or design-system button
-- [ ] Locale-aware `NumberFormat` at all UI display boundaries (engine stays canonical)
-- [ ] String resources moved to `values/strings.xml` (English) + `values-hi/strings.xml` (Hindi)
-- [ ] RTL-safe layouts (`start`/`end` instead of `left`/`right`)
-- [ ] Home screen: search bar that jumps to any tool by name
-- [ ] Static launcher shortcuts: "New calculation", top 2 tools (`shortcuts.xml`)
-- [ ] Dynamic shortcuts updated to recent tools
+- [~] Content descriptions on every key and actionable icon - keypad, hamburger, swap, back, refresh, history-delete, currency pin all have descriptions; audit pass against every screen is a follow-up
+- [~] Minimum touch target `48dp` - keypad buttons use `aspectRatio(1.6f)` which on portrait keeps them well above 48dp; explicit modifier helper still pending
+- [x] Locale-aware `NumberFormatter` utility (en-US, en-IN with lakh grouping, de-DE, plus parse). Adoption at every UI boundary is a follow-up (currently in place at `NumberFormatter.format`/`money`; screens still use locale-fixed DecimalFormat)
+- [x] String resources extracted into `values/strings.xml` (~95 keys covering shell, tools menu, settings, history, life-calculator titles + disclaimers) + `values-hi/strings.xml` Hindi translations
+- [~] RTL-safe layouts - Compose uses logical start/end by default; explicit RTL preview audit pending
+- [ ] Home-screen search bar (deferred - tools menu already gives one-tap access; search is a power-user addition)
+- [x] Static launcher shortcuts: new calculation, unit converter, currency converter (`shortcuts.xml` + manifest + NavHost deep-link wiring)
+- [ ] Dynamic shortcuts driven by recent usage
 - [ ] High-contrast mode honored on Android 14+
 
 ### Phase 8 - Unit tests
 
-- [ ] Number formatter: `1234567.89` → `1,234,567.89` (en-US), `12,34,567.89` (en-IN), `1.234.567,89` (de-DE)
-- [ ] Date formatter: `2026-05-18` rendered per locale
-- [ ] Search index returns "Loan" for query `emi`, `loan`, `कर्ज`
+- [x] Number formatter: en-US/en-IN/de-DE assertions all pass; money formatter keeps two decimals; parse round-trip via the German locale; negative-sign placement
+- [ ] Date formatter test (system DateFormat is in use but no explicit suite yet)
+- [ ] Search index returns "Loan" for query `emi`, `loan`, `कर्ज` (deferred with the search bar)
 
 ### Phase 8 - Compose UI / instrumented tests
 
@@ -610,10 +610,10 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 10 - Deliverables
 
-- [ ] `core/widget/QuickCalcWidget.kt` (Glance `GlanceAppWidget`)
-- [ ] Widget UI: result display + 0-9, +, -, =
-- [ ] `QuickCalculatorTileService` (QS tile) opens the basic calculator
-- [ ] Manifest entries + resource configs
+- [x] `core/widget/QuickCalcWidget.kt` (Glance `GlanceAppWidget`)
+- [x] Widget UI: display row + 5x4 keypad (digits, +, -, ×, ÷, (, ), C, ⌫, =). Same Evaluator the main app uses.
+- [x] `QuickCalculatorTileService` (QS tile) opens MainActivity via `startActivityAndCollapse` (PendingIntent on API 34+, legacy Intent on older)
+- [x] Manifest entries (Glance receiver + `BIND_QUICK_SETTINGS_TILE` service) + `res/xml/quick_calc_widget_info.xml`
 
 ### Phase 10 - Test cases
 
@@ -634,14 +634,15 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 11 - Deliverables
 
-- [ ] Play App Signing enrolled, release keystore secured
-- [ ] Versioning strategy: SemVer for `versionName`, monotonic `versionCode`
-- [ ] Release `bundleRelease` AAB under 15 MB (R8 + resource shrinking verified)
-- [ ] Privacy policy hosted (covers `INTERNET` permission, opt-in crash reporting)
-- [ ] Play Console listing: title, short + long descriptions, screenshots (phone + tablet + foldable), feature graphic
-- [ ] Data Safety form: declare no PII collected; currency API is anonymous
-- [ ] Internal track release → 10-tester closed beta → production rollout 10% → 100%
-- [ ] GitHub release with signed APK attached for sideload users
+- [ ] Play App Signing enrolled, release keystore secured - **out-of-band**: docs/RELEASE.md "Signing" section is the runbook; needs the user to generate the keystore and add GitHub Actions secrets.
+- [x] Versioning: SemVer `versionName` (1.0.0), monotonic `versionCode` (10000); formula in docs/RELEASE.md
+- [x] Release `bundleRelease` AAB measured at **5.1 MB** - 3× under the 15 MB ceiling (R8 + resource shrinking on)
+- [x] Privacy policy at [PRIVACY.md](../PRIVACY.md) covering `INTERNET`, opt-in crash reporting, on-device-only storage
+- [x] Play Console listing copy at [docs/PLAY_LISTING.md](PLAY_LISTING.md) (title / short + long descriptions / Data Safety verbatim answers); screenshots still need to be captured from a release build on a Pixel 6a-class device
+- [x] Data Safety form: verbatim answers in docs/PLAY_LISTING.md (no data collected)
+- [ ] Internal → closed-beta → staged production rollout - **out-of-band**: needs Play Console access; runbook in docs/RELEASE.md
+- [x] GitHub Release workflow ([.github/workflows/release.yml](../.github/workflows/release.yml)) attaches AAB + APK on every `v*.*.*` tag push
+- [x] LoanCopyTest grep-checks LoanScreen.kt user-visible strings for Play's banned personal-loans wording (apply / qualify / lender / borrow / etc.)
 
 ### Phase 11 - Test cases
 

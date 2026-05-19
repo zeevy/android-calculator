@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AppWidgetProviderInfo for the quick-calc home-screen widget.
+
+  Sizing: 4x4 cells (~250x250dp on a stock Pixel launcher) is the
+  sweet spot - tight enough that we don't dominate the home screen,
+  wide enough to fit a display row + a 4x4 keypad.
+
+  resizeMode is set to "none" because Glance lays out best at the
+  default cell size; supporting arbitrary resizing for a mini
+  calculator would force re-layouting on every drag.
+
+  configure is omitted - the widget has no setup screen; placing it
+  is the only configuration the user needs.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="250dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="4"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:previewLayout="@layout/glance_default_loading_layout"
+    android:resizeMode="none"
+    android:widgetCategory="home_screen" />

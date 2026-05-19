@@ -9,7 +9,7 @@
     - Mark format strings with `xliff:g` so translators know not to alter
       placeholders (added when the first formatted string is introduced).
 -->
-<resources>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="app_name">Calculator</string>
 
     <!-- Basic calculator -->
@@ -19,4 +19,149 @@
     <string name="basic_error_division_by_zero">Can\'t divide by zero</string>
     <string name="basic_error_syntax">Check your expression</string>
     <string name="basic_error_unknown_token">Unsupported character</string>
+    <string name="basic_error_domain">Math out of domain</string>
+    <string name="basic_open_menu">Open menu</string>
+
+    <!-- Tools menu tile labels -->
+    <string name="tool_basic">Basic</string>
+    <string name="tool_advanced">Advanced</string>
+    <string name="tool_history">History</string>
+    <string name="tool_units">Units</string>
+    <string name="tool_currency">Currency</string>
+    <string name="tool_loan">Loan</string>
+    <string name="tool_gst">GST</string>
+    <string name="tool_discount">Discount</string>
+    <string name="tool_bmi">BMI</string>
+    <string name="tool_age">Age</string>
+    <string name="tool_date_diff">Date diff</string>
+    <string name="tool_ovulation">Ovulation</string>
+    <string name="tool_settings">Settings</string>
+
+    <!-- Settings sheet -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_dynamic_color">Dynamic color</string>
+    <string name="settings_dynamic_color_desc">Use the wallpaper\'s colors (Android 12+).</string>
+    <string name="settings_section_feedback">Feedback</string>
+    <string name="settings_haptics">Haptics</string>
+    <string name="settings_haptics_desc">Vibrate on key press.</string>
+    <string name="settings_sound">Sound</string>
+    <string name="settings_sound_desc">Play DTMF tones on key press.</string>
+    <string name="settings_section_precision">Math precision</string>
+    <string name="settings_precision_label">Significant figures</string>
+    <string name="settings_section_privacy">Privacy</string>
+    <string name="settings_crash">Crash reporting</string>
+    <string name="settings_crash_desc">Anonymous crash reports. Off by default. Nothing leaves the device until you opt in.</string>
+    <string name="settings_section_about">About</string>
+    <string name="settings_about_version">Version</string>
+    <string name="settings_about_license">License</string>
+    <string name="settings_about_github">GitHub</string>
+
+    <!-- History sheet -->
+    <string name="history_title">History</string>
+    <string name="history_clear_all">Clear all</string>
+    <string name="history_delete">Delete entry</string>
+    <string name="history_clear_all_title">Clear all history?</string>
+    <string name="history_clear_all_body">This removes every saved calculation. It can\'t be undone.</string>
+    <string name="history_clear_confirm">Clear</string>
+    <string name="history_clear_cancel">Cancel</string>
+    <string name="history_empty">No history yet. Calculations show up here when you press =.</string>
+
+    <!-- Common -->
+    <string name="action_back">Back</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_ok">OK</string>
+    <string name="action_cancel">Cancel</string>
+
+    <!-- Unit converter -->
+    <string name="units_title">Unit Converter</string>
+    <string name="units_from">From</string>
+    <string name="units_to">To</string>
+    <string name="units_swap">Swap</string>
+
+    <!-- Currency converter -->
+    <string name="currency_title">Currency</string>
+    <string name="currency_updated_just_now">just now</string>
+    <string name="currency_no_data">No data yet.</string>
+    <string name="currency_no_cache">No cached rates. Tap refresh to fetch.</string>
+    <string name="currency_pin">Pin</string>
+    <string name="currency_unpin">Unpin</string>
+
+    <!-- Life calculators -->
+    <string name="loan_title">Loan estimator</string>
+    <string name="loan_disclaimer">Estimator only - not a lending tool or quote.</string>
+    <string name="loan_section_inputs">Inputs</string>
+    <string name="loan_loan_amount">Loan amount</string>
+    <string name="loan_annual_rate">Annual interest rate</string>
+    <string name="loan_tenure">Tenure</string>
+    <string name="loan_tenure_unit">months</string>
+    <string name="loan_section_result">Result</string>
+    <string name="loan_monthly_emi">Monthly EMI</string>
+    <string name="loan_total_interest">Total interest</string>
+    <string name="loan_total_paid">Total paid</string>
+
+    <string name="gst_title">GST</string>
+    <string name="gst_section_direction">Direction</string>
+    <string name="gst_direction_add">Add GST (net→gross)</string>
+    <string name="gst_direction_remove">Remove GST (gross→net)</string>
+    <string name="gst_intra_state">Intra-state</string>
+    <string name="gst_inter_state">Inter-state</string>
+    <string name="gst_amount_net">Net amount</string>
+    <string name="gst_amount_gross">Gross amount</string>
+    <string name="gst_rate">Rate</string>
+
+    <string name="discount_title">Discount</string>
+    <string name="discount_mode_forward">MRP + % off</string>
+    <string name="discount_mode_reverse">MRP + final price</string>
+    <string name="discount_mrp">MRP</string>
+    <string name="discount_percent">Discount</string>
+    <string name="discount_final">Final price</string>
+    <string name="discount_savings">Savings</string>
+
+    <string name="bmi_title">BMI</string>
+    <string name="bmi_units_metric">Metric (cm/kg)</string>
+    <string name="bmi_units_imperial">Imperial (ft·in/lb)</string>
+    <string name="bmi_height">Height</string>
+    <string name="bmi_height_feet">Height (feet)</string>
+    <string name="bmi_height_inches">Height (inches)</string>
+    <string name="bmi_weight">Weight</string>
+    <string name="bmi_category">Category</string>
+    <string name="bmi_category_underweight">Underweight</string>
+    <string name="bmi_category_normal">Normal</string>
+    <string name="bmi_category_overweight">Overweight</string>
+    <string name="bmi_category_obese">Obese</string>
+
+    <string name="age_title">Age</string>
+    <string name="age_dob">Date of birth</string>
+    <string name="age_weekday">Weekday of birth</string>
+    <string name="age_to_next">Days to next birthday</string>
+    <string name="age_to_next_today">Today!</string>
+
+    <string name="datediff_title">Date difference</string>
+    <string name="datediff_mode_two">Two dates</string>
+    <string name="datediff_mode_offset">Date + offset</string>
+    <string name="datediff_from">From</string>
+    <string name="datediff_to_label">To</string>
+    <string name="datediff_offset">Offset</string>
+    <string name="datediff_offset_unit">days</string>
+
+    <string name="ovulation_title">Ovulation</string>
+    <string name="ovulation_lmp">Last menstrual period</string>
+    <string name="ovulation_cycle">Average cycle length</string>
+    <string name="ovulation_ovulation_date">Ovulation</string>
+    <string name="ovulation_fertile_window">Fertile window</string>
+    <string name="ovulation_next_period">Next period</string>
+    <string name="ovulation_due_date">Estimated due date</string>
+    <string name="ovulation_disclaimer">Estimator only. Cycles vary; this is not medical advice and not a contraception tool.</string>
+
+    <!-- Launcher shortcuts -->
+    <string name="shortcut_new_calc_short">New calc</string>
+    <string name="shortcut_new_calc_long">New calculation</string>
+    <string name="shortcut_units_short">Units</string>
+    <string name="shortcut_units_long">Unit converter</string>
+    <string name="shortcut_currency_short">Currency</string>
+    <string name="shortcut_currency_long">Currency converter</string>
 </resources>

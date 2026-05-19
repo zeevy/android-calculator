@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Static launcher shortcuts (Android 7.1+).
+
+  Long-pressing the launcher icon surfaces these. Each shortcut is a
+  deep-link intent into MainActivity with an extra that the activity
+  reads to pick a starting destination.
+
+  Limited to 3 here (system caps static at 4, but most launchers only
+  render 3 - the fourth gets cut off). Dynamic shortcuts based on
+  recent usage are a Phase 8 follow-up.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <shortcut
+        android:shortcutId="new_calculation"
+        android:icon="@mipmap/ic_launcher_round"
+        android:shortcutShortLabel="@string/shortcut_new_calc_short"
+        android:shortcutLongLabel="@string/shortcut_new_calc_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.calculator"
+            android:targetClass="com.calculator.MainActivity">
+            <extra
+                android:name="com.calculator.SHORTCUT_DESTINATION"
+                android:value="basic" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="unit_converter"
+        android:icon="@mipmap/ic_launcher_round"
+        android:shortcutShortLabel="@string/shortcut_units_short"
+        android:shortcutLongLabel="@string/shortcut_units_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.calculator"
+            android:targetClass="com.calculator.MainActivity">
+            <extra
+                android:name="com.calculator.SHORTCUT_DESTINATION"
+                android:value="units" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="currency_converter"
+        android:icon="@mipmap/ic_launcher_round"
+        android:shortcutShortLabel="@string/shortcut_currency_short"
+        android:shortcutLongLabel="@string/shortcut_currency_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.calculator"
+            android:targetClass="com.calculator.MainActivity">
+            <extra
+                android:name="com.calculator.SHORTCUT_DESTINATION"
+                android:value="currency" />
+        </intent>
+    </shortcut>
+
+</shortcuts>
