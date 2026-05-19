@@ -40,9 +40,19 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // Launcher shortcuts pass an extra here so the nav host can
+        // jump straight to that destination instead of starting on the
+        // basic calculator. Reading once at onCreate is enough because
+        // shortcuts always relaunch the task (singleTask in the manifest).
+        val shortcut = intent?.getStringExtra(SHORTCUT_DESTINATION)
+
         setContent {
-            ThemedCalculatorRoot()
+            ThemedCalculatorRoot(startDestinationHint = shortcut)
         }
+    }
+
+    companion object {
+        const val SHORTCUT_DESTINATION = "com.calculator.SHORTCUT_DESTINATION"
     }
 }
 
@@ -53,7 +63,10 @@ class MainActivity : ComponentActivity() {
  * ComponentActivity's ViewModelStoreOwner.
  */
 @Composable
-private fun ThemedCalculatorRoot(viewModel: SettingsViewModel = hiltViewModel()) {
+private fun ThemedCalculatorRoot(
+    startDestinationHint: String? = null,
+    viewModel: SettingsViewModel = hiltViewModel(),
+) {
     val settings by viewModel.settings.collectAsState()
     val darkTheme =
         when (settings.theme) {
@@ -65,6 +78,6 @@ private fun ThemedCalculatorRoot(viewModel: SettingsViewModel = hiltViewModel())
         darkTheme = darkTheme,
         dynamicColor = settings.dynamicColor,
     ) {
-        CalculatorNavHost()
+        CalculatorNavHost(startDestinationHint = startDestinationHint)
     }
 }

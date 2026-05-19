@@ -25,9 +25,27 @@ import com.calculator.feature.health.ovulation.OvulationScreen
  * navigation lambdas from here), keeping route construction in one place
  * and screens unaware of how they are mounted.
  */
+/**
+ * @param startDestinationHint Optional launcher-shortcut hint; if set
+ *   to a recognised value ("units", "currency"), the corresponding
+ *   screen is pushed onto the back stack right after the basic
+ *   calculator so back returns to the calculator instead of leaving
+ *   the app.
+ */
 @Composable
-fun CalculatorNavHost() {
+fun CalculatorNavHost(startDestinationHint: String? = null) {
     val navController = rememberNavController()
+
+    // Apply the shortcut destination once, after the nav controller is
+    // ready. LaunchedEffect with Unit keys ensures we don't re-navigate
+    // on config change.
+    androidx.compose.runtime.LaunchedEffect(startDestinationHint) {
+        when (startDestinationHint) {
+            "units" -> navController.navigate(UnitConverterRoute)
+            "currency" -> navController.navigate(CurrencyConverterRoute)
+            else -> Unit // "basic" or null - already at start.
+        }
+    }
 
     NavHost(
         navController = navController,
