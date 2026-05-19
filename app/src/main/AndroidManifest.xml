@@ -41,7 +41,36 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- Static launcher shortcuts shown on long-press of the app icon. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
+
+        <!-- Phase 10: Glance home-screen widget. -->
+        <receiver
+            android:name=".core.widget.QuickCalcWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_calc_widget_info" />
+        </receiver>
+
+        <!-- Phase 10: Quick Settings tile to open the basic calculator. -->
+        <service
+            android:name=".core.widget.QuickCalculatorTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_qs_calculator"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
 
     </application>
 

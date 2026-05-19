@@ -100,6 +100,22 @@ class Tokenizer {
                     index++
                 }
 
+                c == '!' -> {
+                    // Postfix factorial. Like %, it only makes sense after
+                    // an operand-producing token (number, `)`, π/e, another
+                    // `!`). Anything else is a tokenization error.
+                    val previous = tokens.lastOrNull()
+                    if (previous == null ||
+                        previous is Token.Op ||
+                        previous is Token.LeftParen ||
+                        previous is Token.Function
+                    ) {
+                        throw TokenizationException("'!' at index $index has no operand")
+                    }
+                    tokens += Token.Factorial
+                    index++
+                }
+
                 else -> {
                     val op =
                         Operator.fromSymbol(c)

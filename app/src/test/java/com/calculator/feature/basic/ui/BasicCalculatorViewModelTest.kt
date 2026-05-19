@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test
  */
 class BasicCalculatorViewModelTest {
     private val savedStateHandle = SavedStateHandle()
-    private val viewModel = BasicCalculatorViewModel(savedStateHandle)
+    private val viewModel = BasicCalculatorViewModel(savedStateHandle, historyRepository = null)
 
     private fun type(vararg symbols: String) = symbols.forEach { viewModel.onEvent(BasicCalculatorEvent.Append(it)) }
 
@@ -34,6 +34,8 @@ class BasicCalculatorViewModelTest {
     private fun backspace() = viewModel.onEvent(BasicCalculatorEvent.Backspace)
 
     private fun clear() = viewModel.onEvent(BasicCalculatorEvent.Clear)
+
+    private fun signFlip() = viewModel.onEvent(BasicCalculatorEvent.SignFlip)
 
     private val state get() = viewModel.state.value
 
@@ -187,48 +189,46 @@ class BasicCalculatorViewModelTest {
 
     @Nested
     inner class RepeatEquals {
+        // Repeat-equals on a complete expression (`2 + 3 =`) is now a
+        // no-op. The user must type a dangling operator (`2 + =`) to
+        // opt into the repeat chain. These four tests assert the no-op
+        // behavior for each of the four arithmetic operators.
         @Test
-        fun `repeat equals replays trailing operator for plus`() {
+        fun `equals on a complete plus expression does not repeat`() {
             type("1", "+", "5")
             equals()
             assertEquals("6", state.expression)
             equals()
-            assertEquals("11", state.expression)
+            assertEquals("6", state.expression)
             equals()
-            assertEquals("16", state.expression)
+            assertEquals("6", state.expression)
         }
 
         @Test
-        fun `repeat equals replays for minus`() {
+        fun `equals on a complete minus expression does not repeat`() {
             type("1", "0", "-", "3")
             equals()
             assertEquals("7", state.expression)
             equals()
-            assertEquals("4", state.expression)
-            equals()
-            assertEquals("1", state.expression)
+            assertEquals("7", state.expression)
         }
 
         @Test
-        fun `repeat equals replays for multiply`() {
+        fun `equals on a complete multiply expression does not repeat`() {
             type("2", "×", "3")
             equals()
             assertEquals("6", state.expression)
             equals()
-            assertEquals("18", state.expression)
-            equals()
-            assertEquals("54", state.expression)
+            assertEquals("6", state.expression)
         }
 
         @Test
-        fun `repeat equals replays for divide`() {
+        fun `equals on a complete divide expression does not repeat`() {
             type("8", "0", "÷", "2")
             equals()
             assertEquals("40", state.expression)
             equals()
-            assertEquals("20", state.expression)
-            equals()
-            assertEquals("10", state.expression)
+            assertEquals("40", state.expression)
         }
 
         @Test
@@ -263,7 +263,9 @@ class BasicCalculatorViewModelTest {
 
         @Test
         fun `typing any other event breaks the repeat chain`() {
-            type("1", "+", "5")
+            // Use the dangling-operator path to actually arm a repeat
+            // token, then prove a digit press clears it.
+            type("1", "+")
             equals()
             assertNotNull(state.pendingRepeat)
 
@@ -273,7 +275,7 @@ class BasicCalculatorViewModelTest {
 
         @Test
         fun `backspace also breaks the repeat chain`() {
-            type("1", "+", "5")
+            type("1", "+")
             equals()
             assertNotNull(state.pendingRepeat)
 
@@ -405,14 +407,17 @@ class BasicCalculatorViewModelTest {
             type("1", "+", "5")
             equals()
             assertEquals("6", state.expression)
-            assertEquals("+5", state.pendingRepeat)
+            // Empty-string pendingRepeat = "we just completed an equals
+            // but there is no repeat operand to apply". Required for the
+            // post-equals fresh-expression UX to survive restoration.
+            assertEquals("", state.pendingRepeat)
 
             // Simulate process death by spinning up a new ViewModel with the
             // same SavedStateHandle - that's what the system does on restore.
             val restored = BasicCalculatorViewModel(savedStateHandle)
 
             assertEquals("6", restored.state.value.expression)
-            assertEquals("+5", restored.state.value.pendingRepeat)
+            assertEquals("", restored.state.value.pendingRepeat)
             // Live preview is derived, so it gets recomputed on restore.
             assertEquals("6", restored.state.value.liveResult)
         }
@@ -427,12 +432,15 @@ class BasicCalculatorViewModelTest {
 
         @Test
         fun `repeat-equals chain continues after restoration`() {
-            type("1", "+", "5")
+            // Use the dangling-operator form to actually arm a repeat
+            // token (1+= yields 2 and arms +1); post-restoration `=`
+            // should still apply +1 to give 3.
+            type("1", "+")
             equals()
 
             val restored = BasicCalculatorViewModel(savedStateHandle)
             restored.onEvent(BasicCalculatorEvent.Equals)
-            assertEquals("11", restored.state.value.expression)
+            assertEquals("3", restored.state.value.expression)
         }
 
         @Test
@@ -759,6 +767,75 @@ class BasicCalculatorViewModelTest {
             // This pins the behaviour so a future change is intentional.
             type("(", "×")
             assertTrue(state.expression.startsWith("("))
+        }
+    }
+
+    @Nested
+    inner class SignFlipBehavior {
+        @Test
+        fun `sign-flip on a single number negates it`() {
+            type("5")
+            signFlip()
+            assertEquals("-5", state.expression)
+        }
+
+        @Test
+        fun `sign-flip toggles back to positive`() {
+            type("5")
+            signFlip()
+            signFlip()
+            assertEquals("5", state.expression)
+        }
+
+        @Test
+        fun `sign-flip on empty arms a unary minus for the next digit`() {
+            signFlip()
+            assertEquals("-", state.expression)
+            type("7")
+            assertEquals("-7", state.expression)
+        }
+
+        @Test
+        fun `sign-flip on a trailing operand inserts a unary minus`() {
+            // `10+5` -> `10+-5`; the tokenizer treats `+-5` as `+(-5)`.
+            type("1", "0", "+", "5")
+            signFlip()
+            assertEquals("10+-5", state.expression)
+        }
+
+        @Test
+        fun `sign-flip toggles a unary minus that was already there`() {
+            type("1", "0", "+")
+            signFlip() // -> 10+-
+            type("5") // -> 10+-5
+            signFlip() // -> 10+5
+            assertEquals("10+5", state.expression)
+        }
+
+        @Test
+        fun `sign-flip after dangling operator arms a unary minus`() {
+            type("1", "0", "+")
+            signFlip()
+            assertEquals("10+-", state.expression)
+        }
+
+        @Test
+        fun `sign-flip is no-op when expression ends with closing paren`() {
+            type("(", "2", "+", "3", ")")
+            signFlip()
+            // We don't try to negate the parenthesised group - the operand
+            // isn't a flat number, and inserting `-` outside would change
+            // operator precedence in surprising ways.
+            assertEquals("(2+3)", state.expression)
+        }
+
+        @Test
+        fun `sign-flip after equals negates the result`() {
+            type("2", "+", "3")
+            equals()
+            assertEquals("5", state.expression)
+            signFlip()
+            assertEquals("-5", state.expression)
         }
     }
 }
