@@ -389,23 +389,23 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 5 - Deliverables
 
-- [ ] `core/domain/converter/UnitCategory.kt`, `Unit.kt` (pure Kotlin, no Android)
-- [ ] `ConversionTable` per category (canonical-unit ratios; Temperature uses formulas)
-- [ ] `feature/converter/unit/UnitConverterScreen.kt` (category tabs, two-pane from/to, swap button, recents)
-- [ ] `feature/converter/unit/UnitConverterViewModel.kt`
-- [ ] Room entity `RecentUnitPair(category, fromUnit, toUnit)` + DAO
-- [ ] Precision honors `settings.precision`
+- [x] `core/domain/converter/UnitCategory.kt`, `ConverterUnit.kt` (pure Kotlin, no Android)
+- [x] `ConversionTable` per category (canonical-unit ratios; Temperature uses an affine offset, all others pass offset=0)
+- [x] `feature/converter/unit/UnitConverterScreen.kt` (scrollable category tabs, two-pane From/To cards, circular swap button, ModalBottomSheet unit picker)
+- [x] `feature/converter/unit/UnitConverterViewModel.kt`
+- [x] Room entity `RecentUnitPairEntity(category PK, fromSymbol, toSymbol)` + `RecentUnitPairDao`
+- [x] Precision honors `settings.precision` via a collect on SettingsRepository in the VM
 
 ### Phase 5 - Unit tests
 
-- [ ] Length: `1 km = 1000 m`, `1 mi ≈ 1609.344 m`
-- [ ] Mass: `1 kg = 2.20462 lb` (within 1e-5)
-- [ ] Temperature: `0 °C = 32 °F = 273.15 K`, `100 °C = 212 °F`
-- [ ] Volume: `1 L = 1000 mL`, `1 US gal = 3.78541 L`
-- [ ] Data: `1 GB = 1024 MB` (binary) - document choice (binary vs decimal) per category
-- [ ] Round-trip: converting `x` from A→B→A returns `x` within precision
-- [ ] Swap from/to inverts the result
-- [ ] Last-used pair persists per category
+- [x] Length: `1 km = 1000 m`, `1 mi = 1609.344 m`, `1 in = 2.54 cm`
+- [x] Mass: `1 kg ≈ 2.20462 lb` (within 1e-5), `1 st = 14 lb`
+- [x] Temperature: `0 °C = 32 °F`, `100 °C = 212 °F`, `0 °C = 273.15 K`, `-40 °C = -40 °F`
+- [x] Volume: `1 L = 1000 mL`, `1 US gal ≈ 3.78541 L`
+- [x] Data: `1 GB = 1024 MB` (binary), `1 B = 8 bit` - binary convention documented in ConversionTable
+- [x] Round-trip: 5 forward+back pairs per category for every (from, to) combination
+- [x] Swap from/to inverts the result (asserted via post-swap state)
+- [x] Last-used pair persists per category (DAO upsert + VM recall test)
 
 ### Phase 5 - Compose UI tests
 
