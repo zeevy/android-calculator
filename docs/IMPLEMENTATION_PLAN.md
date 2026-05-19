@@ -468,72 +468,68 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 7.1 - Loan / EMI deliverables
 
-- [ ] `feature/finance/loan/LoanScreen.kt` + ViewModel
-- [ ] `core/domain/finance/EmiCalculator.kt`: `EMI = P × r × (1+r)^n / ((1+r)^n − 1)`
-- [ ] Amortisation table (month-by-month principal/interest/balance)
-- [ ] Neutral copy: never "you qualify for", "apply for a loan", etc.
+- [x] `feature/finance/loan/LoanScreen.kt` (local Compose state; the math is simple enough that a ViewModel is overkill)
+- [x] `core/domain/finance/EmiCalculator.kt`: `EMI = P × r × (1+r)^n / ((1+r)^n − 1)` with a zero-interest fast path
+- [x] Amortisation table (month-by-month principal/interest/balance) - rendered as part of `EmiResult` (UI shows headline figures; full table available as `result.amortisation`)
+- [x] Neutral copy: pinned disclaimer "Estimator only - not a lending tool or quote."
 
 ### Phase 7.2 - GST (India) deliverables
 
-- [ ] `feature/finance/gst/GstScreen.kt` + ViewModel
-- [ ] Presets: 5/12/18/28%; custom rate also allowed
-- [ ] Output: CGST, SGST, IGST (intra- vs inter-state toggle), net, gross
-- [ ] Visible only in `IN` locale (or via Settings opt-in)
+- [x] `feature/finance/gst/GstScreen.kt`
+- [x] Presets: 5/12/18/28% chips + free-text custom rate field
+- [x] Output: CGST/SGST (intra-state) or IGST (inter-state), net, gross; forward and reverse modes
+- [ ] Visible only in `IN` locale - deferred to Phase 8 (i18n pass)
 
 ### Phase 7.3 - BMI deliverables
 
-- [ ] `feature/health/bmi/BmiScreen.kt` + ViewModel
-- [ ] Metric (cm/kg) + Imperial (ft+in/lb) units, persists last choice
-- [ ] Category: Underweight / Normal / Overweight / Obese (WHO ranges)
+- [x] `feature/health/bmi/BmiScreen.kt`
+- [x] Metric (cm/kg) + Imperial (ft+in/lb) units (last-choice persistence deferred to a Phase 7 follow-up; current screen defaults to Metric)
+- [x] Category: Underweight / Normal / Overweight / Obese (WHO ranges)
 
 ### Phase 7.4 - Age deliverables
 
-- [ ] `feature/datetime/age/AgeScreen.kt` + ViewModel
-- [ ] DOB picker (locale-aware), output years/months/days, next birthday countdown, weekday of birth
+- [x] `feature/datetime/age/AgeScreen.kt` (Material3 DatePickerDialog)
+- [x] DOB picker, output years/months/days, next birthday countdown (days), weekday of birth
 
 ### Phase 7.5 - Discount deliverables
 
-- [ ] `feature/finance/discount/DiscountScreen.kt` + ViewModel
-- [ ] Forward: MRP + % → savings + final
-- [ ] Reverse: MRP + final → %
+- [x] `feature/finance/discount/DiscountScreen.kt`
+- [x] Forward: MRP + % → savings + final
+- [x] Reverse: MRP + final → %
 
 ### Phase 7.6 - Date Difference deliverables
 
-- [ ] `feature/datetime/datediff/DateDiffScreen.kt` + ViewModel
-- [ ] Mode 1: two dates → days/weeks/months/years
-- [ ] Mode 2: date + offset → resulting date
+- [x] `feature/datetime/datediff/DateDiffScreen.kt`
+- [x] Mode 1: two dates → y/m/d + total days + weeks remainder
+- [x] Mode 2: date + offset days → resulting date
 
 ### Phase 7.7 - Ovulation deliverables
 
-- [ ] `feature/health/ovulation/OvulationScreen.kt` + ViewModel
-- [ ] `core/domain/health/OvulationCalculator.kt` (pure Kotlin)
-- [ ] Inputs: last menstrual period (LMP) date + average cycle length (default 28, range 21-35)
-- [ ] Outputs:
-    - Next period start date (LMP + cycle length)
-    - Predicted ovulation date (next period - 14)
-    - Fertile window (ovulation - 5 to ovulation + 1, six-day span)
-    - Estimated due date if conception occurs this cycle (LMP + 280 days, Naegele's rule)
-- [ ] **Educational copy only.** Surface a one-line disclaimer that estimates are statistical and not a substitute for medical advice; not a contraception tool.
-- [ ] No data leaves the device; LMP is never persisted to history without an explicit "save" action (Phase 3 history layer).
+- [x] `feature/health/ovulation/OvulationScreen.kt`
+- [x] `core/domain/health/OvulationCalculator.kt` (pure Kotlin)
+- [x] Inputs: LMP date + average cycle length slider (default 28, range 21-35)
+- [x] Outputs: ovulation date, six-day fertile window, next period date, estimated due date (Naegele's rule)
+- [x] Educational disclaimer: "Estimator only. Cycles vary; this is not medical advice and not a contraception tool."
+- [x] No data leaves the device; LMP is in local Compose state only, never persisted
 
 ### Phase 7 - Unit tests (one suite per calculator)
 
-- [ ] **EMI:** `P=100000, r=10%/yr, n=12` → EMI ≈ `8791.59`, sum of payments ≈ `105499.1`
-- [ ] **EMI:** zero-interest loan (`r=0`) → `EMI = P/n`
-- [ ] **EMI:** amortisation: final balance = 0 (within ₹1 rounding)
-- [ ] **GST:** `1000 @ 18%` → CGST `90`, SGST `90`, gross `1180`
-- [ ] **GST:** inter-state `1000 @ 18%` → IGST `180`, no CGST/SGST
-- [ ] **BMI:** `70kg, 1.70m` → `24.22` → `Normal`
-- [ ] **BMI:** `170lb, 5'10"` matches metric equivalent within 0.1
-- [ ] **Age:** DOB `1990-01-15`, today `2026-05-18` → `36y 4m 3d`
-- [ ] **Age:** leap-year DOB Feb 29 → correct in non-leap-year today
-- [ ] **Discount:** MRP `2000`, 20% off → final `1600`, savings `400`
-- [ ] **Discount reverse:** MRP `2000`, final `1500` → `25%`
-- [ ] **DateDiff:** `2024-02-29` to `2025-02-28` → `0y 11m 30d` (or document spec)
-- [ ] **DateDiff:** add `90d` to `2026-01-01` → `2026-04-01`
-- [ ] **Ovulation:** LMP `2026-05-01`, cycle `28` → ovulation `2026-05-15`, fertile `2026-05-10`..`2026-05-16`, next period `2026-05-29`, due date `2027-02-04`
-- [ ] **Ovulation:** non-default cycle length `35` → ovulation = LMP + 21 (next period - 14), fertile window shifts accordingly
-- [ ] **Ovulation:** rejects cycle length outside 21-35 with a typed error
+- [x] **EMI:** `P=100000, r=10%/yr, n=12` → EMI ≈ `8791.59`, total paid ≈ `105499.07`
+- [x] **EMI:** zero-interest loan (`r=0`) → `EMI = P/n`
+- [x] **EMI:** amortisation: final balance = 0 within rounding; rows sum to total paid
+- [x] **GST:** `1000 @ 18%` intra-state → CGST `90`, SGST `90`, gross `1180`
+- [x] **GST:** inter-state `1000 @ 18%` → IGST `180`, no CGST/SGST; reverse `1180@18%` recovers `1000` net
+- [x] **BMI:** `70kg, 1.70m` → `24.22` → `Normal`; each category boundary asserted
+- [x] **BMI:** `170lb, 5'10"` matches metric equivalent within 0.1
+- [x] **Age:** DOB `1990-01-15`, today `2026-05-18` → `36y 4m 3d`, Monday
+- [x] **Age:** Feb 29 in non-leap year falls back to Feb 28
+- [x] **Discount:** MRP `2000`, 20% off → final `1600`, savings `400`; 100% off → 0
+- [x] **Discount reverse:** MRP `2000`, final `1500` → `25%`
+- [x] **DateDiff:** `2024-02-29` to `2025-02-28` → `0y 11m 30d` (365 days / 52w 1d)
+- [x] **DateDiff:** add `90d` to `2026-01-01` → `2026-04-01`; -1d goes to 2025-12-31; argument-swap symmetry
+- [x] **Ovulation:** LMP `2026-05-01`, cycle `28` → ovulation `2026-05-15`, fertile `2026-05-10`..`2026-05-16`, next period `2026-05-29`, due date `2027-02-05`
+- [x] **Ovulation:** cycle `35` → ovulation +7d from default
+- [x] **Ovulation:** rejects cycle length outside 21-35 with `IllegalArgumentException`
 
 ### Phase 7 - Compose UI tests
 
