@@ -32,7 +32,13 @@ import androidx.compose.material.icons.filled.Functions
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MonitorWeight
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Cake
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Percent
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.AssistChip
@@ -95,6 +101,7 @@ import java.math.BigDecimal
 fun BasicCalculatorScreen(
     onOpenUnitConverter: () -> Unit = {},
     onOpenCurrencyConverter: () -> Unit = {},
+    onOpenLifeCalc: (Any) -> Unit = {},
     viewModel: BasicCalculatorViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -103,6 +110,7 @@ fun BasicCalculatorScreen(
         onEvent = viewModel::onEvent,
         onOpenUnitConverter = onOpenUnitConverter,
         onOpenCurrencyConverter = onOpenCurrencyConverter,
+        onOpenLifeCalc = onOpenLifeCalc,
     )
 }
 
@@ -120,6 +128,7 @@ internal fun BasicCalculatorScreenContent(
     onEvent: (BasicCalculatorEvent) -> Unit,
     onOpenUnitConverter: () -> Unit = {},
     onOpenCurrencyConverter: () -> Unit = {},
+    onOpenLifeCalc: (Any) -> Unit = {},
 ) {
     var openSheet by remember { mutableStateOf<MenuSheet?>(null) }
     val sheetState = rememberModalBottomSheetState()
@@ -219,6 +228,11 @@ internal fun BasicCalculatorScreenContent(
                             openSheet = null
                             onOpenCurrencyConverter()
                         },
+                        onOpenLifeCalc = { route ->
+                            scope.launch { sheetState.hide() }
+                            openSheet = null
+                            onOpenLifeCalc(route)
+                        },
                         onClose = {
                             scope.launch { sheetState.hide() }
                             openSheet = null
@@ -272,6 +286,7 @@ private fun ToolsSheetContent(
     onOpenSettings: () -> Unit,
     onOpenUnitConverter: () -> Unit,
     onOpenCurrencyConverter: () -> Unit,
+    onOpenLifeCalc: (Any) -> Unit,
     onClose: () -> Unit,
 ) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
@@ -319,18 +334,53 @@ private fun ToolsSheetContent(
                     onTap = onOpenCurrencyConverter,
                 ),
                 ToolTile(
-                    icon = Icons.Filled.Percent,
-                    label = "Finance",
-                    enabled = false,
+                    icon = Icons.Filled.AccountBalance,
+                    label = "Loan",
+                    enabled = true,
                     selected = false,
-                    onTap = onClose,
+                    onTap = { onOpenLifeCalc(com.calculator.navigation.LoanRoute) },
+                ),
+                ToolTile(
+                    icon = Icons.Filled.Receipt,
+                    label = "GST",
+                    enabled = true,
+                    selected = false,
+                    onTap = { onOpenLifeCalc(com.calculator.navigation.GstRoute) },
+                ),
+                ToolTile(
+                    icon = Icons.Filled.LocalOffer,
+                    label = "Discount",
+                    enabled = true,
+                    selected = false,
+                    onTap = { onOpenLifeCalc(com.calculator.navigation.DiscountRoute) },
                 ),
                 ToolTile(
                     icon = Icons.Filled.MonitorWeight,
-                    label = "Health",
-                    enabled = false,
+                    label = "BMI",
+                    enabled = true,
                     selected = false,
-                    onTap = onClose,
+                    onTap = { onOpenLifeCalc(com.calculator.navigation.BmiRoute) },
+                ),
+                ToolTile(
+                    icon = Icons.Filled.Cake,
+                    label = "Age",
+                    enabled = true,
+                    selected = false,
+                    onTap = { onOpenLifeCalc(com.calculator.navigation.AgeRoute) },
+                ),
+                ToolTile(
+                    icon = Icons.Filled.DateRange,
+                    label = "Date diff",
+                    enabled = true,
+                    selected = false,
+                    onTap = { onOpenLifeCalc(com.calculator.navigation.DateDiffRoute) },
+                ),
+                ToolTile(
+                    icon = Icons.Filled.Favorite,
+                    label = "Ovulation",
+                    enabled = true,
+                    selected = false,
+                    onTap = { onOpenLifeCalc(com.calculator.navigation.OvulationRoute) },
                 ),
                 ToolTile(
                     icon = Icons.Filled.Settings,

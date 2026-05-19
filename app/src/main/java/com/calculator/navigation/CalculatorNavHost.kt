@@ -7,6 +7,13 @@ import androidx.navigation.compose.rememberNavController
 import com.calculator.feature.basic.ui.BasicCalculatorScreen
 import com.calculator.feature.converter.currency.CurrencyConverterScreen
 import com.calculator.feature.converter.unit.UnitConverterScreen
+import com.calculator.feature.datetime.age.AgeScreen
+import com.calculator.feature.datetime.datediff.DateDiffScreen
+import com.calculator.feature.finance.discount.DiscountScreen
+import com.calculator.feature.finance.gst.GstScreen
+import com.calculator.feature.finance.loan.LoanScreen
+import com.calculator.feature.health.bmi.BmiScreen
+import com.calculator.feature.health.ovulation.OvulationScreen
 
 /**
  * Root navigation host.
@@ -30,6 +37,7 @@ fun CalculatorNavHost() {
             BasicCalculatorScreen(
                 onOpenUnitConverter = { navController.navigate(UnitConverterRoute) },
                 onOpenCurrencyConverter = { navController.navigate(CurrencyConverterRoute) },
+                onOpenLifeCalc = { route -> navController.navigate(route) },
             )
         }
 
@@ -40,5 +48,13 @@ fun CalculatorNavHost() {
         composable<CurrencyConverterRoute> {
             CurrencyConverterScreen(onUp = navController::popBackStack)
         }
+
+        composable<LoanRoute> { LoanScreen(onUp = navController::popBackStack) }
+        composable<GstRoute> { GstScreen(onUp = navController::popBackStack) }
+        composable<DiscountRoute> { DiscountScreen(onUp = navController::popBackStack) }
+        composable<BmiRoute> { BmiScreen(onUp = navController::popBackStack) }
+        composable<AgeRoute> { AgeScreen(onUp = navController::popBackStack) }
+        composable<DateDiffRoute> { DateDiffScreen(onUp = navController::popBackStack) }
+        composable<OvulationRoute> { OvulationScreen(onUp = navController::popBackStack) }
     }
 }
