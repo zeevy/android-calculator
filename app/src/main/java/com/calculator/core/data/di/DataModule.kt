@@ -7,6 +7,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
 import com.calculator.core.data.converter.RoomUnitConverterRepository
 import com.calculator.core.data.converter.UnitConverterRepository
+import com.calculator.core.data.rates.DefaultRatesRepository
+import com.calculator.core.data.rates.RatesRepository
 import com.calculator.core.data.db.CalculatorDatabase
 import com.calculator.core.data.db.HistoryDao
 import com.calculator.core.data.history.HistoryRepository
@@ -65,6 +67,16 @@ object DataModule {
 
     @Provides
     @Singleton
+    fun provideCurrencyRateDao(db: CalculatorDatabase): com.calculator.core.data.db.CurrencyRateDao =
+        db.currencyRateDao()
+
+    @Provides
+    @Singleton
+    fun provideFavoriteCurrencyDao(db: CalculatorDatabase): com.calculator.core.data.db.FavoriteCurrencyDao =
+        db.favoriteCurrencyDao()
+
+    @Provides
+    @Singleton
     fun provideUserSettingsDataStore(
         @ApplicationContext context: Context,
     ): DataStore<Preferences> = context.userSettingsDataStore
@@ -89,4 +101,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindUnitConverterRepository(impl: RoomUnitConverterRepository): UnitConverterRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindRatesRepository(impl: DefaultRatesRepository): RatesRepository
 }

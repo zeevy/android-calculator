@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MonitorWeight
 import androidx.compose.material.icons.filled.Percent
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.BottomSheetDefaults
@@ -93,6 +94,7 @@ import java.math.BigDecimal
 @Composable
 fun BasicCalculatorScreen(
     onOpenUnitConverter: () -> Unit = {},
+    onOpenCurrencyConverter: () -> Unit = {},
     viewModel: BasicCalculatorViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -100,6 +102,7 @@ fun BasicCalculatorScreen(
         state = state,
         onEvent = viewModel::onEvent,
         onOpenUnitConverter = onOpenUnitConverter,
+        onOpenCurrencyConverter = onOpenCurrencyConverter,
     )
 }
 
@@ -116,6 +119,7 @@ internal fun BasicCalculatorScreenContent(
     state: BasicCalculatorUiState,
     onEvent: (BasicCalculatorEvent) -> Unit,
     onOpenUnitConverter: () -> Unit = {},
+    onOpenCurrencyConverter: () -> Unit = {},
 ) {
     var openSheet by remember { mutableStateOf<MenuSheet?>(null) }
     val sheetState = rememberModalBottomSheetState()
@@ -210,6 +214,11 @@ internal fun BasicCalculatorScreenContent(
                             openSheet = null
                             onOpenUnitConverter()
                         },
+                        onOpenCurrencyConverter = {
+                            scope.launch { sheetState.hide() }
+                            openSheet = null
+                            onOpenCurrencyConverter()
+                        },
                         onClose = {
                             scope.launch { sheetState.hide() }
                             openSheet = null
@@ -262,6 +271,7 @@ private fun ToolsSheetContent(
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenUnitConverter: () -> Unit,
+    onOpenCurrencyConverter: () -> Unit,
     onClose: () -> Unit,
 ) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
@@ -295,11 +305,18 @@ private fun ToolsSheetContent(
                     onTap = onOpenHistory,
                 ),
                 ToolTile(
-                    icon = Icons.Filled.CurrencyExchange,
-                    label = "Converter",
+                    icon = Icons.Filled.Straighten,
+                    label = "Units",
                     enabled = true,
                     selected = false,
                     onTap = onOpenUnitConverter,
+                ),
+                ToolTile(
+                    icon = Icons.Filled.CurrencyExchange,
+                    label = "Currency",
+                    enabled = true,
+                    selected = false,
+                    onTap = onOpenCurrencyConverter,
                 ),
                 ToolTile(
                     icon = Icons.Filled.Percent,

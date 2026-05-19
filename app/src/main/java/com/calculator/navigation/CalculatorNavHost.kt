@@ -5,6 +5,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.calculator.feature.basic.ui.BasicCalculatorScreen
+import com.calculator.feature.converter.currency.CurrencyConverterScreen
 import com.calculator.feature.converter.unit.UnitConverterScreen
 
 /**
@@ -28,11 +29,16 @@ fun CalculatorNavHost() {
         composable<BasicCalculatorRoute> {
             BasicCalculatorScreen(
                 onOpenUnitConverter = { navController.navigate(UnitConverterRoute) },
+                onOpenCurrencyConverter = { navController.navigate(CurrencyConverterRoute) },
             )
         }
 
         composable<UnitConverterRoute> {
             UnitConverterScreen(onUp = navController::popBackStack)
+        }
+
+        composable<CurrencyConverterRoute> {
+            CurrencyConverterScreen(onUp = navController::popBackStack)
         }
     }
 }
