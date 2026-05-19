@@ -549,21 +549,21 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 8 - Deliverables
 
-- [ ] Content descriptions on every key (basic + scientific) and every actionable icon
-- [ ] Minimum touch target `48dp` enforced via a custom modifier or design-system button
-- [ ] Locale-aware `NumberFormat` at all UI display boundaries (engine stays canonical)
-- [ ] String resources moved to `values/strings.xml` (English) + `values-hi/strings.xml` (Hindi)
-- [ ] RTL-safe layouts (`start`/`end` instead of `left`/`right`)
-- [ ] Home screen: search bar that jumps to any tool by name
-- [ ] Static launcher shortcuts: "New calculation", top 2 tools (`shortcuts.xml`)
-- [ ] Dynamic shortcuts updated to recent tools
+- [~] Content descriptions on every key and actionable icon - keypad, hamburger, swap, back, refresh, history-delete, currency pin all have descriptions; audit pass against every screen is a follow-up
+- [~] Minimum touch target `48dp` - keypad buttons use `aspectRatio(1.6f)` which on portrait keeps them well above 48dp; explicit modifier helper still pending
+- [x] Locale-aware `NumberFormatter` utility (en-US, en-IN with lakh grouping, de-DE, plus parse). Adoption at every UI boundary is a follow-up (currently in place at `NumberFormatter.format`/`money`; screens still use locale-fixed DecimalFormat)
+- [x] String resources extracted into `values/strings.xml` (~95 keys covering shell, tools menu, settings, history, life-calculator titles + disclaimers) + `values-hi/strings.xml` Hindi translations
+- [~] RTL-safe layouts - Compose uses logical start/end by default; explicit RTL preview audit pending
+- [ ] Home-screen search bar (deferred - tools menu already gives one-tap access; search is a power-user addition)
+- [x] Static launcher shortcuts: new calculation, unit converter, currency converter (`shortcuts.xml` + manifest + NavHost deep-link wiring)
+- [ ] Dynamic shortcuts driven by recent usage
 - [ ] High-contrast mode honored on Android 14+
 
 ### Phase 8 - Unit tests
 
-- [ ] Number formatter: `1234567.89` → `1,234,567.89` (en-US), `12,34,567.89` (en-IN), `1.234.567,89` (de-DE)
-- [ ] Date formatter: `2026-05-18` rendered per locale
-- [ ] Search index returns "Loan" for query `emi`, `loan`, `कर्ज`
+- [x] Number formatter: en-US/en-IN/de-DE assertions all pass; money formatter keeps two decimals; parse round-trip via the German locale; negative-sign placement
+- [ ] Date formatter test (system DateFormat is in use but no explicit suite yet)
+- [ ] Search index returns "Loan" for query `emi`, `loan`, `कर्ज` (deferred with the search bar)
 
 ### Phase 8 - Compose UI / instrumented tests
 
