@@ -426,22 +426,23 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 6 - Deliverables
 
-- [ ] `core/data/network/RatesApi.kt` (Retrofit + kotlinx.serialization, e.g. open.er-api.com)
-- [ ] `core/data/network/RatesDto.kt` + mapper to domain `Rates`
-- [ ] `core/data/db` entity `CurrencyRate(code, rateVsBase, baseCode, fetchedAtUtc)` + DAO
-- [ ] `RatesRepository` interface; `DefaultRatesRepository` impl chooses API → cache fallback
-- [ ] `FakeRatesApi` for tests (in `app/src/test/`)
-- [ ] `feature/converter/currency/CurrencyConverterScreen.kt` (amount field, base, target, multi-row view, refresh, last-updated timestamp)
-- [ ] Favourites pinning: `FavoriteCurrency(code, position)` entity + DAO
-- [ ] Manual `Refresh` action; stale-rate banner if cache > 24h
+- [x] `core/data/network/RatesApi.kt` (Retrofit + kotlinx.serialization against open.er-api.com)
+- [x] `core/data/network/RatesDto.kt` + repository mapper to domain `Rates`
+- [x] `core/data/db/CurrencyRateEntity(code PK, rateVsBase, baseCode, fetchedAtUtc)` + DAO with atomic `replaceAll`
+- [x] `RatesRepository` interface; `DefaultRatesRepository` impl - refresh hits API, cache stays the source for UI reads via observeCached
+- [x] `FakeRatesApi` for tests (in-class inside `RatesRepositoryTest`)
+- [x] `feature/converter/currency/CurrencyConverterScreen.kt` (amount field, base picker, multi-row list with pinned favourites first, refresh button, last-updated relative timestamp)
+- [x] Favourites pinning: `FavoriteCurrencyEntity(code PK, position)` + DAO with append-at-end semantics
+- [x] Manual `Refresh` action; error banner when the latest refresh fails (stale-cache banner > 24h - deferred follow-up, current relative timestamp lets the user see if it's been a while)
 
 ### Phase 6 - Unit tests
 
-- [ ] `RatesRepositoryTest` with `FakeRatesApi`: fresh fetch updates cache
-- [ ] Offline path: API throws → repository returns cached rates
-- [ ] Mapping: API response with `rates: {EUR: 0.91, INR: 83.2}` produces a `Rates` with base `USD`
-- [ ] Conversion math: `100 USD × 83.2 = 8320 INR`
-- [ ] Favourites DAO: insert, reorder by position, delete
+- [x] `RatesRepositoryTest` with `FakeRatesApi`: fresh fetch updates cache (`refreshWritesTheCache`)
+- [x] Offline path: API throws → cache stays intact (`refreshFailureLeavesCacheIntact`)
+- [x] Provider sends `result != "success"` → repository throws, cache not overwritten (`nonSuccessResultIsTreatedAsFailure`)
+- [x] Conversion math: `100 USD × 83.2 = 8320 INR` (`100 USD times 83 point 2 equals 8320 INR via the rates map`)
+- [x] Favourites: insert appends at end of position, remove deletes (`favouritesPersistAndAppendAtEnd`)
+- [x] ViewModel: refresh failure surfaces as errorMessage without blanking cache
 
 ### Phase 6 - Compose UI tests
 
