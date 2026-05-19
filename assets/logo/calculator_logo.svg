@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Calculator app logo (master).
+
+  Design notes:
+   - 1024x1024 canvas (matches Google Play store-listing requirement).
+   - Black background (#1C1C1E - the same near-black the in-app sheet
+     uses) with an orange (#FF9F0A) accent equals glyph that mirrors
+     the operator-key colour in the keypad. Picks the two strongest
+     visual signatures from the app and turns them into the launcher
+     mark.
+   - The trailing dot to the right of the "=" reads as a result cursor;
+     it gives the mark forward motion (left-to-right read order) and
+     subtly differentiates from generic "equals" icons.
+   - Centred on the 1024px canvas with a 192px safe margin from each
+     edge, which keeps the glyph well inside Android's adaptive-icon
+     72dp inner safe zone when the mark is rendered into a 108x108
+     foreground.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+    <!-- Background tile -->
+    <rect width="1024" height="1024" fill="#1C1C1E"/>
+
+    <!-- Top bar of the equals sign -->
+    <rect x="248" y="416" width="448" height="80" rx="40" ry="40" fill="#FF9F0A"/>
+
+    <!-- Bottom bar of the equals sign -->
+    <rect x="248" y="544" width="448" height="80" rx="40" ry="40" fill="#FF9F0A"/>
+
+    <!-- Result dot - reads as a cursor / "result follows" marker -->
+    <circle cx="784" cy="520" r="56" fill="#FF9F0A"/>
+</svg>

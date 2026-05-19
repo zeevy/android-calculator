@@ -1,17 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Placeholder foreground for the adaptive launcher icon.
+  Adaptive-icon foreground: an orange "=" sign with a trailing result dot.
 
-  This is a minimal "=" mark inside the safe zone (66dp center of the
-  108dp canvas). Replace with a designer-supplied vector before the first
-  Play Store release.
+  Mirrors the master SVG at assets/logo/calculator_logo.svg, scaled
+  from the 1024-pixel canvas down to the 108-unit adaptive-icon
+  viewport (108 / 1024 = 0.10547):
+
+      Equals bars: 448x80 px        ->  47.25x8.4375 vu
+      Bar corner radius: 40 px      ->  4.219 vu
+      Top bar at y=416 px           ->  y=43.875 vu
+      Bottom bar at y=544 px        ->  y=57.375 vu
+      Result dot: r=56 px @ cx=784  ->  r=5.906 @ cx=82.69 vu
+
+  Every element sits inside Android's 72-unit inner safe zone
+  (centred at 54,54 with +/-36 radius), so no part is cropped under
+  any launcher mask (circle / squircle / squared / teardrop).
+
+  The same path is reused as the monochrome variant referenced by
+  the adaptive-icon XML, so Android 13+ themed icons paint the mark
+  in the user's chosen wallpaper-tinted colour.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- Top bar of the equals: pill from (26.156, 43.875)
+         to (73.406, 52.3125), corner radius 4.219. -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M40,46 L68,46 L68,52 L40,52 Z M40,58 L68,58 L68,64 L40,64 Z" />
+        android:fillColor="#FF9F0A"
+        android:pathData="M30.375,43.875 H69.187 A4.219,4.219 0 0 1 69.187,52.313 H30.375 A4.219,4.219 0 0 1 30.375,43.875 Z" />
+
+    <!-- Bottom bar of the equals (top bar offset down by 13.5 vu). -->
+    <path
+        android:fillColor="#FF9F0A"
+        android:pathData="M30.375,57.375 H69.187 A4.219,4.219 0 0 1 69.187,65.813 H30.375 A4.219,4.219 0 0 1 30.375,57.375 Z" />
+
+    <!-- Result dot: circle centred at (82.688, 54.844), radius 5.906. -->
+    <path
+        android:fillColor="#FF9F0A"
+        android:pathData="M76.781,54.844 A5.906,5.906 0 1 1 88.594,54.844 A5.906,5.906 0 1 1 76.781,54.844 Z" />
 </vector>
