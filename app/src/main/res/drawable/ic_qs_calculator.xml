@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Quick Settings tile icon. White (system-tinted in the shade) glyph
+  on a transparent background. The system applies its own state-list
+  tinting based on tile active/inactive, so this drawable only needs
+  the silhouette.
+
+  Shape: a single bold "=" - small enough to read at 24dp, recognisable
+  as math.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?android:attr/colorControlNormal">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M5,10 H19 A1.5,1.5 0 0 1 19,13 H5 A1.5,1.5 0 0 1 5,10 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M5,15 H19 A1.5,1.5 0 0 1 19,18 H5 A1.5,1.5 0 0 1 5,15 Z" />
+</vector>

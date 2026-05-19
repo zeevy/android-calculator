@@ -20,6 +20,33 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object BasicCalculatorRoute
 
+@Serializable
+data object UnitConverterRoute
+
+@Serializable
+data object CurrencyConverterRoute
+
+@Serializable
+data object LoanRoute
+
+@Serializable
+data object GstRoute
+
+@Serializable
+data object DiscountRoute
+
+@Serializable
+data object BmiRoute
+
+@Serializable
+data object AgeRoute
+
+@Serializable
+data object DateDiffRoute
+
+@Serializable
+data object OvulationRoute
+
 // Future destinations follow the same pattern, e.g.:
 // @Serializable data object SettingsRoute
 // @Serializable data class CurrencyConverterRoute(val baseCurrency: String? = null)

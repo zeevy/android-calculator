@@ -1,0 +1,15 @@
+# Baseline profile.
+#
+# This file is **regenerated** by the :baselineprofile module:
+#   ./gradlew :app:generateReleaseBaselineProfile
+#
+# It should be committed - the AOT compilation of the rules here is
+# what lets cold start hit the < 600 ms target on a Pixel 6a-class
+# device. CI re-runs the generator on `main` and fails if the rules
+# diverge from this snapshot beyond an allowed threshold.
+#
+# Rules are one method-or-class signature per line. While the file
+# is empty (or contains only this comment block) the app still runs;
+# it just doesn't get any AOT benefit. The first real run of
+# generateBaselineProfile against the calculator's hot paths will
+# replace this content with several thousand rules.

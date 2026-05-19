@@ -25,14 +25,23 @@ console-reports:
 complexity:
   active: true
   LongMethod:
-    threshold: 100
+    # Compose screen content composables naturally trend long because
+    # layout is expressed inline; 150 lets a typical full-screen scaffold
+    # fit without forcing artificial splits, while still flagging genuine
+    # monoliths.
+    threshold: 150
   LongParameterList:
     functionThreshold: 7
     constructorThreshold: 8
   CyclomaticComplexMethod:
     # Tokenizer + ViewModel append rule grow with each input class supported;
-    # 25 leaves room without letting genuine spaghetti through.
-    threshold: 25
+    # 30 leaves room without letting genuine spaghetti through.
+    threshold: 30
+  ComplexCondition:
+    # Tokenizer / converter normalisation paths string together 4 short
+    # checks intentionally; the alternative is naming each predicate which
+    # hurts readability more than it helps.
+    threshold: 5
   # Shunting-Yard naturally produces a switch-inside-while pattern; 5 is
   # tight enough to catch genuine over-nesting elsewhere.
   NestedBlockDepth:
@@ -43,6 +52,7 @@ complexity:
     thresholdInInterfaces: 15
     thresholdInObjects: 15
     thresholdInEnums: 15
+
 
 empty-blocks:
   active: true
@@ -75,6 +85,11 @@ style:
     excludeImportStatements: true
   ReturnCount:
     max: 4
+  # Tokenizer + factorial validate several typed error paths before they
+  # commit to a computation; each throw maps to a distinct user-visible
+  # error and pulling them into a helper would only obscure intent.
+  ThrowsCount:
+    max: 5
   WildcardImport:
     active: true
 

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Macrobenchmarks need to query other packages on Android 11+ via
+         the package visibility model. The target app sits under :app and
+         is identified by its applicationId at runtime. -->
+    <queries>
+        <package android:name="com.calculator" />
+        <package android:name="com.calculator.benchmark" />
+    </queries>
+</manifest>
