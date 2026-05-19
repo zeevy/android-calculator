@@ -18,8 +18,7 @@ import com.calculator.feature.lifecalc.LifeCalcNumberField
 import com.calculator.feature.lifecalc.LifeCalcOutputRow
 import com.calculator.feature.lifecalc.LifeCalcSectionLabel
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
+import com.calculator.core.common.format.NumberFormatter
 import java.util.Locale
 
 /**
@@ -77,9 +76,9 @@ fun LoanScreen(onUp: () -> Unit) {
         if (result != null) {
             LifeCalcCard {
                 LifeCalcSectionLabel("Result")
-                LifeCalcOutputRow("Monthly EMI", money.format(result.emi), accent = true)
-                LifeCalcOutputRow("Total interest", money.format(result.totalInterest))
-                LifeCalcOutputRow("Total paid", money.format(result.totalPayment))
+                LifeCalcOutputRow("Monthly EMI", money(result.emi), accent = true)
+                LifeCalcOutputRow("Total interest", money(result.totalInterest))
+                LifeCalcOutputRow("Total paid", money(result.totalPayment))
             }
             Spacer(Modifier.size(4.dp))
             Text(
@@ -101,14 +100,13 @@ fun LoanScreen(onUp: () -> Unit) {
     }
 }
 
-// Western thousands grouping ("#,##0.00"). Currency symbols are
-// deliberately omitted: the EMI value is unitless until the user
-// picks a locale, and Loan/EMI is most often used with INR where
-// the lakh grouping is handled by NumberFormatter at the basic
-// calculator boundary - here we keep it simple and locale-neutral.
-private val money: DecimalFormat by lazy {
-    DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale.US))
-}
+// Money formatting routes through [NumberFormatter.money] so a user
+// running the app in en-IN sees lakh/crore grouping ("1,23,456.78"),
+// en-US sees thousands grouping ("123,456.78"), de-DE sees swapped
+// separators ("123.456,78"). Currency symbols are deliberately
+// omitted - the EMI value is unitless until the user picks a locale.
+private fun money(value: Double): String =
+    NumberFormatter.money(value, Locale.getDefault())
 
 // No-op extension to keep the Compose padding import valid without
 // applying any extra padding. The footnote Text composable references

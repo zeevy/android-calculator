@@ -94,7 +94,10 @@ class UnitConverterViewModelTest {
                     ?.symbol,
             )
             assertEquals("1", viewModel.state.value.fromInput)
-            assertEquals("1000", viewModel.state.value.toOutput)
+            // toOutput goes through NumberFormatter so the running
+            // locale adds grouping ("1,000" in en-US, "1.000" in de-DE).
+            // Test JVM defaults to en-US; expect the comma-grouped form.
+            assertEquals("1,000", viewModel.state.value.toOutput)
         }
 
     @Test

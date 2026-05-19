@@ -29,8 +29,7 @@ import com.calculator.feature.lifecalc.LifeCalcSectionLabel
 import com.calculator.feature.lifecalc.LifeCalcSegmentBackground
 import com.calculator.feature.lifecalc.LifeCalcSegmented
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
+import com.calculator.core.common.format.NumberFormatter
 import java.util.Locale
 
 /**
@@ -117,14 +116,14 @@ fun GstScreen(onUp: () -> Unit) {
                     color = Color.White.copy(alpha = 0.55f),
                 )
             } else {
-                LifeCalcOutputRow("Net", money.format(result.net))
+                LifeCalcOutputRow("Net", money(result.net))
                 if (intraStateIdx == 0) {
-                    LifeCalcOutputRow("CGST", money.format(result.cgst))
-                    LifeCalcOutputRow("SGST", money.format(result.sgst))
+                    LifeCalcOutputRow("CGST", money(result.cgst))
+                    LifeCalcOutputRow("SGST", money(result.sgst))
                 } else {
-                    LifeCalcOutputRow("IGST", money.format(result.igst))
+                    LifeCalcOutputRow("IGST", money(result.igst))
                 }
-                LifeCalcOutputRow("Gross", money.format(result.gross), accent = true)
+                LifeCalcOutputRow("Gross", money(result.gross), accent = true)
             }
         }
     }
@@ -166,6 +165,8 @@ private fun RatePresets(selected: String, onSelect: (String) -> Unit) {
     }
 }
 
-private val money: DecimalFormat by lazy {
-    DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale.US))
-}
+// Money formatter routes through [NumberFormatter.money] so the
+// running locale picks the right grouping (en-IN lakh, de-DE swapped
+// separators, etc.).
+private fun money(value: Double): String =
+    NumberFormatter.money(value, Locale.getDefault())

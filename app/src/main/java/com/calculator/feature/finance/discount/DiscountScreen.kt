@@ -16,8 +16,7 @@ import com.calculator.feature.lifecalc.LifeCalcOutputRow
 import com.calculator.feature.lifecalc.LifeCalcSectionLabel
 import com.calculator.feature.lifecalc.LifeCalcSegmented
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
+import com.calculator.core.common.format.NumberFormatter
 import java.util.Locale
 
 /**
@@ -75,25 +74,26 @@ fun DiscountScreen(onUp: () -> Unit) {
                     color = Color.White.copy(alpha = 0.55f),
                 )
             } else {
-                LifeCalcOutputRow("Savings", money.format(result.savings))
-                LifeCalcOutputRow("Final price", money.format(result.finalPrice), accent = true)
-                LifeCalcOutputRow("Discount", "${percent.format(result.percentOff)} %")
+                LifeCalcOutputRow("Savings", money(result.savings))
+                LifeCalcOutputRow("Final price", money(result.finalPrice), accent = true)
+                LifeCalcOutputRow("Discount", "${percent(result.percentOff)} %")
             }
         }
     }
 }
 
-// Fixed 2-decimal money format - sane default for any currency. Lazy
-// because DecimalFormat instances are not thread-safe and constructing
-// one is cheap relative to keeping a singleton; lazy + by-property
-// avoids the warm-up cost on screens that never render the discount.
-private val money: DecimalFormat by lazy {
-    DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale.US))
-}
+// Money formatter routes through [NumberFormatter.money] for locale-
+// aware grouping (en-IN lakh, de-DE swapped separators, etc.).
+private fun money(value: Double): String =
+    NumberFormatter.money(value, Locale.getDefault())
 
 // Percent shows up to two decimals only when the trailing fractional
-// part is non-zero ("20" not "20.00", but "12.34" stays). The `##`
-// suffix is DecimalFormat shorthand for "include if significant".
-private val percent: DecimalFormat by lazy {
-    DecimalFormat("#,##0.##", DecimalFormatSymbols(Locale.US))
-}
+// part is non-zero ("20" not "20.00", but "12.34" stays). Min-fraction
+// 0 lets [NumberFormatter] omit the decimal point on whole percents.
+private fun percent(value: Double): String =
+    NumberFormatter.format(
+        value = value,
+        locale = Locale.getDefault(),
+        minFractionDigits = 0,
+        maxFractionDigits = 2,
+    )

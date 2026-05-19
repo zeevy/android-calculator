@@ -67,7 +67,7 @@ jobs:
           disable-animations: true
           script: echo "Generated AVD snapshot."
 
-      - name: Generate baseline profile
+      - name: Generate baseline profile + run startup benchmark
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -76,11 +76,36 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: ./gradlew :app:generateReleaseBaselineProfile --stacktrace
+          # Generate the profile, then run the Macrobenchmark startup
+          # benchmarks. The startup test produces a benchmarkData.json
+          # which the regression gate below reads.
+          script: |
+            ./gradlew :app:generateReleaseBaselineProfile --stacktrace
+            ./gradlew :baselineprofile:connectedBenchmarkAndroidTest --stacktrace
+
+      - name: Gate cold-start regression at 10%
+        # Compares the measured cold-start P50 (Partial+BaselineProfile
+        # compilation row) against the committed baseline at
+        # baselineprofile/baseline-startup.json. Fails the workflow if
+        # the new run is more than 10 percent slower. Update the JSON
+        # when a regression is intentional (e.g. shipping a heavier
+        # feature) and call it out in the PR description.
+        run: ./baselineprofile/scripts/check-startup-regression.sh
 
       - name: Upload generated profile
         uses: actions/upload-artifact@v5
         with:
           name: baseline-prof
           path: app/src/main/baseline-prof.txt
+          retention-days: 30
+
+      - name: Upload macrobenchmark data
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: benchmark-data
+          # Macrobenchmark writes one JSON per device under
+          # connected_android_test_additional_output - glob it so we
+          # capture whatever the emulator-runner names the AVD.
+          path: baselineprofile/build/outputs/**/*benchmarkData.json
           retention-days: 30

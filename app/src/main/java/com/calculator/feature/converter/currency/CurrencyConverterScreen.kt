@@ -48,8 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
+import com.calculator.core.common.format.NumberFormatter
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -334,12 +333,22 @@ private fun CodePickerSheet(
     }
 }
 
-private val moneyFormat: DecimalFormat by lazy {
-    DecimalFormat("#,##0.00####", DecimalFormatSymbols(Locale.US))
-}
-
+// Currency-row amounts route through [NumberFormatter.format] so the
+// running locale picks grouping + decimal separators. We allow up to
+// six fractional digits because some currencies (KWD, BHD, JOD) quote
+// to three places; values smaller than 1 also benefit from extra
+// precision so we don't lose signal on micro-conversions.
 private fun formatMoney(value: Double): String =
-    if (value == 0.0) "0.00" else moneyFormat.format(value)
+    if (value == 0.0) {
+        "0.00"
+    } else {
+        NumberFormatter.format(
+            value = value,
+            locale = Locale.getDefault(),
+            minFractionDigits = 2,
+            maxFractionDigits = 6,
+        )
+    }
 
 /**
  * Relative-time string for the "last updated" line.

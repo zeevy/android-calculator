@@ -2,6 +2,7 @@ package com.calculator.feature.converter.unit
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.calculator.core.common.format.NumberFormatter
 import com.calculator.core.data.converter.UnitConverterRepository
 import com.calculator.core.data.settings.SettingsRepository
 import com.calculator.core.domain.converter.ConversionTable
@@ -188,22 +189,34 @@ internal fun formatResult(value: Double, significantFigures: Int): String {
     val absValue = abs(value)
     val sigFigs = significantFigures.coerceIn(1, MAX_SIG_FIGS)
     val useScientific = absValue < SCIENTIFIC_LOWER_BOUND || absValue >= SCIENTIFIC_UPPER_BOUND
-    val symbols = DecimalFormatSymbols(Locale.US)
-    val format =
-        if (useScientific) {
-            DecimalFormat("0.${"#".repeat(sigFigs - 1)}E0", symbols)
-        } else {
-            // floor (not toInt) because toInt truncates toward zero, which
-            // miscounts magnitude for sub-unit values (log10(0.0006) is
-            // -3.2; floor gives -4 which is the correct order of
-            // magnitude).
-            val digitsAfterPoint =
-                (sigFigs - 1 - floor(log10(absValue)).toInt())
-                    .coerceAtLeast(0)
-                    .coerceAtMost(MAX_DECIMAL_DIGITS)
-            DecimalFormat("0.${"#".repeat(digitsAfterPoint)}", symbols)
-        }
-    return format.format(value)
+    val locale = Locale.getDefault()
+
+    if (useScientific) {
+        // Scientific notation routes through DecimalFormat with the
+        // locale's symbols so the decimal separator follows convention
+        // ("1.23E-5" in en-US, "1,23E-5" in de-DE). NumberFormatter
+        // doesn't have a scientific mode, so we keep DecimalFormat here.
+        val symbols = DecimalFormatSymbols.getInstance(locale)
+        val pattern = "0.${"#".repeat(sigFigs - 1)}E0"
+        return DecimalFormat(pattern, symbols).format(value)
+    }
+
+    // floor (not toInt) because toInt truncates toward zero, which
+    // miscounts magnitude for sub-unit values (log10(0.0006) is -3.2;
+    // floor gives -4, the correct order of magnitude).
+    val digitsAfterPoint =
+        (sigFigs - 1 - floor(log10(absValue)).toInt())
+            .coerceAtLeast(0)
+            .coerceAtMost(MAX_DECIMAL_DIGITS)
+    // Fixed-decimal path uses NumberFormatter so en-IN gets lakh
+    // grouping ("12,34,567.89") and de-DE gets swapped separators
+    // ("12.345,67"). Grouping enabled by default in NumberFormatter.
+    return NumberFormatter.format(
+        value = value,
+        locale = locale,
+        minFractionDigits = 0,
+        maxFractionDigits = digitsAfterPoint,
+    )
 }
 
 // Double-precision sane bounds for human-readable formatting.

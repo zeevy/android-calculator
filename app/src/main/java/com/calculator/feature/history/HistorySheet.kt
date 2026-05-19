@@ -1,12 +1,15 @@
 package com.calculator.feature.history
 
+import android.widget.Toast
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -17,12 +20,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +40,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -90,7 +101,7 @@ fun HistorySheetContent(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 items(entries, key = { it.id }) { entry ->
-                    HistoryRow(
+                    SwipeableHistoryRow(
                         entry = entry,
                         onTap = {
                             onReuseExpression(entry.expression)
@@ -126,31 +137,132 @@ fun HistorySheetContent(
 }
 
 /**
+ * Swipe-to-delete wrapper around [HistoryRow].
+ *
+ * Swiping the row left or right past the dismiss threshold flips the
+ * SwipeToDismissBox into a dismissed state, at which point we fire
+ * [onDelete]. The deletion is committed inside a [LaunchedEffect]
+ * keyed by the dismissed-state's current value so it runs exactly
+ * once per gesture; the row itself disappears on the next LazyColumn
+ * recomposition because the underlying repository emits a new list
+ * without this entry's id.
+ *
+ * Background pane: a red surface with a trash icon on the side the
+ * user is swiping toward. We respect both swipe directions so left-
+ * and right-handed users get equivalent affordances; the cue
+ * (trash icon) sits at the leading edge of whichever direction is
+ * active so it reads correctly as the row slides away.
+ *
+ * Note: Material3's SwipeToDismissBox API is still flagged
+ * experimental at 1.3.x; we OptIn here and re-evaluate on Material3
+ * stable upgrades.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeableHistoryRow(
+    entry: HistoryEntry,
+    onTap: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val dismissState =
+        rememberSwipeToDismissBoxState(
+            // Threshold roughly one-third of the row width feels right
+            // - any less and accidental long horizontal scrolls trip
+            // it; any more and intentional swipes need exaggerated
+            // motion to register.
+            positionalThreshold = { totalDistance -> totalDistance * 0.3f },
+        )
+
+    // Single-shot delete: any non-Settled value means the gesture
+    // completed past the threshold. Once we react we won't re-fire
+    // because the LazyColumn drops this composition next frame.
+    LaunchedEffect(dismissState.currentValue) {
+        if (dismissState.currentValue != SwipeToDismissBoxValue.Settled) {
+            onDelete()
+        }
+    }
+
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = { SwipeBackground(direction = dismissState.dismissDirection) },
+        content = {
+            HistoryRow(entry = entry, onTap = onTap, onDelete = onDelete)
+        },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeBackground(direction: SwipeToDismissBoxValue) {
+    // Settled means the user hasn't started swiping yet - render an
+    // empty box so we don't flash any red until they actually pull.
+    if (direction == SwipeToDismissBoxValue.Settled) {
+        Box(Modifier.fillMaxSize())
+        return
+    }
+    val alignment =
+        when (direction) {
+            SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
+            SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
+            else -> Alignment.Center
+        }
+    Box(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.errorContainer)
+                .padding(horizontal = 20.dp),
+        contentAlignment = alignment,
+    ) {
+        Icon(
+            imageVector = Icons.Filled.DeleteOutline,
+            contentDescription = null, // decorative - SwipeToDismissBox parent owns the a11y label
+            tint = MaterialTheme.colorScheme.onErrorContainer,
+        )
+    }
+}
+
+/**
  * Single history row: expression, "= result", timestamp, and a trash
  * icon on the right.
  *
- * Whole-row tap fires [onTap] (reuse), but the icon button sits inside
- * the same Row and gets first dibs on the gesture by virtue of being
- * an explicit clickable - tapping it does not also fire the row's
- * onClick. This is Compose's standard nested-clickable contract.
+ * Whole-row tap fires [onTap] (reuse). Long-press on the row copies
+ * "expression = result" to the system clipboard and shows a brief
+ * Toast confirming. The trash icon on the right delegates to
+ * [onDelete] directly - it lives inside the same Row so Compose's
+ * nested-clickable contract gives the icon first dibs on a tap, and
+ * the row's combinedClickable only fires for taps OUTSIDE the icon.
  *
  * @param entry History entry to render.
  * @param onTap Reuse this expression in the calculator.
  * @param onDelete Delete this entry from the DAO.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HistoryRow(
     entry: HistoryEntry,
     onTap: () -> Unit,
     onDelete: () -> Unit,
 ) {
+    val clipboard = LocalClipboardManager.current
+    val context = LocalContext.current
+    val copyOnLongPress = {
+        // Copying "expression = result" so the clipboard payload reads
+        // as a complete equation when pasted into a note or chat.
+        clipboard.setText(AnnotatedString("${entry.expression} = ${entry.result}"))
+        Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+    }
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainer)
-                .clickable(onClick = onTap)
+                .combinedClickable(
+                    onClick = onTap,
+                    onLongClick = copyOnLongPress,
+                )
                 .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
