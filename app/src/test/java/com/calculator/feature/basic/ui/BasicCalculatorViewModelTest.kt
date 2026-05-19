@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test
  */
 class BasicCalculatorViewModelTest {
     private val savedStateHandle = SavedStateHandle()
-    private val viewModel = BasicCalculatorViewModel(savedStateHandle)
+    private val viewModel = BasicCalculatorViewModel(savedStateHandle, historyRepository = null)
 
     private fun type(vararg symbols: String) = symbols.forEach { viewModel.onEvent(BasicCalculatorEvent.Append(it)) }
 

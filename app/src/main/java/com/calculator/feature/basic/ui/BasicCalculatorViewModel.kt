@@ -2,6 +2,9 @@ package com.calculator.feature.basic.ui
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.calculator.core.data.history.HistoryEntry
+import com.calculator.core.data.history.HistoryRepository
 import com.calculator.core.math.AngleMode
 import com.calculator.core.math.EvaluationResult
 import com.calculator.core.math.Evaluator
@@ -10,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import javax.inject.Inject
 
@@ -46,6 +50,7 @@ class BasicCalculatorViewModel
     @Inject
     constructor(
         private val savedStateHandle: SavedStateHandle,
+        private val historyRepository: HistoryRepository? = null,
     ) : ViewModel() {
         // Restore from the SavedStateHandle so calculator state survives
         // process death and config changes. `liveResult` is derived from
@@ -190,7 +195,16 @@ class BasicCalculatorViewModel
                 val (toEvaluate, repeatToken) = buildEquationToEvaluate(current)
 
                 when (val result = evaluatorFor(current.angleMode).evaluate(toEvaluate)) {
-                    is EvaluationResult.Success ->
+                    is EvaluationResult.Success -> {
+                        val canonicalResult = result.value.stripTrailingZeros().toPlainString()
+                        // Record into history only on a fresh equals (not on
+                        // a replay through pendingRepeat) so the repeat-equals
+                        // chain doesn't spam the table. The repository call is
+                        // a fire-and-forget; failures are non-fatal because
+                        // the user already saw their result.
+                        if (current.pendingRepeat == null) {
+                            recordHistory(toEvaluate, canonicalResult, current.scientific)
+                        }
                         current
                             .copy(
                                 // Replace the expression with the canonical result so the
@@ -198,11 +212,12 @@ class BasicCalculatorViewModel
                                 // `stripTrailingZeros` collapses `4.0` to `4` for display,
                                 // and `toPlainString` keeps it out of scientific notation so
                                 // the next keypress chains naturally.
-                                expression = result.value.stripTrailingZeros().toPlainString(),
+                                expression = canonicalResult,
                                 liveResult = null,
                                 errorMessage = null,
                                 pendingRepeat = repeatToken,
                             ).also(::persist)
+                    }
 
                     is EvaluationResult.Error ->
                         current
@@ -213,6 +228,19 @@ class BasicCalculatorViewModel
                             ).also(::persist)
                 }
             }
+
+        private fun recordHistory(expression: String, result: String, scientific: Boolean) {
+            val repo = historyRepository ?: return
+            viewModelScope.launch {
+                runCatching {
+                    repo.add(
+                        expression = expression,
+                        result = result,
+                        type = if (scientific) HistoryEntry.Type.Scientific else HistoryEntry.Type.Basic,
+                    )
+                }
+            }
+        }
 
         private fun toggleScientific() =
             _state.update { current ->

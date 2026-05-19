@@ -77,6 +77,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.core.designsystem.theme.CalculatorTheme
 import com.calculator.core.math.AngleMode
+import com.calculator.feature.history.HistorySheetContent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -107,7 +108,7 @@ internal fun BasicCalculatorScreenContent(
     state: BasicCalculatorUiState,
     onEvent: (BasicCalculatorEvent) -> Unit,
 ) {
-    var menuOpen by remember { mutableStateOf(false) }
+    var openSheet by remember { mutableStateOf<MenuSheet?>(null) }
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     val tones = rememberKeyToneGenerator()
@@ -138,7 +139,7 @@ internal fun BasicCalculatorScreenContent(
             DisplaySection(
                 state = state,
                 onEvent = onEvent,
-                onOpenMenu = { menuOpen = true },
+                onOpenMenu = { openSheet = MenuSheet.Tools },
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -165,10 +166,10 @@ internal fun BasicCalculatorScreenContent(
         }
     }
 
-    if (menuOpen) {
+    if (openSheet != null) {
         ModalBottomSheet(
             sheetState = sheetState,
-            onDismissRequest = { menuOpen = false },
+            onDismissRequest = { openSheet = null },
             // iOS palette: near-black sheet so it sits flat against the
             // calculator's black canvas, with a light-grey drag handle
             // to match the modifier-key tone.
@@ -179,14 +180,30 @@ internal fun BasicCalculatorScreenContent(
                 )
             },
         ) {
-            SettingsSheetContent(
-                state = state,
-                onEvent = onEvent,
-                onClose = {
-                    scope.launch { sheetState.hide() }
-                    menuOpen = false
-                },
-            )
+            when (openSheet) {
+                MenuSheet.Tools ->
+                    SettingsSheetContent(
+                        state = state,
+                        onEvent = onEvent,
+                        onOpenHistory = { openSheet = MenuSheet.History },
+                        onClose = {
+                            scope.launch { sheetState.hide() }
+                            openSheet = null
+                        },
+                    )
+                MenuSheet.History ->
+                    HistorySheetContent(
+                        onReuseExpression = { expr ->
+                            onEvent(BasicCalculatorEvent.Clear)
+                            onEvent(BasicCalculatorEvent.Append(expr))
+                        },
+                        onClose = {
+                            scope.launch { sheetState.hide() }
+                            openSheet = null
+                        },
+                    )
+                null -> Unit
+            }
         }
     }
     } // CompositionLocalProvider
@@ -204,10 +221,14 @@ internal fun BasicCalculatorScreenContent(
  * in Phase 5/6, life calculators in Phase 7) and are tappable but flash
  * a "coming soon" hint to avoid silently swallowing user intent.
  */
+/** Which sheet is currently displayed in the modal bottom sheet. */
+private enum class MenuSheet { Tools, History }
+
 @Composable
 private fun SettingsSheetContent(
     state: BasicCalculatorUiState,
     onEvent: (BasicCalculatorEvent) -> Unit,
+    onOpenHistory: () -> Unit,
     onClose: () -> Unit,
 ) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
@@ -236,9 +257,9 @@ private fun SettingsSheetContent(
                 ToolTile(
                     icon = Icons.Filled.History,
                     label = "History",
-                    enabled = false,
+                    enabled = true,
                     selected = false,
-                    onTap = onClose,
+                    onTap = onOpenHistory,
                 ),
                 ToolTile(
                     icon = Icons.Filled.CurrencyExchange,

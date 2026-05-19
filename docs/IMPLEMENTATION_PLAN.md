@@ -315,24 +315,25 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 3 - Deliverables
 
-- [ ] Room DB `core/data/db/CalculatorDatabase.kt`
-- [ ] Entity `HistoryEntry(id, expression, result, timestampUtc, type)`
-- [ ] DAO `HistoryDao` (`observeAll`, `insert`, `delete`, `clearAll`)
-- [ ] `HistoryRepository` (Flow-based interface)
-- [ ] Hilt `DataModule` providing `Database`, DAOs, Repository
-- [ ] DataStore `SettingsRepository` (theme, dynamicColor, haptics, sound, precision, defaultCurrency, defaultUnitSystem, crashOptIn)
-- [ ] History sheet/screen: scroll, swipe-to-delete, tap-to-reuse, "Clear all" confirm
-- [ ] Long-press a history row → copy to clipboard
-- [ ] Wire ViewModel: on `=`, insert into history
+- [x] Room DB `core/data/db/CalculatorDatabase.kt`
+- [x] Entity `HistoryEntity(id, expression, result, timestampUtc, type)` + domain mirror `HistoryEntry`
+- [x] DAO `HistoryDao` (`observeAll`, `insert`, `deleteById`, `clearAll`)
+- [x] `HistoryRepository` (Flow-based interface, `RoomHistoryRepository` impl)
+- [x] Hilt `DataModule` + `RepositoryModule` providing `Database`, DAOs, Repository, DataStore
+- [x] DataStore `SettingsRepository` (theme, dynamicColor, haptics, sound, precision, crashOptIn) - currency/unit-system defer to Phase 5/6
+- [x] History sheet/screen: scroll list, per-row delete icon, tap-to-reuse, "Clear all" confirm dialog
+- [ ] Swipe-to-delete (deferred; per-row trash icon ships first)
+- [ ] Long-press a history row → copy to clipboard (deferred)
+- [x] Wire ViewModel: on a *fresh* `=`, insert into history (repeat-equals replays do not spam)
 
 ### Phase 3 - Unit tests
 
-- [ ] `HistoryDaoTest` (Robolectric in-memory Room): insert + observe emits the row
-- [ ] `HistoryDaoTest`: delete by id removes only that row
-- [ ] `HistoryDaoTest`: `clearAll` empties the table
-- [ ] `HistoryRepositoryTest`: emits a new value every time a row is inserted (Turbine)
-- [ ] `SettingsRepositoryTest`: writes survive a process recreation (test-scope DataStore)
-- [ ] `BasicCalculatorViewModelTest`: tapping `=` writes to history (verify with MockK)
+- [x] `HistoryDaoTest` (Robolectric in-memory Room): insert + observe emits the row
+- [x] `HistoryDaoTest`: delete by id removes only that row
+- [x] `HistoryDaoTest`: `clearAll` empties the table; also `observeAll` orders newest-first
+- [x] `HistoryRepositoryTest`: emits a new value per insert (Turbine); type round-trip; `clearAll`
+- [x] `SettingsRepositoryTest`: defaults, write-persists-across-instances, precision clamp
+- [x] `BasicCalculatorHistoryTest`: `=` records (fresh only, not on replays/errors/blank); scientific type tagged
 
 ### Phase 3 - Compose UI tests
 

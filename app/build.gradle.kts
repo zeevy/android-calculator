@@ -149,10 +149,16 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)
 
-    // ----- Unit tests (JUnit5) -----
+    // ----- Unit tests (JUnit5 for our own tests; JUnit4 vintage runner
+    //                  carries Robolectric tests since Robolectric is
+    //                  JUnit4-only - both run from the same task) -----
     testImplementation(libs.junit5.jupiter.api)
     testImplementation(libs.junit5.jupiter.params)
     testRuntimeOnly(libs.junit5.jupiter.engine)
+    testImplementation(libs.junit5.vintage.engine)
+    testImplementation(libs.junit4)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
     testImplementation(libs.mockk)
