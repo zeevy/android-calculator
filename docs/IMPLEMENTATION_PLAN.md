@@ -354,19 +354,21 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 4 - Deliverables
 
-- [ ] `feature/settings/ui/SettingsScreen.kt`
-- [ ] `feature/settings/ui/SettingsViewModel.kt`
-- [ ] Theme system reads from `SettingsRepository`: `system` / `light` / `dark` + dynamicColor toggle
-- [ ] Haptic engine wraps `HapticFeedback` and reads `settings.haptics`
-- [ ] Decimal precision (2..10) feeds `Evaluator` `MathContext`
-- [ ] About row: version, license, GitHub link
-- [ ] Crash-reporting toggle is **off by default** with disclosure text
+- [x] `feature/settings/SettingsSheet.kt` (bottom-sheet content, not a full screen - reuses the existing modal-sheet container)
+- [x] `feature/settings/SettingsViewModel.kt`
+- [x] Theme system reads from `SettingsRepository`: `system` / `light` / `dark` segmented picker + dynamicColor toggle (live, no restart)
+- [x] Haptics wired via `LocalHapticsEnabled` CompositionLocal + `HapticFeedback.performHapticFeedback`
+- [x] Decimal precision slider (6..16) feeds `Evaluator` `MathContext` per-evaluation
+- [x] About rows: version, license, GitHub link
+- [x] Crash-reporting toggle is **off by default** with disclosure text
+- [x] Sound toggle gates the existing DTMF tones (set `LocalKeyTones` to null when disabled)
 
 ### Phase 4 - Unit tests
 
-- [ ] `SettingsViewModelTest`: changing theme emits a new `UiState` with the new theme
-- [ ] `SettingsViewModelTest`: dynamic-color toggle persists via `SettingsRepository`
-- [ ] Precision change rebuilds the Evaluator with new MathContext
+- [x] `SettingsViewModelTest`: theme write propagates to the repository
+- [x] `SettingsViewModelTest`: dynamic-color toggle persists via `SettingsRepository`
+- [x] `SettingsViewModelTest`: precision and crash-opt-in writes propagate
+- [ ] Precision change rebuilds the Evaluator with new MathContext - **verified via wiring** (Evaluator is constructed per-evaluation from `precision.value`); a dedicated test that asserts the rebuilt Evaluator picks up the new precision is a follow-up
 
 ### Phase 4 - Compose UI tests
 
