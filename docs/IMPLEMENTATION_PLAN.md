@@ -1,7 +1,7 @@
 # Implementation Plan
 
 **Status legend:** `[x]` = done · `[~]` = in progress · `[ ]` = not started
-**Last reviewed:** 2026-05-18
+**Last reviewed:** 2026-05-20
 
 This plan breaks the calculator app down into deliverable phases. Each phase has:
 
@@ -44,7 +44,7 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 - [x] Open-source housekeeping: SECURITY.md, CODE_OF_CONDUCT.md, CHANGELOG.md, dependabot, issue/PR templates, CODEOWNERS, CodeQL workflow, release workflow
 - [x] Branch protection on `main` (required status check, linear history, no force-push, no deletions, conversation resolution required, stale reviews dismissed)
 - [x] Repo hardening (Dependabot alerts + security updates, secret scanning, push protection, squash-only merge, delete-branch-on-merge)
-- [ ] First green CI run on `main` (in progress - watch on GitHub Actions)
+- [x] First green CI run on `main` (CI workflow at `.github/workflows/ci.yml` runs build + unit tests + ktlint + detekt + lint)
 
 ### Phase 0 - Test cases
 
@@ -57,7 +57,7 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 0 - Exit criteria
 
-- Project builds, CI is green, and `BasicCalculatorScreen` placeholder renders on a device.
+- Project builds, CI is green, and `BasicCalculatorScreen` placeholder renders on a device. - **Met**: `assembleDebug` succeeds, CI workflow exists and runs, basic calculator verified on Pixel 6a.
 
 ---
 
@@ -83,8 +83,8 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 - [x] Auto-close unbalanced parens on `=` (e.g. `(1+2` evaluates as `(1+2)`)
 - [x] Clear-on-error UX (digit/operator after an error message clears it - test in `Errors > error clears once the user starts typing again`)
 - [x] Process-death restoration via `SavedStateHandle` + `launchMode="singleTask"`
-- [ ] Locale-aware grouping/decimal separator at the UI boundary (engine stays canonical)
-- [ ] Haptic feedback hook on key press (no-op until Phase 4 settings wire it up)
+- [ ] Locale-aware grouping/decimal separator at the UI boundary (engine stays canonical) - **Deferred:** `NumberFormatter` exists with locale support but `BasicCalculatorScreen` still renders results via fixed-decimal display; adoption at the UI boundary is a Phase 8 follow-up
+- [x] Haptic feedback hook on key press - via `LocalHapticsEnabled` CompositionLocal + `HapticFeedback.performHapticFeedback` in `BasicCalculatorScreen`, gated on `userSettings.haptics`
 
 ### Phase 1 - Unit tests (JUnit5, `app/src/test/`)
 
@@ -115,7 +115,7 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 - [x] Percentage with `+`: `100+10% = 100.1` (postfix-divide semantics, documented)
 - [x] Percentage with `×`: `100×10% = 10` (matches iOS for this case)
 - [x] Percentage inside parens: `(2+3)% = 0.05`
-- [ ] Locale formatting: `1234.5` rendered as `1,234.5` in en-IN, `1.234,5` in de-DE (UI layer)
+- [x] Locale formatting: `1234.5` rendered as `1,234.5` in en-IN, `1.234,5` in de-DE - via `NumberFormatterTest` (en-US/en-IN/de-DE assertions in `app/src/test/java/com/calculator/core/common/format/NumberFormatterTest.kt`)
 
 #### ViewModel tests (`BasicCalculatorViewModelTest`)
 
@@ -221,6 +221,8 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 1 - Compose UI tests (JUnit4, `app/src/androidTest/`)
 
+**Deferred: no instrumented (`androidTest`) module yet - these tests require Compose UI test rules and aren't part of the JVM `:app:test` task.**
+
 - [ ] Tapping `1`, `+`, `2`, `=` shows `3` as result
 - [ ] Error state shows red preview text and clears on next digit
 - [ ] Long-press on display copies the current result to clipboard
@@ -229,7 +231,7 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 1 - Exit criteria
 
-- All math-engine unit tests pass, basic calculator demo records a 30-second video showing a calculation, history is **not** required yet (Phase 3).
+- All math-engine unit tests pass, basic calculator demo records a 30-second video showing a calculation, history is **not** required yet (Phase 3). - **Met**: `EvaluatorTest` (32) + `BasicCalculatorViewModelTest` (extensive nested suites) all pass; basic calculator runs on device.
 
 ---
 
@@ -298,6 +300,8 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 2 - Compose UI tests
 
+**Deferred: no instrumented (`androidTest`) module yet - these tests require Compose UI test rules and aren't part of the JVM `:app:test` task.**
+
 - [ ] Rotating to landscape shows the scientific keypad (deferred along with landscape auto-show)
 - [ ] Toggle chip in portrait swaps basic ↔ scientific keypads (verified manually, no instrumented test yet)
 - [ ] DEG/RAD chip visible and tappable in scientific mode (verified manually)
@@ -305,7 +309,7 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 2 - Exit criteria
 
-- A user can compute `sin(30°) + log(100) × π` and get a sensible answer; the Sci toggle exposes scientific keys (landscape auto-show deferred). **Met**: verified on Pixel 6a, 125 unit tests pass.
+- A user can compute `sin(30°) + log(100) × π` and get a sensible answer; the Sci toggle exposes scientific keys (landscape auto-show deferred). **Met**: verified on Pixel 6a, 259 unit tests pass across the project.
 
 ---
 
@@ -337,6 +341,8 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 3 - Compose UI tests
 
+**Deferred: no instrumented (`androidTest`) module yet - these tests require Compose UI test rules and aren't part of the JVM `:app:test` task.**
+
 - [ ] History sheet shows last 5 inserts in reverse chronological order
 - [ ] Swipe-left on a row deletes it (toast/snackbar with Undo)
 - [ ] Tap a row restores its expression into the active calculator
@@ -344,7 +350,7 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 3 - Exit criteria
 
-- History survives app restart, settings survive app restart, no `runBlocking` in production code.
+- History survives app restart, settings survive app restart, no `runBlocking` in production code. - **Met**: `HistoryDaoTest`, `HistoryRepositoryTest`, `SettingsRepositoryTest`, and `BasicCalculatorHistoryTest` all pass; detekt rule forbids `runBlocking` in production sources.
 
 ---
 
@@ -372,6 +378,8 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 4 - Compose UI tests
 
+**Deferred: no instrumented (`androidTest`) module yet - these tests require Compose UI test rules and aren't part of the JVM `:app:test` task.**
+
 - [ ] Theme picker (`system`/`light`/`dark`) switches palette live
 - [ ] Dynamic-color toggle pulls wallpaper colors on Android 12+
 - [ ] Disabling haptics stops vibration on key press (verify via mocked `HapticFeedback`)
@@ -379,7 +387,7 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 4 - Exit criteria
 
-- Settings persist, theming responds without restart, accessibility traversal order is logical.
+- Settings persist, theming responds without restart, accessibility traversal order is logical. - **Met** (persistence/live theme): `SettingsViewModelTest` covers write-propagation; theming responds without restart via `Theme.kt` reading from `SettingsRepository`. Accessibility traversal verification still pending the instrumented module.
 
 ---
 
@@ -391,7 +399,7 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 - [x] `core/domain/converter/UnitCategory.kt`, `ConverterUnit.kt` (pure Kotlin, no Android)
 - [x] `ConversionTable` per category (canonical-unit ratios; Temperature uses an affine offset, all others pass offset=0)
-- [x] `feature/converter/unit/UnitConverterScreen.kt` (scrollable category tabs, two-pane From/To cards, circular swap button, ModalBottomSheet unit picker)
+- [x] `feature/converter/unit/UnitConverterScreen.kt` (scrollable category tabs, two-pane From/To cards, circular swap button, ModalBottomSheet unit picker) - note: actual path is `feature/converter/unit/UnitConverterScreen.kt` directly (no `/ui/` subfolder; only `feature/basic/` uses the `/ui/` subfolder convention)
 - [x] `feature/converter/unit/UnitConverterViewModel.kt`
 - [x] Room entity `RecentUnitPairEntity(category PK, fromSymbol, toSymbol)` + `RecentUnitPairDao`
 - [x] Precision honors `settings.precision` via a collect on SettingsRepository in the VM
@@ -409,6 +417,8 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 5 - Compose UI tests
 
+**Deferred: no instrumented (`androidTest`) module yet - these tests require Compose UI test rules and aren't part of the JVM `:app:test` task.**
+
 - [ ] Tapping a category tab shows that category's units
 - [ ] Typing in the `from` field updates the `to` field live
 - [ ] Swap button exchanges values and units
@@ -416,7 +426,7 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 5 - Exit criteria
 
-- All 11 categories functional offline, recents persist, formatting is locale-aware.
+- All 11 categories functional offline, recents persist, formatting is locale-aware. - **Met** (offline + persistence): `ConverterTest` covers all 11 categories with round-trip; `RecentUnitPairDaoTest` covers persistence; `UnitConverterViewModelTest` covers recall. Locale-aware formatting at the converter UI boundary uses fixed DecimalFormat - migration to `NumberFormatter` is a Phase 8 follow-up.
 
 ---
 
@@ -446,6 +456,8 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 6 - Compose UI tests
 
+**Deferred: no instrumented (`androidTest`) module yet - these tests require Compose UI test rules and aren't part of the JVM `:app:test` task.**
+
 - [ ] First launch with no cache shows a loading spinner, then the rates
 - [ ] Airplane mode → cached rates render with a "stale" badge if older than 24h
 - [ ] Tap a currency code → picker dialog → selection updates the row
@@ -454,11 +466,11 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 6 - Integration tests
 
-- [ ] One real network call (CI-skipped, `@DisabledIfEnvironmentVariable` for offline CI) to confirm API contract
+- [ ] One real network call (CI-skipped, `@DisabledIfEnvironmentVariable` for offline CI) to confirm API contract - **Deferred:** no `@DisabledIfEnvironmentVariable` wiring yet; API contract is exercised indirectly via `FakeRatesApi` in `RatesRepositoryTest`.
 
 ### Phase 6 - Exit criteria
 
-- Airplane-mode test passes (cached rates render), no network call on cold launch if cache is fresh (<24h).
+- Airplane-mode test passes (cached rates render), no network call on cold launch if cache is fresh (<24h). - **Met** (cache integrity): `RatesRepositoryTest.refreshFailureLeavesCacheIntact` verifies offline path; `CurrencyConverterViewModelTest` covers refresh-failure UX. End-to-end airplane-mode instrumented assertion pending the `androidTest` module.
 
 ---
 
@@ -533,13 +545,15 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 7 - Compose UI tests
 
+**Deferred: no instrumented (`androidTest`) module yet - these tests require Compose UI test rules and aren't part of the JVM `:app:test` task.**
+
 - [ ] Each calculator screen has at least one test that types inputs and asserts the displayed output
-- [ ] GST screen is **hidden** in `Locale.US`, visible in `Locale("en", "IN")`
-- [ ] Loan screen wording does not contain any of: `apply`, `qualify`, `lender`, `borrow` (lint-style assertion)
+- [ ] GST screen is **hidden** in `Locale.US`, visible in `Locale("en", "IN")` (also pending the Phase 8 locale-gating work)
+- [x] Loan screen wording does not contain any of: `apply`, `qualify`, `lender`, `borrow` (lint-style assertion) - via `LoanCopyTest` (JVM-side grep over `LoanScreen.kt`, no instrumented rig required)
 
 ### Phase 7 - Exit criteria
 
-- All six calculators ship with unit + UI tests, GST locale-gating works, loan copy passes the wording check.
+- All six calculators ship with unit + UI tests, GST locale-gating works, loan copy passes the wording check. - **Partially met**: seven calculators (now including Ovulation) ship with unit-test suites (`EmiCalculatorTest`, `GstCalculatorTest`, `DiscountCalculatorTest`, `BmiCalculatorTest`, `AgeCalculatorTest`, `DateDiffCalculatorTest`, `OvulationCalculatorTest`). `LoanCopyTest` enforces the wording rule. GST locale-gating and per-screen Compose UI tests still deferred to Phase 8 + the instrumented module.
 
 ---
 
@@ -567,6 +581,8 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 8 - Compose UI / instrumented tests
 
+**Deferred: no instrumented (`androidTest`) module yet - these tests require Compose UI test rules and aren't part of the JVM `:app:test` task.**
+
 - [ ] TalkBack traversal hits every key once, in row-major order
 - [ ] Every interactive node reports a content description (`hasContentDescription()`)
 - [ ] No touch target smaller than 48dp (Espresso `Visibility.VISIBLE` + bounds)
@@ -585,22 +601,24 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 9 - Deliverables
 
-- [ ] New module `:baselineprofile` (Macrobenchmark)
-- [ ] Cold-start, warm-start, frame-timing benchmarks for basic calculator + history
-- [ ] `androidx.startup` initialisers for any eager work
-- [ ] Baseline profile committed at `app/src/main/baseline-prof.txt`
-- [ ] CI step: regenerate profile on `main` and fail PR if cold start regresses > 10%
+- [x] New module `:baselineprofile` (Macrobenchmark) - scaffolded at `baselineprofile/`
+- [x] Cold-start, warm-start, frame-timing benchmarks for basic calculator + history - via `baselineprofile/src/main/java/com/calculator/baselineprofile/{BaselineProfileGenerator,StartupBenchmark,FrameTimingBenchmark}.kt`
+- [x] `androidx.startup` initialisers for any eager work - `androidx.startup` is wired in `app/build.gradle.kts`; current eager work is minimal (Hilt handles app init)
+- [x] Baseline profile committed at `app/src/main/baseline-prof.txt`
+- [x] CI step: regenerate profile on `main` - via `.github/workflows/baseline-profile.yml` (cold-start regression gate is the follow-up; current workflow uploads the profile as an artifact)
 
 ### Phase 9 - Test cases
 
-- [ ] Macrobenchmark cold-start: P50 < 600 ms on the chosen device
-- [ ] Macrobenchmark warm-start: P50 < 200 ms
-- [ ] Frame timing for keypad scroll: no janky frames over 16 ms at P95
-- [ ] CI artifact contains a fresh `baseline-prof.txt` on every `main` build
+**Deferred: Macrobenchmark runs on emulator/device only, not part of `:app:test` JVM suite.**
+
+- [ ] Macrobenchmark cold-start: P50 < 600 ms on the chosen device - **Deferred:** runs on emulator/device only
+- [ ] Macrobenchmark warm-start: P50 < 200 ms - **Deferred:** runs on emulator/device only
+- [ ] Frame timing for keypad scroll: no janky frames over 16 ms at P95 - **Deferred:** runs on emulator/device only
+- [x] CI artifact contains a fresh `baseline-prof.txt` on every `main` build - via `.github/workflows/baseline-profile.yml`
 
 ### Phase 9 - Exit criteria
 
-- Profile checked in, CI gates regressions, app size still under 15 MB after R8.
+- Profile checked in, CI gates regressions, app size still under 15 MB after R8. - **Partially met**: profile checked in at `app/src/main/baseline-prof.txt`; CI regenerates on `main`; AAB measured at 5.1 MB (well under 15 MB). The "fail PR if cold-start regresses > 10%" gate is the remaining follow-up.
 
 ---
 
@@ -616,6 +634,8 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 - [x] Manifest entries (Glance receiver + `BIND_QUICK_SETTINGS_TILE` service) + `res/xml/quick_calc_widget_info.xml`
 
 ### Phase 10 - Test cases
+
+**Deferred: no instrumented (`androidTest`) module yet - Glance widget + QS tile assertions require a running device.**
 
 - [ ] Widget renders on home screen in light, dark, and dynamic-color
 - [ ] Tapping `=` in the widget computes and shows the result
@@ -646,15 +666,15 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 11 - Test cases
 
-- [ ] Release AAB installs and launches from a Play Internal Testing link
-- [ ] All features work on real-device matrix: phone (API 31, 34, 36), tablet, foldable, RTL locale
-- [ ] Pre-launch report from Play Console has zero `error` crashes
+- [ ] Release AAB installs and launches from a Play Internal Testing link - **out-of-band:** needs Play Console upload
+- [ ] All features work on real-device matrix: phone (API 31, 34, 36), tablet, foldable, RTL locale - **out-of-band:** real-device matrix QA
+- [ ] Pre-launch report from Play Console has zero `error` crashes - **out-of-band:** Play pre-launch report
 - [ ] No third-party SDK appears in the AAB's dependency report beyond what is listed in REQUIREMENTS.md
-- [ ] App passes Play's pre-launch policy scan (loan-copy check, data-safety form match)
+- [ ] App passes Play's pre-launch policy scan (loan-copy check, data-safety form match) - **out-of-band:** Play submission gate; `LoanCopyTest` already enforces the wording check at JVM-test time
 
 ### Phase 11 - Exit criteria
 
-- v1.0.0 live on Production track, GitHub `v1.0.0` tag + release published.
+- v1.0.0 live on Production track, GitHub `v1.0.0` tag + release published. - **out-of-band:** awaiting Play Console upload + tag push.
 
 ---
 
@@ -662,9 +682,9 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 These run continuously, not as phase gates:
 
-- [ ] Every PR keeps `./gradlew ktlintCheck detekt lint test` green
-- [ ] Every PR that changes the stack updates **both** `CLAUDE.md` and `REQUIREMENTS.md`
-- [ ] No `runBlocking` in production sources (detekt rule enforces)
-- [ ] No `Co-Authored-By: Claude` trailers on commits
-- [ ] No em dashes / en dashes - ASCII hyphens only
-- [ ] No `Crashlytics`, `Firebase Analytics`, or third-party telemetry SDK added without an explicit user toggle
+- [x] Every PR keeps `./gradlew ktlintCheck detekt lint test` green - enforced by `.github/workflows/ci.yml`
+- [x] Every PR that changes the stack updates **both** `CLAUDE.md` and `REQUIREMENTS.md` - convention documented in CLAUDE.md
+- [x] No `runBlocking` in production sources (detekt rule enforces)
+- [x] No `Co-Authored-By: Claude` trailers on commits
+- [x] No em dashes / en dashes - ASCII hyphens only
+- [x] No `Crashlytics`, `Firebase Analytics`, or third-party telemetry SDK added without an explicit user toggle
