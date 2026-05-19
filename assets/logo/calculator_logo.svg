@@ -1,32 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Calculator app logo (master).
+  Calculator app logo (master) - 2x2 operator grid.
 
-  Design notes:
-   - 1024x1024 canvas (matches Google Play store-listing requirement).
-   - Black background (#1C1C1E - the same near-black the in-app sheet
-     uses) with an orange (#FF9F0A) accent equals glyph that mirrors
-     the operator-key colour in the keypad. Picks the two strongest
-     visual signatures from the app and turns them into the launcher
-     mark.
-   - The trailing dot to the right of the "=" reads as a result cursor;
-     it gives the mark forward motion (left-to-right read order) and
-     subtly differentiates from generic "equals" icons.
-   - Centred on the 1024px canvas with a 192px safe margin from each
-     edge, which keeps the glyph well inside Android's adaptive-icon
-     72dp inner safe zone when the mark is rendered into a 108x108
-     foreground.
+  Design concept:
+   - Four arithmetic operators arranged in a 2x2 grid: +, -, ×, ÷.
+     The keypad in miniature - any user immediately reads "calculator".
+   - Black background (#1C1C1E - matches the in-app sheet tint and
+     the splash screen, so the launcher icon, splash, and the running
+     app share one visual identity).
+   - Operators in operator-orange (#FF9F0A) - the same colour the
+     keypad uses for arithmetic keys, so the mark and the live app
+     reinforce each other.
+   - Symbols sit centred in (308, 308), (716, 308), (308, 716),
+     (716, 716) on the 1024 canvas. That keeps every glyph inside
+     Android's 72-vu inner safe zone when the SVG is scaled down
+     into the adaptive-icon viewport (108 vu).
+   - Bars are 240x52 with fully-rounded ends; the divide dots are
+     r=28. All glyphs are visually weighted to feel like the same
+     size.
+
+  Same file is mirrored as an Android Vector Drawable at
+  res/drawable/ic_launcher_foreground.xml.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-    <!-- Background tile -->
     <rect width="1024" height="1024" fill="#1C1C1E"/>
 
-    <!-- Top bar of the equals sign -->
-    <rect x="248" y="416" width="448" height="80" rx="40" ry="40" fill="#FF9F0A"/>
+    <!-- Top-left: PLUS. Two 240x52 rounded bars crossing at (308, 308). -->
+    <g transform="translate(308 308)">
+        <rect x="-120" y="-26" width="240" height="52" rx="26" ry="26" fill="#FF9F0A"/>
+        <rect x="-26" y="-120" width="52" height="240" rx="26" ry="26" fill="#FF9F0A"/>
+    </g>
 
-    <!-- Bottom bar of the equals sign -->
-    <rect x="248" y="544" width="448" height="80" rx="40" ry="40" fill="#FF9F0A"/>
+    <!-- Top-right: MINUS. Single horizontal bar at (716, 308). -->
+    <g transform="translate(716 308)">
+        <rect x="-120" y="-26" width="240" height="52" rx="26" ry="26" fill="#FF9F0A"/>
+    </g>
 
-    <!-- Result dot - reads as a cursor / "result follows" marker -->
-    <circle cx="784" cy="520" r="56" fill="#FF9F0A"/>
+    <!-- Bottom-left: TIMES. "Plus" rotated 45 at (308, 716). -->
+    <g transform="translate(308 716) rotate(45)">
+        <rect x="-120" y="-26" width="240" height="52" rx="26" ry="26" fill="#FF9F0A"/>
+        <rect x="-26" y="-120" width="52" height="240" rx="26" ry="26" fill="#FF9F0A"/>
+    </g>
+
+    <!-- Bottom-right: DIVIDE. Dot, bar, dot stacked at (716, 716). -->
+    <g transform="translate(716 716)">
+        <circle cx="0" cy="-90" r="28" fill="#FF9F0A"/>
+        <rect x="-120" y="-26" width="240" height="52" rx="26" ry="26" fill="#FF9F0A"/>
+        <circle cx="0" cy="90" r="28" fill="#FF9F0A"/>
+    </g>
 </svg>
