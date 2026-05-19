@@ -1,77 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Adaptive-icon foreground: four orange operators in a 2x2 grid.
+  Adaptive-icon foreground.
 
-  Mirrors assets/logo/calculator_logo.svg, scaled from the 1024-pixel
-  canvas down to the 108-unit adaptive-icon viewport (108 / 1024 ≈
-  0.10547). Quadrant centres land at:
+  The mark itself - green disk + white ring + calculator body with the
+  +, -, x operators + a "CA" badge - lives in the per-density PNGs
+  under res/mipmap-{m,h,x,xx,xxx}dpi/ic_launcher_foreground.png.
+  Master vector is at assets/logo/calculator_logo.svg.
 
-      +  at (32.5, 32.5)        -  at (75.5, 32.5)
-      ×  at (32.5, 75.5)        ÷  at (75.5, 75.5)
+  Using a bitmap rather than an Android Vector Drawable here because
+  the design includes serif lettering ("CA") that's painful to
+  represent as raw <path> commands without a font-to-path conversion
+  step. The PNGs are pre-rendered from the master SVG via sips and
+  ship at every launcher density up through xxxhdpi (432px).
 
-  Operator bars are 25.3x5.5 vu with rx=2.75; divide dots are r=2.95.
-  Every element stays inside Android's 72-vu inner safe zone
-  (centre 54,54, radius 36) so no launcher mask crops a glyph.
-
-  Same path also serves as the `monochrome` variant in the adaptive
-  icon, so Android 13+ themed icons paint the operators in the
-  wallpaper-derived tint automatically.
+  android:gravity="fill" stretches the bitmap to the 108-vu adaptive
+  icon viewport; the PNGs are square so this preserves the design.
 -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-
-    <!-- ============================================================
-         Top-left quadrant: PLUS.
-         ============================================================ -->
-    <!-- Horizontal bar of the plus. -->
-    <path
-        android:fillColor="#FF9F0A"
-        android:pathData="M22.575,29.742 H42.395 A2.742,2.742 0 0 1 42.395,35.227 H22.575 A2.742,2.742 0 0 1 22.575,29.742 Z" />
-    <!-- Vertical bar of the plus. -->
-    <path
-        android:fillColor="#FF9F0A"
-        android:pathData="M29.742,22.575 H35.227 A2.742,2.742 0 0 1 35.227,42.395 H29.742 A2.742,2.742 0 0 1 29.742,22.575 Z" />
-
-    <!-- ============================================================
-         Top-right quadrant: MINUS.
-         ============================================================ -->
-    <path
-        android:fillColor="#FF9F0A"
-        android:pathData="M65.606,29.742 H85.426 A2.742,2.742 0 0 1 85.426,35.227 H65.606 A2.742,2.742 0 0 1 65.606,29.742 Z" />
-
-    <!-- ============================================================
-         Bottom-left quadrant: TIMES (the plus rotated 45 degrees
-         around (32.484, 75.516)). Using a <group> so the rotation
-         is declared once instead of pre-computing the corner points.
-         ============================================================ -->
-    <group
-        android:pivotX="32.484"
-        android:pivotY="75.516"
-        android:rotation="45">
-        <path
-            android:fillColor="#FF9F0A"
-            android:pathData="M22.575,72.773 H42.395 A2.742,2.742 0 0 1 42.395,78.258 H22.575 A2.742,2.742 0 0 1 22.575,72.773 Z" />
-        <path
-            android:fillColor="#FF9F0A"
-            android:pathData="M29.742,65.606 H35.227 A2.742,2.742 0 0 1 35.227,85.426 H29.742 A2.742,2.742 0 0 1 29.742,65.606 Z" />
-    </group>
-
-    <!-- ============================================================
-         Bottom-right quadrant: DIVIDE - dot, bar, dot at (75.5, 75.5).
-         ============================================================ -->
-    <!-- Top dot of the divide sign. -->
-    <path
-        android:fillColor="#FF9F0A"
-        android:pathData="M72.563,66.023 A2.953,2.953 0 1 1 78.469,66.023 A2.953,2.953 0 1 1 72.563,66.023 Z" />
-    <!-- Middle bar. -->
-    <path
-        android:fillColor="#FF9F0A"
-        android:pathData="M65.606,72.773 H85.426 A2.742,2.742 0 0 1 85.426,78.258 H65.606 A2.742,2.742 0 0 1 65.606,72.773 Z" />
-    <!-- Bottom dot. -->
-    <path
-        android:fillColor="#FF9F0A"
-        android:pathData="M72.563,85.008 A2.953,2.953 0 1 1 78.469,85.008 A2.953,2.953 0 1 1 72.563,85.008 Z" />
-</vector>
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@mipmap/ic_launcher_foreground"
+    android:gravity="fill" />

@@ -9,10 +9,12 @@
   Theme colors for the running app live in Compose (`Theme.kt`).
 -->
 <resources>
-    <!-- Phase 8: adaptive-icon background now matches the in-app sheet
-         tint (near-black), so the launcher icon and the splash screen
-         share one visual identity. -->
-    <color name="ic_launcher_background">#1C1C1E</color>
+    <!-- "CA" badge logo: forest green that matches the master SVG
+         (assets/logo/calculator_logo.svg). The foreground PNG carries
+         the green disk + white ring + calculator + CA badge; this
+         background colour fills any pixels outside the foreground if
+         the launcher mask is wider than the bitmap. -->
+    <color name="ic_launcher_background">#1B5E20</color>
     <!-- Splash screen background. Matches the iOS-palette calculator's
          black canvas so the splash hands off into the running app
          without a colour flash. -->

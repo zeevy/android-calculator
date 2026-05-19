@@ -149,6 +149,9 @@ dependencies {
     // first cold start benefits from AOT compilation of hot paths.
     implementation(libs.androidx.profileinstaller)
     "baselineProfile"(project(":baselineprofile"))
+    // Phase 10: Glance for the home-screen widget.
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
 
     // ----- Persistence -----
     implementation(libs.androidx.datastore.preferences)
