@@ -2,15 +2,25 @@ package com.calculator.feature.basic.ui
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.calculator.core.data.history.HistoryEntry
+import com.calculator.core.data.history.HistoryRepository
+import com.calculator.core.data.settings.SettingsRepository
 import com.calculator.core.math.AngleMode
 import com.calculator.core.math.EvaluationResult
 import com.calculator.core.math.Evaluator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import java.math.MathContext
+import java.math.RoundingMode
 import javax.inject.Inject
 
 /**
@@ -46,7 +56,25 @@ class BasicCalculatorViewModel
     @Inject
     constructor(
         private val savedStateHandle: SavedStateHandle,
+        private val historyRepository: HistoryRepository? = null,
+        settingsRepository: SettingsRepository? = null,
     ) : ViewModel() {
+        // Precision flows in from SettingsRepository, defaulting to
+        // DECIMAL64 when no repo is wired (e.g. unit tests construct
+        // the VM without one). Each `=` and live preview pulls the
+        // current value, so a precision change in Settings takes
+        // effect on the next keypress without restarting anything.
+        private val precision: StateFlow<Int> =
+            settingsRepository
+                ?.settings
+                ?.map { it.precision }
+                ?.stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.Eagerly,
+                    initialValue = DEFAULT_PRECISION,
+                )
+                ?: MutableStateFlow(DEFAULT_PRECISION).asStateFlow()
+
         // Restore from the SavedStateHandle so calculator state survives
         // process death and config changes. `liveResult` is derived from
         // `expression`, so we recompute it rather than persist it.
@@ -98,6 +126,7 @@ class BasicCalculatorViewModel
                 BasicCalculatorEvent.MemorySubtract -> memoryDelta(addToMemory = false)
                 BasicCalculatorEvent.MemoryRecall -> memoryRecall()
                 BasicCalculatorEvent.MemoryClear -> memoryClear()
+                BasicCalculatorEvent.SignFlip -> signFlip()
             }
         }
 
@@ -189,7 +218,16 @@ class BasicCalculatorViewModel
                 val (toEvaluate, repeatToken) = buildEquationToEvaluate(current)
 
                 when (val result = evaluatorFor(current.angleMode).evaluate(toEvaluate)) {
-                    is EvaluationResult.Success ->
+                    is EvaluationResult.Success -> {
+                        val canonicalResult = result.value.stripTrailingZeros().toPlainString()
+                        // Record into history only on a fresh equals (not on
+                        // a replay through pendingRepeat) so the repeat-equals
+                        // chain doesn't spam the table. The repository call is
+                        // a fire-and-forget; failures are non-fatal because
+                        // the user already saw their result.
+                        if (current.pendingRepeat == null) {
+                            recordHistory(toEvaluate, canonicalResult, current.scientific)
+                        }
                         current
                             .copy(
                                 // Replace the expression with the canonical result so the
@@ -197,11 +235,12 @@ class BasicCalculatorViewModel
                                 // `stripTrailingZeros` collapses `4.0` to `4` for display,
                                 // and `toPlainString` keeps it out of scientific notation so
                                 // the next keypress chains naturally.
-                                expression = result.value.stripTrailingZeros().toPlainString(),
+                                expression = canonicalResult,
                                 liveResult = null,
                                 errorMessage = null,
                                 pendingRepeat = repeatToken,
                             ).also(::persist)
+                    }
 
                     is EvaluationResult.Error ->
                         current
@@ -212,6 +251,19 @@ class BasicCalculatorViewModel
                             ).also(::persist)
                 }
             }
+
+        private fun recordHistory(expression: String, result: String, scientific: Boolean) {
+            val repo = historyRepository ?: return
+            viewModelScope.launch {
+                runCatching {
+                    repo.add(
+                        expression = expression,
+                        result = result,
+                        type = if (scientific) HistoryEntry.Type.Scientific else HistoryEntry.Type.Basic,
+                    )
+                }
+            }
+        }
 
         private fun toggleScientific() =
             _state.update { current ->
@@ -273,6 +325,34 @@ class BasicCalculatorViewModel
             }
 
         /**
+         * Toggle the sign of the trailing numeric operand in the expression.
+         *
+         * Examples (`|` marks where the user's caret would be):
+         *  - `5|`         -> `-5|`
+         *  - `-5|`        -> `5|`
+         *  - `10+5|`      -> `10+-5|`   (the engine parses `+-5` as `+(-5)`)
+         *  - `10+-5|`     -> `10+5|`
+         *  - `|` (empty)  -> `-|`       (so the next digit lands as `-digit`)
+         *  - `10+|`       -> `10+-|`    (no operand yet; arm a unary minus
+         *                                for the next digit)
+         *
+         * After equals, the expression IS the result, so `signFlip` just
+         * flips its sign - same code path because the result is a single
+         * numeric token.
+         */
+        private fun signFlip() =
+            _state.update { current ->
+                val flipped = flipSignOfTrailingOperand(current.expression)
+                current
+                    .copy(
+                        expression = flipped,
+                        liveResult = preview(flipped, current.angleMode),
+                        errorMessage = null,
+                        pendingRepeat = null,
+                    ).also(::persist)
+            }
+
+        /**
          * Resolve the canonical equation string to evaluate on `=`.
          *
          * Returns `(expressionToEvaluate, repeatTokenForNextEquals)`. The
@@ -292,7 +372,9 @@ class BasicCalculatorViewModel
 
             // Trailing operator: auto-complete with the operand the user just
             // typed (the number immediately before that operator). So `1+=`
-            // resolves as `1+1=2`, `10-3×=` as `10-3×3=1`, and so on.
+            // resolves as `1+1=2`, `10-3×=` as `10-3×3=1`, and so on. This
+            // is the *only* path that arms a repeat-equals token: pressing
+            // `=` again replays the auto-completed `+1`, `×3`, etc.
             if (expr.last() in ArithmeticOperators) {
                 val precedingNumber = PrecedingNumberRegex.find(expr)?.groupValues?.getOrNull(1)
                 return if (precedingNumber != null) {
@@ -304,9 +386,13 @@ class BasicCalculatorViewModel
                 }
             }
 
-            // Normal path: extract trailing `op+operand` for future replays.
-            val repeat = TrailingOpRegex.find(expr)?.value
-            return expr to repeat
+            // Normal path: a complete expression like `2+3`. We arm an
+            // empty-string repeat token: it does NOT add anything on
+            // subsequent `=` presses (the user has to type a dangling
+            // operator to opt into the repeat chain) but it still signals
+            // "we just completed an equals" so digit/decimal presses
+            // correctly start a fresh expression (see [appendAfterEquals]).
+            return expr to ""
         }
 
         /**
@@ -325,7 +411,11 @@ class BasicCalculatorViewModel
         }
 
         /** Build a fresh evaluator pinned to the current angle mode. */
-        private fun evaluatorFor(angleMode: AngleMode): Evaluator = Evaluator(angleMode = angleMode)
+        private fun evaluatorFor(angleMode: AngleMode): Evaluator =
+            Evaluator(
+                mathContext = MathContext(precision.value, RoundingMode.HALF_EVEN),
+                angleMode = angleMode,
+            )
 
         /** Best-effort current numeric value: the live result if available, else null. */
         private fun currentDisplayValue(state: BasicCalculatorUiState): BigDecimal? =
@@ -383,7 +473,57 @@ class BasicCalculatorViewModel
             return if (opens > closes) expr + ")".repeat(opens - closes) else expr
         }
 
+        /**
+         * Toggle the leading `-` of the rightmost numeric operand.
+         *
+         * "Operand" here is whatever the cursor is on - the trailing
+         * digits/dot string, optionally preceded by a unary `-`. If that
+         * unary `-` is present we remove it; otherwise we insert one.
+         *
+         * Three edge cases handled at the boundary:
+         *  - Empty expression: there's nothing to flip, but the user
+         *    pressing `±` first wants to start a negative number - so
+         *    we return `"-"` so the next digit appends to it.
+         *  - Expression ends with an operator (`10+`): no operand yet;
+         *    insert `-` after the operator (`10+-`) so the next digit
+         *    becomes the negative operand.
+         *  - Expression ends with `)` or `!`: don't try to flip; the
+         *    operand isn't a single numeric token.
+         *
+         * Each early return guards a distinct edge case; merging them
+         * into a single return point would only nest the logic and hide
+         * intent, hence the [ReturnCount] suppression.
+         */
+        @Suppress("ReturnCount")
+        private fun flipSignOfTrailingOperand(expr: String): String {
+            if (expr.isEmpty()) return "-"
+            val last = expr.last()
+            if (last in ArithmeticOperators || last == '(') {
+                // Arm a unary minus for the next digit.
+                return expr + "-"
+            }
+            if (last == ')' || last == '!') return expr // operand isn't a flat number
+            val match = TrailingNumberRegex.find(expr) ?: return expr
+            val numStart = match.range.first
+            // Is there a leading `-` directly before the number that we should
+            // remove? It counts as unary if it sits at the start of input, or
+            // right after an operator/`(`.
+            val minusPos = numStart - 1
+            if (minusPos >= 0 && expr[minusPos] == '-') {
+                val priorPos = minusPos - 1
+                val isUnary = priorPos < 0 || expr[priorPos] in "+-×÷*/^("
+                if (isUnary) {
+                    return expr.removeRange(minusPos, minusPos + 1)
+                }
+            }
+            return expr.substring(0, numStart) + "-" + expr.substring(numStart)
+        }
+
         private companion object {
+            // Matches DataStoreSettingsRepository.DEFAULT_PRECISION; pulled
+            // in only so the VM can construct an Evaluator without a
+            // settings repo (tests).
+            const val DEFAULT_PRECISION = 12
             const val KEY_EXPRESSION = "calculator.expression"
             const val KEY_ERROR = "calculator.error"
             const val KEY_PENDING_REPEAT = "calculator.pendingRepeat"
@@ -403,5 +543,8 @@ class BasicCalculatorViewModel
              * `=` (e.g. `10-3×` → use `3`, the operand just entered).
              */
             val PrecedingNumberRegex = Regex("(\\d+(?:\\.\\d+)?)[+\\-×÷*/^]$")
+
+            /** The trailing numeric literal of the expression. Used by [flipSignOfTrailingOperand]. */
+            val TrailingNumberRegex = Regex("(\\d+(?:\\.\\d+)?|\\.\\d+)$")
         }
     }

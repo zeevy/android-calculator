@@ -26,20 +26,26 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.CurrencyExchange
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Functions
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MonitorWeight
-import androidx.compose.material.icons.filled.Percent
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
@@ -57,26 +63,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.core.designsystem.theme.CalculatorTheme
 import com.calculator.core.math.AngleMode
+import com.calculator.feature.history.HistorySheetContent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -89,9 +96,20 @@ import java.math.BigDecimal
  * possible without a ViewModel and makes UI tests straightforward.
  */
 @Composable
-fun BasicCalculatorScreen(viewModel: BasicCalculatorViewModel = hiltViewModel()) {
+fun BasicCalculatorScreen(
+    onOpenUnitConverter: () -> Unit = {},
+    onOpenCurrencyConverter: () -> Unit = {},
+    onOpenLifeCalc: (Any) -> Unit = {},
+    viewModel: BasicCalculatorViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    BasicCalculatorScreenContent(state = state, onEvent = viewModel::onEvent)
+    BasicCalculatorScreenContent(
+        state = state,
+        onEvent = viewModel::onEvent,
+        onOpenUnitConverter = onOpenUnitConverter,
+        onOpenCurrencyConverter = onOpenCurrencyConverter,
+        onOpenLifeCalc = onOpenLifeCalc,
+    )
 }
 
 /**
@@ -106,91 +124,145 @@ fun BasicCalculatorScreen(viewModel: BasicCalculatorViewModel = hiltViewModel())
 internal fun BasicCalculatorScreenContent(
     state: BasicCalculatorUiState,
     onEvent: (BasicCalculatorEvent) -> Unit,
+    onOpenUnitConverter: () -> Unit = {},
+    onOpenCurrencyConverter: () -> Unit = {},
+    onOpenLifeCalc: (Any) -> Unit = {},
 ) {
-    var menuOpen by remember { mutableStateOf(false) }
+    var openSheet by remember { mutableStateOf<MenuSheet?>(null) }
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     val tones = rememberKeyToneGenerator()
+    // Settings drives sound and haptics toggles. Falling back to defaults
+    // (both on) when the settings VM hasn't emitted yet keeps the UI
+    // responsive during the first frame.
+    val settingsViewModel: com.calculator.feature.settings.SettingsViewModel = hiltViewModel()
+    val userSettings by settingsViewModel.settings.collectAsStateWithLifecycle()
+    val tonesIfEnabled = if (userSettings.sound) tones else null
 
-    CompositionLocalProvider(LocalKeyTones provides tones) {
-    Scaffold(
-        // Hand out insets per-child: outer Column absorbs the status-bar
-        // inset (so the display card sits below the system icons), and
-        // the keypad card absorbs the navigation-bar inset on its bottom
-        // edge (so the bottom row of keys doesn't collide with the
-        // gesture pill).
-        contentWindowInsets = WindowInsets(0.dp),
-    ) { padding ->
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .windowInsetsPadding(WindowInsets.statusBars)
-                    .padding(horizontal = 12.dp)
-                    .padding(top = 8.dp),
-        ) {
-            // Display sits directly on the screen background - no card,
-            // no border. The typographic hierarchy inside (small muted
-            // expression line, big bold result) carries the visual
-            // weight on its own, and the gap before the keypad tray
-            // does the section separation.
-            DisplaySection(
-                state = state,
-                onEvent = onEvent,
-                onOpenMenu = { menuOpen = true },
+    CompositionLocalProvider(
+        LocalKeyTones provides tonesIfEnabled,
+        LocalHapticsEnabled provides userSettings.haptics,
+    ) {
+        Scaffold(
+            // Hand out insets per-child: outer Column absorbs the status-bar
+            // inset (so the display card sits below the system icons), and
+            // the keypad card absorbs the navigation-bar inset on its bottom
+            // edge (so the bottom row of keys doesn't collide with the
+            // gesture pill).
+            contentWindowInsets = WindowInsets(0.dp),
+        ) { padding ->
+            Column(
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-            )
-            Spacer(Modifier.size(8.dp))
-            HorizontalDivider(
-                color = MaterialTheme.colorScheme.outlineVariant,
-                thickness = 1.dp,
-            )
-            Spacer(Modifier.size(12.dp))
-            // No keypad tray. iOS calculator puts keys directly on the
-            // screen background; the colored keys carry the visual
-            // structure on their own.
-            Keypad(
-                scientific = state.scientific,
-                onEvent = onEvent,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .windowInsetsPadding(WindowInsets.navigationBars)
-                        .padding(bottom = 12.dp),
-            )
-        }
-    }
-
-    if (menuOpen) {
-        ModalBottomSheet(
-            sheetState = sheetState,
-            onDismissRequest = { menuOpen = false },
-            // iOS palette: near-black sheet so it sits flat against the
-            // calculator's black canvas, with a light-grey drag handle
-            // to match the modifier-key tone.
-            containerColor = IosSheetBackground,
-            dragHandle = {
-                BottomSheetDefaults.DragHandle(
-                    color = IosKeyModifierContainer,
+                        .fillMaxSize()
+                        .padding(padding)
+                        .windowInsetsPadding(WindowInsets.statusBars)
+                        .padding(horizontal = 12.dp)
+                        .padding(top = 8.dp),
+            ) {
+                // Display sits directly on the screen background - no card,
+                // no border. The typographic hierarchy inside (small muted
+                // expression line, big bold result) carries the visual
+                // weight on its own, and the gap before the keypad tray
+                // does the section separation.
+                DisplaySection(
+                    state = state,
+                    onEvent = onEvent,
+                    onOpenMenu = { openSheet = MenuSheet.Tools },
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
                 )
-            },
-        ) {
-            SettingsSheetContent(
-                state = state,
-                onEvent = onEvent,
-                onClose = {
-                    scope.launch { sheetState.hide() }
-                    menuOpen = false
-                },
-            )
+                Spacer(Modifier.size(8.dp))
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    thickness = 1.dp,
+                )
+                Spacer(Modifier.size(12.dp))
+                // No keypad tray. iOS calculator puts keys directly on the
+                // screen background; the colored keys carry the visual
+                // structure on their own.
+                Keypad(
+                    scientific = state.scientific,
+                    onEvent = onEvent,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .windowInsetsPadding(WindowInsets.navigationBars)
+                            .padding(bottom = 12.dp),
+                )
+            }
         }
-    }
+
+        if (openSheet != null) {
+            ModalBottomSheet(
+                sheetState = sheetState,
+                onDismissRequest = { openSheet = null },
+                // iOS palette: near-black sheet so it sits flat against the
+                // calculator's black canvas, with a light-grey drag handle
+                // to match the modifier-key tone.
+                containerColor = IosSheetBackground,
+                dragHandle = {
+                    BottomSheetDefaults.DragHandle(
+                        color = IosKeyModifierContainer,
+                    )
+                },
+            ) {
+                when (openSheet) {
+                    MenuSheet.Tools ->
+                        ToolsSheetContent(
+                            state = state,
+                            onEvent = onEvent,
+                            onOpenHistory = { openSheet = MenuSheet.History },
+                            onOpenSettings = { openSheet = MenuSheet.Settings },
+                            onOpenUnitConverter = {
+                                scope.launch { sheetState.hide() }
+                                openSheet = null
+                                onOpenUnitConverter()
+                            },
+                            onOpenCurrencyConverter = {
+                                scope.launch { sheetState.hide() }
+                                openSheet = null
+                                onOpenCurrencyConverter()
+                            },
+                            onOpenLifeCalc = { route ->
+                                scope.launch { sheetState.hide() }
+                                openSheet = null
+                                onOpenLifeCalc(route)
+                            },
+                            onClose = {
+                                scope.launch { sheetState.hide() }
+                                openSheet = null
+                            },
+                        )
+                    MenuSheet.History ->
+                        HistorySheetContent(
+                            onReuseExpression = { expr ->
+                                onEvent(BasicCalculatorEvent.Clear)
+                                onEvent(BasicCalculatorEvent.Append(expr))
+                            },
+                            onClose = {
+                                scope.launch { sheetState.hide() }
+                                openSheet = null
+                            },
+                        )
+                    MenuSheet.Settings ->
+                        com.calculator.feature.settings.SettingsSheetContent(
+                            onClose = {
+                                scope.launch { sheetState.hide() }
+                                openSheet = null
+                            },
+                        )
+                    null -> Unit
+                }
+            }
+        }
     } // CompositionLocalProvider
 }
+
+/** Which sheet is currently displayed in the modal bottom sheet. */
+private enum class MenuSheet { Tools, History, Settings }
 
 /**
  * App-level tools sheet, summoned from the top-right hamburger button.
@@ -203,11 +275,21 @@ internal fun BasicCalculatorScreenContent(
  * are placeholders for upcoming features (history in Phase 3, converters
  * in Phase 5/6, life calculators in Phase 7) and are tappable but flash
  * a "coming soon" hint to avoid silently swallowing user intent.
+ *
+ * Each lambda routes to a distinct destination; collapsing them into a
+ * single sealed event would push the routing decision into the screen,
+ * hence the suppression of [LongParameterList].
  */
+@Suppress("LongParameterList")
 @Composable
-private fun SettingsSheetContent(
+private fun ToolsSheetContent(
     state: BasicCalculatorUiState,
     onEvent: (BasicCalculatorEvent) -> Unit,
+    onOpenHistory: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onOpenUnitConverter: () -> Unit,
+    onOpenCurrencyConverter: () -> Unit,
+    onOpenLifeCalc: (Any) -> Unit,
     onClose: () -> Unit,
 ) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
@@ -236,30 +318,79 @@ private fun SettingsSheetContent(
                 ToolTile(
                     icon = Icons.Filled.History,
                     label = "History",
-                    enabled = false,
+                    enabled = true,
                     selected = false,
-                    onTap = onClose,
+                    onTap = onOpenHistory,
+                ),
+                ToolTile(
+                    icon = Icons.Filled.Straighten,
+                    label = "Units",
+                    enabled = true,
+                    selected = false,
+                    onTap = onOpenUnitConverter,
                 ),
                 ToolTile(
                     icon = Icons.Filled.CurrencyExchange,
-                    label = "Converter",
-                    enabled = false,
+                    label = "Currency",
+                    enabled = true,
                     selected = false,
-                    onTap = onClose,
+                    onTap = onOpenCurrencyConverter,
                 ),
                 ToolTile(
-                    icon = Icons.Filled.Percent,
-                    label = "Finance",
-                    enabled = false,
+                    icon = Icons.Filled.AccountBalance,
+                    label = "Loan",
+                    enabled = true,
                     selected = false,
-                    onTap = onClose,
+                    onTap = { onOpenLifeCalc(com.calculator.navigation.LoanRoute) },
+                ),
+                ToolTile(
+                    icon = Icons.Filled.Receipt,
+                    label = "GST",
+                    enabled = true,
+                    selected = false,
+                    onTap = { onOpenLifeCalc(com.calculator.navigation.GstRoute) },
+                ),
+                ToolTile(
+                    icon = Icons.Filled.LocalOffer,
+                    label = "Discount",
+                    enabled = true,
+                    selected = false,
+                    onTap = { onOpenLifeCalc(com.calculator.navigation.DiscountRoute) },
                 ),
                 ToolTile(
                     icon = Icons.Filled.MonitorWeight,
-                    label = "Health",
-                    enabled = false,
+                    label = "BMI",
+                    enabled = true,
                     selected = false,
-                    onTap = onClose,
+                    onTap = { onOpenLifeCalc(com.calculator.navigation.BmiRoute) },
+                ),
+                ToolTile(
+                    icon = Icons.Filled.Cake,
+                    label = "Age",
+                    enabled = true,
+                    selected = false,
+                    onTap = { onOpenLifeCalc(com.calculator.navigation.AgeRoute) },
+                ),
+                ToolTile(
+                    icon = Icons.Filled.DateRange,
+                    label = "Date diff",
+                    enabled = true,
+                    selected = false,
+                    onTap = { onOpenLifeCalc(com.calculator.navigation.DateDiffRoute) },
+                ),
+                ToolTile(
+                    icon = Icons.Filled.Favorite,
+                    label = "Ovulation",
+                    enabled = true,
+                    selected = false,
+                    onTap = { onOpenLifeCalc(com.calculator.navigation.OvulationRoute) },
+                ),
+                ToolTile(
+                    icon = Icons.Filled.Settings,
+                    label = "Settings",
+                    enabled = true,
+                    selected = false,
+                    onTap = onOpenSettings,
                 ),
             )
 
@@ -513,7 +644,12 @@ private fun Display(
  *  3. Stop at [minFontSize] - if the string still doesn't fit there,
  *     the trailing characters clip (the alternative is illegible 8sp
  *     text, which is worse than clipping).
+ *
+ * Each parameter maps to a distinct visual lever (size bounds, color,
+ * line cap, modifier) that callers tweak independently, hence the
+ * suppression of [LongParameterList].
  */
+@Suppress("LongParameterList")
 @Composable
 private fun AutoSizeText(
     text: String,
@@ -566,6 +702,7 @@ private fun AutoSizeText(
 }
 
 private const val AUTO_SIZE_STEP_SP = 2f
+
 // Floors are deliberately small so the shrink loop can actually find
 // a size that fits in advanced mode (where the 9-row keypad leaves
 // only ~100dp for the entire display). A previous 28sp floor caused
@@ -573,6 +710,7 @@ private const val AUTO_SIZE_STEP_SP = 2f
 // because the loop bottomed out before finding a fit.
 private val DISPLAY_RESULT_MIN_SIZE = 16.sp
 private val DISPLAY_EXPRESSION_MIN_SIZE = 10.sp
+
 // Up to three lines for the big result line and two for the muted
 // expression-history line. Multi-line first, then font shrink - so a
 // long expression grows downward before any text gets smaller.
@@ -613,15 +751,27 @@ private fun Keypad(
             keys = listOf(Key.MemoryClear, Key.MemoryRecall, Key.MemoryAdd, Key.MemorySubtract),
             compact = true,
         )
+    // Basic-mode modifier row: sign-flip + factorial + percent + divide.
+    // Parens are dropped from basic mode (they live in the scientific
+    // section in advanced mode); ± and x! take their slots.
+    val signFlipRow =
+        KeypadRowSpec(
+            keys = listOf(Key.SignFlip, Key.Factorial, Key.Symbol("%"), Key.Symbol("÷")),
+            compact = true,
+        )
     val basicRows =
         listOf(
             memoryRow,
-            KeypadRowSpec(listOf(Key.LeftParen, Key.RightParen, Key.Symbol("%"), Key.Symbol("÷"))),
+            signFlipRow,
             KeypadRowSpec(listOf(Key.Symbol("7"), Key.Symbol("8"), Key.Symbol("9"), Key.Symbol("×"))),
             KeypadRowSpec(listOf(Key.Symbol("4"), Key.Symbol("5"), Key.Symbol("6"), Key.Symbol("-"))),
             KeypadRowSpec(listOf(Key.Symbol("1"), Key.Symbol("2"), Key.Symbol("3"), Key.Symbol("+"))),
             KeypadRowSpec(listOf(Key.Backspace, Key.Symbol("0"), Key.Symbol("."), Key.Equals)),
         )
+    // Four scientific rows, all compact. Parens slot into row 3
+    // (replacing π/e there); π and e move to row 4 alongside x² and x³
+    // shortcuts so every cell in advanced mode does something useful -
+    // no empty placeholders.
     val scientificRows =
         listOf(
             KeypadRowSpec(
@@ -633,7 +783,11 @@ private fun Keypad(
                 compact = true,
             ),
             KeypadRowSpec(
-                listOf(Key.Function("log"), Key.Function("ln"), Key.Symbol("π"), Key.Symbol("e")),
+                listOf(Key.Function("log"), Key.Function("ln"), Key.LeftParen, Key.RightParen),
+                compact = true,
+            ),
+            KeypadRowSpec(
+                listOf(Key.Symbol("π"), Key.Symbol("e"), Key.Squared, Key.Cubed),
                 compact = true,
             ),
         )
@@ -684,15 +838,21 @@ private fun KeypadRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         row.forEach { key ->
-            KeyButton(
-                key = key,
-                onEvent = onEvent,
-                compact = compact,
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .aspectRatio(aspectRatio),
-            )
+            if (key is Key.Empty) {
+                // Reserve the slot so the row's remaining buttons stay
+                // the same width as a fully-populated row.
+                Spacer(modifier = Modifier.weight(1f).aspectRatio(aspectRatio))
+            } else {
+                KeyButton(
+                    key = key,
+                    onEvent = onEvent,
+                    compact = compact,
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .aspectRatio(aspectRatio),
+                )
+            }
         }
     }
 }
@@ -756,8 +916,37 @@ private sealed interface Key {
     data object MemorySubtract : Key {
         override val label: String = "M-"
     }
+
+    /** Toggle the sign of the trailing operand (`5` <-> `-5`). */
+    data object SignFlip : Key {
+        override val label: String = "±"
+    }
+
+    /** Postfix factorial. Appends `!` to the expression. */
+    data object Factorial : Key {
+        override val label: String = "x!"
+    }
+
+    /** Squares the current operand. Appends `^2` to the expression. */
+    data object Squared : Key {
+        override val label: String = "x²"
+    }
+
+    /** Cubes the current operand. Appends `^3` to the expression. */
+    data object Cubed : Key {
+        override val label: String = "x³"
+    }
+
+    /** Renders as empty space; used to pad partial rows in the keypad grid. */
+    data object Empty : Key {
+        override val label: String = ""
+    }
 }
 
+// Dispatcher for the keypad: one `when` arm per `Key` subtype. Adding a
+// dispatcher class to split this purely for the linter would only obscure
+// the table-style mapping from key to event.
+@Suppress("CyclomaticComplexMethod")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun KeyButton(
@@ -767,6 +956,8 @@ private fun KeyButton(
     compact: Boolean = false,
 ) {
     val tones = LocalKeyTones.current
+    val hapticsEnabled = LocalHapticsEnabled.current
+    val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
     val rawClick: () -> Unit = {
         when (key) {
             is Key.Symbol -> onEvent(BasicCalculatorEvent.Append(key.label))
@@ -780,13 +971,25 @@ private fun KeyButton(
             Key.MemoryRecall -> onEvent(BasicCalculatorEvent.MemoryRecall)
             Key.MemoryAdd -> onEvent(BasicCalculatorEvent.MemoryAdd)
             Key.MemorySubtract -> onEvent(BasicCalculatorEvent.MemorySubtract)
+            Key.SignFlip -> onEvent(BasicCalculatorEvent.SignFlip)
+            // Factorial is a plain char append - the tokenizer turns
+            // trailing `!` into Token.Factorial during evaluation.
+            Key.Factorial -> onEvent(BasicCalculatorEvent.Append("!"))
+            Key.Squared -> onEvent(BasicCalculatorEvent.Append("^2"))
+            Key.Cubed -> onEvent(BasicCalculatorEvent.Append("^3"))
+            Key.Empty -> Unit
         }
     }
-    // Every click also plays its DTMF tone. Tones are silently no-op if
-    // the system refused to give us a ToneGenerator (rare; some OEM
-    // devices restrict STREAM_DTMF for non-phone apps).
+    // Every click plays its DTMF tone (if sound is enabled in settings)
+    // and fires a light haptic tick (if haptics are enabled). Both are
+    // silently no-op if disabled or unavailable.
     val click: () -> Unit = {
         tones?.play(key)
+        if (hapticsEnabled) {
+            haptics.performHapticFeedback(
+                androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress,
+            )
+        }
         rawClick()
     }
 
@@ -794,7 +997,9 @@ private fun KeyButton(
     // clears the whole expression, in place of the standalone C key.
     val longClick: (() -> Unit)? =
         when (key) {
-            Key.Backspace -> { { onEvent(BasicCalculatorEvent.Clear) } }
+            Key.Backspace -> {
+                { onEvent(BasicCalculatorEvent.Clear) }
+            }
             else -> null
         }
 
@@ -966,6 +1171,8 @@ private class KeyToneGenerator(private val tg: ToneGenerator) {
             Key.Clear -> ToneGenerator.TONE_PROP_NACK
             Key.MemoryClear, Key.MemoryRecall, Key.MemoryAdd, Key.MemorySubtract ->
                 ToneGenerator.TONE_PROP_BEEP
+            Key.SignFlip, Key.Factorial, Key.Squared, Key.Cubed -> ToneGenerator.TONE_PROP_BEEP
+            Key.Empty -> null
             is Key.Function -> ToneGenerator.TONE_PROP_BEEP
         }
 
@@ -1001,13 +1208,21 @@ private fun rememberKeyToneGenerator(): KeyToneGenerator? {
 /** CompositionLocal so any key in the tree can play tones without prop drilling. */
 private val LocalKeyTones = compositionLocalOf<KeyToneGenerator?> { null }
 
+/**
+ * Whether key-press haptic feedback should fire. Defaults to true so
+ * existing code paths and previews continue to vibrate.
+ */
+private val LocalHapticsEnabled = compositionLocalOf { true }
+
 private enum class KeyCategory { Digit, Operator, Modifier, Function, Equals }
 
 private fun keyCategoryOf(key: Key): KeyCategory =
     when (key) {
         Key.Equals -> KeyCategory.Equals
-        Key.Clear, Key.LeftParen, Key.RightParen, Key.Backspace -> KeyCategory.Modifier
+        Key.Clear, Key.LeftParen, Key.RightParen, Key.Backspace, Key.SignFlip -> KeyCategory.Modifier
         Key.MemoryClear, Key.MemoryRecall, Key.MemoryAdd, Key.MemorySubtract -> KeyCategory.Function
+        Key.Factorial, Key.Squared, Key.Cubed -> KeyCategory.Function
+        Key.Empty -> KeyCategory.Digit // unused; Empty is rendered separately
         is Key.Function -> KeyCategory.Function
         is Key.Symbol ->
             if (key.label in OperatorLabels) KeyCategory.Operator else KeyCategory.Digit
@@ -1021,6 +1236,7 @@ private val OperatorLabels = setOf("+", "-", "×", "÷", "%", "^", "π", "e")
 // shape physical desk calculators use. Tweaking this is the single
 // knob for "make keys taller / shorter" without touching layout code.
 private const val BUTTON_ASPECT_RATIO = 1.6f
+
 // Wider aspect ratio for scientific-function and memory rows: same
 // width, smaller height, so those rows are visibly less prominent than
 // the digit/operator rows and free up vertical space for the display.

@@ -18,6 +18,7 @@ plugins {
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
     alias(libs.plugins.android.junit5)
+    alias(libs.plugins.baseline.profile)
 }
 
 android {
@@ -37,8 +38,11 @@ android {
             libs.versions.target.sdk
                 .get()
                 .toInt()
-        versionCode = 1
-        versionName = "0.1.0"
+        // Phase 11 versioning. Bumping `versionName` always pairs with
+        // a bump of `versionCode` (monotonic across the lifetime of
+        // the app). See docs/RELEASE.md for the formula.
+        versionCode = 10000
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
@@ -61,6 +65,23 @@ android {
                 "proguard-rules.pro",
             )
             // signingConfig set up later via Play App Signing.
+        }
+        // The baselineprofile module measures release-flavoured binaries
+        // but the Macrobenchmark harness needs to attach a profiler, so
+        // we expose a release-shaped, debuggable, no-shrink-equivalents
+        // variant. The benchmark Gradle plugin matches against this.
+        create("benchmark") {
+            initWith(getByName("release"))
+            isMinifyEnabled = false
+            isShrinkResources = false
+            // signingConfig left at debug so the APK installs without a
+            // release key on a contributor's machine.
+            signingConfig = signingConfigs.getByName("debug")
+            // Profileable so the macrobenchmark process can read /
+            // record what we're doing without making the app fully
+            // debuggable (which would skew timings).
+            isProfileable = true
+            matchingFallbacks += listOf("release")
         }
     }
 
@@ -127,6 +148,13 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.splashscreen)
     implementation(libs.androidx.startup)
+    // Installs the Phase 9 baseline profile at app launch so the
+    // first cold start benefits from AOT compilation of hot paths.
+    implementation(libs.androidx.profileinstaller)
+    "baselineProfile"(project(":baselineprofile"))
+    // Phase 10: Glance for the home-screen widget.
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
 
     // ----- Persistence -----
     implementation(libs.androidx.datastore.preferences)
@@ -149,10 +177,16 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)
 
-    // ----- Unit tests (JUnit5) -----
+    // ----- Unit tests (JUnit5 for our own tests; JUnit4 vintage runner
+    //                  carries Robolectric tests since Robolectric is
+    //                  JUnit4-only - both run from the same task) -----
     testImplementation(libs.junit5.jupiter.api)
     testImplementation(libs.junit5.jupiter.params)
     testRuntimeOnly(libs.junit5.jupiter.engine)
+    testImplementation(libs.junit5.vintage.engine)
+    testImplementation(libs.junit4)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
     testImplementation(libs.mockk)

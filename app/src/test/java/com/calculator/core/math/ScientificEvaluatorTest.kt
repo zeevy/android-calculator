@@ -209,4 +209,57 @@ class ScientificEvaluatorTest {
         val result = radEvaluator.evaluate("foo(5)")
         assertInstanceOf(EvaluationResult.Error.UnknownToken::class.java, result)
     }
+
+    // ----- Factorial -----
+
+    @Test
+    fun factorialOfFiveIs120() {
+        near(radEvaluator.evaluate("5!").success(), "120")
+    }
+
+    @Test
+    fun factorialOfZeroIsOne() {
+        near(radEvaluator.evaluate("0!").success(), "1")
+    }
+
+    @Test
+    fun factorialOfOneIsOne() {
+        near(radEvaluator.evaluate("1!").success(), "1")
+    }
+
+    @Test
+    fun factorialBindsTighterThanPlus() {
+        // `5! + 3` should be `120 + 3 = 123`, not `(5+3)! = 40320`.
+        near(radEvaluator.evaluate("5!+3").success(), "123")
+    }
+
+    @Test
+    fun factorialAfterParenthesesAppliesToWholeGroup() {
+        near(radEvaluator.evaluate("(2+3)!").success(), "120")
+    }
+
+    @Test
+    fun factorialOfNegativeIsDomainError() {
+        val result = radEvaluator.evaluate("(-3)!")
+        assertInstanceOf(EvaluationResult.Error.Domain::class.java, result)
+    }
+
+    @Test
+    fun factorialOfNonIntegerIsDomainError() {
+        val result = radEvaluator.evaluate("2.5!")
+        assertInstanceOf(EvaluationResult.Error.Domain::class.java, result)
+    }
+
+    @Test
+    fun factorialOfFiveIntegerLiteralWithDotIsOk() {
+        // `5.0` should still count as integer thanks to stripTrailingZeros.
+        near(radEvaluator.evaluate("5.0!").success(), "120")
+    }
+
+    @Test
+    fun factorialAtStartIsTokenError() {
+        // `!5` has no operand for the `!`.
+        val result = radEvaluator.evaluate("!5")
+        assertInstanceOf(EvaluationResult.Error.UnknownToken::class.java, result)
+    }
 }
