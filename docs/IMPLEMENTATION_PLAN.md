@@ -610,10 +610,10 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 10 - Deliverables
 
-- [ ] `core/widget/QuickCalcWidget.kt` (Glance `GlanceAppWidget`)
-- [ ] Widget UI: result display + 0-9, +, -, =
-- [ ] `QuickCalculatorTileService` (QS tile) opens the basic calculator
-- [ ] Manifest entries + resource configs
+- [x] `core/widget/QuickCalcWidget.kt` (Glance `GlanceAppWidget`)
+- [x] Widget UI: display row + 5x4 keypad (digits, +, -, ×, ÷, (, ), C, ⌫, =). Same Evaluator the main app uses.
+- [x] `QuickCalculatorTileService` (QS tile) opens MainActivity via `startActivityAndCollapse` (PendingIntent on API 34+, legacy Intent on older)
+- [x] Manifest entries (Glance receiver + `BIND_QUICK_SETTINGS_TILE` service) + `res/xml/quick_calc_widget_info.xml`
 
 ### Phase 10 - Test cases
 
