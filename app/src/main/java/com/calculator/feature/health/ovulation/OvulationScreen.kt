@@ -31,10 +31,31 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
+/**
+ * Cycle estimator UI. Wraps [OvulationCalculator].
+ *
+ * Inputs:
+ *  - Last menstrual period (LMP) date - picked via the M3 DatePicker
+ *    dialog.
+ *  - Average cycle length, default 28, slider clamped to the
+ *    [OvulationCalculator.MIN_CYCLE_DAYS] .. [OvulationCalculator.MAX_CYCLE_DAYS]
+ *    range (so the input can never raise the IllegalArgumentException
+ *    the calculator throws for out-of-band values).
+ *
+ * Outputs: predicted ovulation date, fertile window, next period,
+ * estimated due date. A footer disclaimer is shown unconditionally
+ * because the figures are statistical and the screen must not read as
+ * either medical advice or a contraception tool.
+ *
+ * @param onUp Pop the calculator from the back stack.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OvulationScreen(onUp: () -> Unit) {
-    var lmp by remember { mutableStateOf(LocalDate.now().minusDays(14)) }
+    // Seed the LMP to ~two weeks ago so on first open the user sees a
+    // populated result roughly centred on today's date. They will replace
+    // it with their actual LMP via the picker.
+    var lmp by remember { mutableStateOf(LocalDate.now().minusDays(DEFAULT_LMP_OFFSET_DAYS)) }
     var cycleDays by remember { mutableIntStateOf(OvulationCalculator.DEFAULT_CYCLE_DAYS) }
     var pickerOpen by remember { mutableStateOf(false) }
 
@@ -53,8 +74,7 @@ fun OvulationScreen(onUp: () -> Unit) {
                 value = cycleDays.toFloat(),
                 onValueChange = { cycleDays = it.toInt() },
                 valueRange =
-                    OvulationCalculator.MIN_CYCLE_DAYS.toFloat()..
-                        OvulationCalculator.MAX_CYCLE_DAYS.toFloat(),
+                    OvulationCalculator.MIN_CYCLE_DAYS.toFloat()..OvulationCalculator.MAX_CYCLE_DAYS.toFloat(),
                 steps =
                     OvulationCalculator.MAX_CYCLE_DAYS -
                         OvulationCalculator.MIN_CYCLE_DAYS - 1,
@@ -99,6 +119,13 @@ fun OvulationScreen(onUp: () -> Unit) {
     }
 
     if (pickerOpen) {
+        // M3's DatePicker speaks epoch-millis in UTC. We feed it the
+        // current LMP converted to UTC midnight, and convert back via
+        // UTC so we get the same calendar date the user actually
+        // selected - using the device zone would slide the date by one
+        // day for users in negative-offset zones (e.g. Hawaii UTC-10
+        // picking "May 18" would land on "May 17" if we round-tripped
+        // via system zone).
         val state =
             rememberDatePickerState(
                 initialSelectedDateMillis = lmp.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli(),
@@ -122,5 +149,13 @@ fun OvulationScreen(onUp: () -> Unit) {
     }
 }
 
+// Human-friendly format: weekday, day, short month, year (e.g.
+// "Tue, 19 May 2026"). The leading weekday matters for next-period and
+// ovulation rows because users frequently want to know what day of the
+// week to plan around.
 private fun format(date: LocalDate): String =
     date.format(DateTimeFormatter.ofPattern("EEE, d MMM yyyy"))
+
+// Default seed of "two weeks ago" gives the chart a sensible starting
+// position centred around an average ovulation date.
+private const val DEFAULT_LMP_OFFSET_DAYS = 14L

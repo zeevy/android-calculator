@@ -31,10 +31,12 @@ class RatesRepositoryTest {
     @Before
     fun setUp() {
         db =
-            Room.inMemoryDatabaseBuilder(
-                ApplicationProvider.getApplicationContext(),
-                CalculatorDatabase::class.java,
-            ).allowMainThreadQueries().build()
+            Room
+                .inMemoryDatabaseBuilder(
+                    ApplicationProvider.getApplicationContext(),
+                    CalculatorDatabase::class.java,
+                ).allowMainThreadQueries()
+                .build()
         api = FakeRatesApi()
         repo =
             DefaultRatesRepository(

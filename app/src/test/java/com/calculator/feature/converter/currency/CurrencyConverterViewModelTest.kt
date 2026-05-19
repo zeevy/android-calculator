@@ -75,10 +75,17 @@ class CurrencyConverterViewModelTest {
             advanceUntilIdle()
             viewModel.toggleFavorite("EUR")
             advanceUntilIdle()
-            assertTrue(viewModel.state.value.favorites.contains("EUR"))
+            assertTrue(
+                viewModel.state.value.favorites
+                    .contains("EUR"),
+            )
             viewModel.toggleFavorite("EUR")
             advanceUntilIdle()
-            assertEquals(false, viewModel.state.value.favorites.contains("EUR"))
+            assertEquals(
+                false,
+                viewModel.state.value.favorites
+                    .contains("EUR"),
+            )
         }
 
     @Test

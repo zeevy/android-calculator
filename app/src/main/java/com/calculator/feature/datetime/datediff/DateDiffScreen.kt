@@ -27,10 +27,29 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
+/**
+ * Date arithmetic: difference between two dates, or a date plus an
+ * offset.
+ *
+ * Mode 0 (Two dates) - shows years/months/days, total days, and total
+ * weeks + remainder. Order doesn't matter; [DateDiffCalculator] swaps
+ * arguments to keep the result non-negative.
+ *
+ * Mode 1 (Date + offset) - takes a start date and a (possibly negative)
+ * integer day count, returns the resulting calendar date. Offset is
+ * stored as a string so the field can show "" or "-" mid-edit.
+ *
+ * @param onUp Pop the calculator from the back stack.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateDiffScreen(onUp: () -> Unit) {
     var mode by remember { mutableIntStateOf(0) } // 0 = two dates, 1 = date + offset
+    // Defaults seed a sample 1-year span so the result card has
+    // something to display on first render. The single picker state
+    // (`openPicker`) doubles as a flag (null = closed) and a routing
+    // tag (which date to update on confirm) - simpler than carrying a
+    // boolean + selector pair.
     var dateA by remember { mutableStateOf(LocalDate.now().minusYears(1)) }
     var dateB by remember { mutableStateOf(LocalDate.now()) }
     var offsetDays by remember { mutableStateOf("90") }
@@ -127,4 +146,5 @@ fun DateDiffScreen(onUp: () -> Unit) {
     }
 }
 
+/** Identifies which date the picker dialog should write back to on confirm. */
 private enum class Picker { A, B }

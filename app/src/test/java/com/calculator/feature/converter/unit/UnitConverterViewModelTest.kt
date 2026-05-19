@@ -83,8 +83,16 @@ class UnitConverterViewModelTest {
             // and the "from" field carries the previous output (1 km).
             viewModel.swap()
             advanceUntilIdle()
-            assertEquals("km", viewModel.state.value.fromUnit?.symbol)
-            assertEquals("m", viewModel.state.value.toUnit?.symbol)
+            assertEquals(
+                "km",
+                viewModel.state.value.fromUnit
+                    ?.symbol,
+            )
+            assertEquals(
+                "m",
+                viewModel.state.value.toUnit
+                    ?.symbol,
+            )
             assertEquals("1", viewModel.state.value.fromInput)
             assertEquals("1000", viewModel.state.value.toOutput)
         }
@@ -133,8 +141,16 @@ class UnitConverterViewModelTest {
             repo.records[UnitCategory.Volume] = "L" to "gal US"
             viewModel.selectCategory(UnitCategory.Volume)
             advanceUntilIdle()
-            assertEquals("L", viewModel.state.value.fromUnit?.symbol)
-            assertEquals("gal US", viewModel.state.value.toUnit?.symbol)
+            assertEquals(
+                "L",
+                viewModel.state.value.fromUnit
+                    ?.symbol,
+            )
+            assertEquals(
+                "gal US",
+                viewModel.state.value.toUnit
+                    ?.symbol,
+            )
         }
 
     private class FakeRepo : UnitConverterRepository {
@@ -152,9 +168,13 @@ class UnitConverterViewModelTest {
         override val settings: Flow<UserSettings> = snapshot.asStateFlow()
 
         override suspend fun setTheme(theme: UserSettings.ThemeOption) = Unit
+
         override suspend fun setDynamicColor(enabled: Boolean) = Unit
+
         override suspend fun setHaptics(enabled: Boolean) = Unit
+
         override suspend fun setSound(enabled: Boolean) = Unit
+
         override suspend fun setPrecision(precision: Int) {
             snapshot.value = snapshot.value.copy(precision = precision)
         }

@@ -42,7 +42,9 @@ import com.calculator.core.data.settings.UserSettings
  */
 @Composable
 fun SettingsSheetContent(
-    onClose: () -> Unit,
+    // Kept in the API so the host bottom sheet can wire dismiss into its
+    // own state; the sheet itself has no in-content close affordance.
+    @Suppress("UnusedParameter") onClose: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsState()
@@ -128,6 +130,11 @@ fun SettingsSheetContent(
     }
 }
 
+/**
+ * Small uppercase header above each settings group (Appearance,
+ * Feedback, etc.). Matches the iOS Settings app convention; uppercase
+ * is done at render time so callers pass plain title-case strings.
+ */
 @Composable
 private fun SectionLabel(text: String) {
     Text(
@@ -138,6 +145,22 @@ private fun SectionLabel(text: String) {
     )
 }
 
+/**
+ * Tappable row with a label, optional description, and trailing switch.
+ *
+ * The whole row is clickable, not just the switch - matches the iOS
+ * pattern where tapping anywhere on the cell toggles the value. The
+ * switch's own `onCheckedChange` covers the case where the user drags
+ * the thumb instead of tapping.
+ *
+ * @param label Primary row label.
+ * @param description Optional second line; pass null to skip.
+ * @param checked Current switch state.
+ * @param onCheckedChange Invoked with the new value when the row or
+ *   switch is tapped.
+ * @param accent Track colour when checked - reused by the slider and
+ *   theme picker so the whole sheet has one accent.
+ */
 @Composable
 private fun ToggleRow(
     label: String,
@@ -178,7 +201,7 @@ private fun ToggleRow(
                     checkedThumbColor = Color.White,
                     checkedTrackColor = accent,
                     uncheckedThumbColor = Color.White,
-                    uncheckedTrackColor = Color(0xFF555555),
+                    uncheckedTrackColor = UncheckedTrackColor,
                     uncheckedBorderColor = Color.Transparent,
                 ),
         )
@@ -219,6 +242,19 @@ private fun SegmentedThemePicker(
     }
 }
 
+/**
+ * Significant-figures slider.
+ *
+ * Steps are the integer count between
+ * [DataStoreSettingsRepository.MIN_PRECISION] and
+ * [DataStoreSettingsRepository.MAX_PRECISION]. Slider's `steps` value
+ * is "tick marks between min and max" (exclusive of both endpoints),
+ * so it's `(max - min) - 1`.
+ *
+ * Picked-up changes flow through [DataStoreSettingsRepository] and the
+ * Evaluator instances pull the new precision on their next construction
+ * - precision changes take effect on the next keypress, no restart.
+ */
 @Composable
 private fun PrecisionRow(
     precision: Int,
@@ -250,8 +286,7 @@ private fun PrecisionRow(
             value = precision.toFloat(),
             onValueChange = { onChange(it.toInt()) },
             valueRange =
-                DataStoreSettingsRepository.MIN_PRECISION.toFloat()..
-                    DataStoreSettingsRepository.MAX_PRECISION.toFloat(),
+                DataStoreSettingsRepository.MIN_PRECISION.toFloat()..DataStoreSettingsRepository.MAX_PRECISION.toFloat(),
             steps =
                 DataStoreSettingsRepository.MAX_PRECISION -
                     DataStoreSettingsRepository.MIN_PRECISION - 1,
@@ -313,6 +348,7 @@ private fun UserSettings.ThemeOption.label(): String =
 // Background tint for settings rows. Slightly lighter than the
 // sheet container so individual rows read as distinct cards.
 private val RowBackground = Color(0xFF2C2C2E)
+private val UncheckedTrackColor = Color(0xFF555555)
 
 // Same orange as the keypad operator keys. Reused here so the settings
 // sheet stays visually consistent with the rest of the app.

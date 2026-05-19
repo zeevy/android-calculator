@@ -3,7 +3,6 @@ package com.calculator.feature.lifecalc
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -50,6 +48,13 @@ import androidx.compose.ui.unit.sp
  *       InputCard { ... }
  *       OutputCard { ... }
  *   }
+ *
+ * @param title Screen title shown next to the back arrow.
+ * @param onUp Invoked when the back arrow is tapped. The scaffold does
+ *   not call `popBackStack()` itself so navigation stays a concern of
+ *   the host.
+ * @param content Vertical body of the screen, scrollable. Receives a
+ *   [ColumnScope] so cards can use `Modifier.weight` if they need to.
  */
 @Composable
 fun LifeCalculatorScaffold(
@@ -126,6 +131,18 @@ fun LifeCalcSectionLabel(text: String) {
 /**
  * Labelled number field with the same iOS-flavoured look as the rest
  * of the app: dim white label, white bold value, decimal IME.
+ *
+ * Uses [BasicTextField] (not OutlinedTextField) because the visual is a
+ * borderless label-over-value pattern - the M3 text field would impose
+ * its own outline and floating label which don't match.
+ *
+ * @param label Field title shown above the value.
+ * @param value Current value as a string. The caller is responsible for
+ *   parsing it - strings let mid-edit states like "" or "-." round-trip
+ *   without prematurely converting.
+ * @param onValueChange Invoked on each keystroke with the new string.
+ * @param suffix Optional trailing unit (e.g. "kg", "%"). Rendered to the
+ *   right of the field at smaller weight so the number reads as primary.
  */
 @Composable
 fun LifeCalcNumberField(
@@ -153,7 +170,8 @@ fun LifeCalcNumberField(
                         fontWeight = FontWeight.Bold,
                     ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                cursorBrush = androidx.compose.ui.graphics.SolidColor(LifeCalcAccent),
+                cursorBrush = androidx.compose.ui.graphics
+                    .SolidColor(LifeCalcAccent),
                 modifier = Modifier.weight(1f),
             )
             if (suffix != null) {
@@ -168,7 +186,18 @@ fun LifeCalcNumberField(
     }
 }
 
-/** "Label .... value" output line; used in result cards. */
+/**
+ * "Label .... value" output line; used in result cards.
+ *
+ * Layout: label on the left at 70% white, value right-aligned and bold.
+ * Setting [accent] to true colors the value with the orange accent and
+ * bumps the weight to bold - used to mark the headline output of each
+ * calculator (EMI, BMI, gross, etc.) so the user's eye lands on it first.
+ *
+ * @param label Row label (e.g. "Monthly EMI").
+ * @param value Right-aligned value string.
+ * @param accent If true, render the value in the orange accent colour.
+ */
 @Composable
 fun LifeCalcOutputRow(label: String, value: String, accent: Boolean = false) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -193,6 +222,15 @@ fun LifeCalcOutputRow(label: String, value: String, accent: Boolean = false) {
 /**
  * Two-option segmented control. Use for toggles like Metric/Imperial,
  * Forward/Reverse, Intra-state/Inter-state.
+ *
+ * The component accepts N options but visually it's tuned for 2 - with
+ * 3+ the labels can get crowded on narrow screens. The selected pill
+ * uses the orange accent with black text (high-contrast on the bright
+ * fill); unselected segments are transparent with white text.
+ *
+ * @param options Labels for each segment, left-to-right.
+ * @param selectedIndex 0-based index of the currently-selected option.
+ * @param onSelect Invoked with the tapped segment's index.
  */
 @Composable
 fun LifeCalcSegmented(
@@ -228,15 +266,10 @@ fun LifeCalcSegmented(
     }
 }
 
+// iOS palette tokens shared across all life-calc screens. Literal Color
+// values rather than MaterialTheme roles because the look needs to match
+// the basic calculator regardless of the user's dynamic-color settings.
 internal val LifeCalcAccent = Color(0xFFFF9F0A)
 internal val LifeCalcBackground = Color.Black
 internal val LifeCalcCardBackground = Color(0xFF1C1C1E)
 internal val LifeCalcSegmentBackground = Color(0xFF2C2C2E)
-
-/** Suppress "unused" warnings if a calculator screen doesn't use LazyColumn. */
-@Suppress("unused")
-private val _lazyColumnUsage: @Composable () -> Unit = { LazyColumn(modifier = Modifier) {} }
-
-/** Compose helper for Box import resolution (we use Box in some output cards). */
-@Suppress("unused")
-private val _boxUsage: @Composable () -> Unit = { Box(modifier = Modifier) {} }

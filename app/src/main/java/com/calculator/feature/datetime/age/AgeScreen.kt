@@ -37,11 +37,26 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
+/**
+ * Age calculator: takes a date of birth and reports elapsed
+ * years/months/days, weekday of birth, and days remaining until the
+ * next birthday.
+ *
+ * "Today" is read once per composition via [LocalDate.now]; the
+ * underlying [AgeCalculator] takes "today" as a parameter so the unit
+ * tests can pass a fixed date and assert deterministic output.
+ *
+ * @param onUp Pop the calculator from the back stack.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AgeScreen(onUp: () -> Unit) {
-    var dob by remember { mutableStateOf(LocalDate.of(1990, 1, 15)) }
+    var dob by remember { mutableStateOf(LocalDate.of(DEFAULT_DOB_YEAR, 1, DEFAULT_DOB_DAY)) }
     var pickerOpen by remember { mutableStateOf(false) }
+    // Cached for this composition. The result card recomputes when
+    // either `dob` or `today` changes; since `today` only changes when
+    // recomposition happens past midnight, reading it once is fine for
+    // a foreground calculator screen.
     val today = LocalDate.now()
 
     LifeCalculatorScaffold(title = "Age", onUp = onUp) {
@@ -65,7 +80,12 @@ fun AgeScreen(onUp: () -> Unit) {
                     value = "${result.years}y ${result.months}m ${result.days}d",
                     accent = true,
                 )
-                LifeCalcOutputRow("Weekday of birth", result.weekdayOfBirth.name.lowercase().replaceFirstChar { it.titlecase() })
+                LifeCalcOutputRow(
+                    "Weekday of birth",
+                    result.weekdayOfBirth.name
+                        .lowercase()
+                        .replaceFirstChar { it.titlecase() },
+                )
                 LifeCalcOutputRow(
                     label = "Days to next birthday",
                     value = if (result.daysToNextBirthday == 0) "Today!" else "${result.daysToNextBirthday}d",
@@ -98,6 +118,17 @@ fun AgeScreen(onUp: () -> Unit) {
     }
 }
 
+/**
+ * Tappable date row. Renders a friendly full date with weekday and a
+ * "Tap to change" hint, styled to match the rest of the life-calc cards.
+ *
+ * Shared with the ovulation screen (and any future screen that needs a
+ * "pick a date" affordance with the same look) - hence `internal`
+ * visibility rather than `private`.
+ *
+ * @param date Date currently selected (also seeds the picker dialog).
+ * @param onClick Open the date-picker dialog.
+ */
 @Composable
 internal fun DateRow(date: LocalDate, onClick: () -> Unit) {
     Column(
@@ -122,3 +153,8 @@ internal fun DateRow(date: LocalDate, onClick: () -> Unit) {
         )
     }
 }
+
+// Placeholder birthdate used when the user first opens the screen; the
+// exact value is unimportant as long as it's a recognisable, valid date.
+private const val DEFAULT_DOB_YEAR = 1990
+private const val DEFAULT_DOB_DAY = 15

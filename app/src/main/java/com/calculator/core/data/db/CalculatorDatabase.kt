@@ -4,22 +4,21 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 
 /**
- * Room database for the calculator. Currently a single table; future
- * phases will add a currency-rate cache (Phase 6) and unit-converter
- * favourites (Phase 5).
+ * Room database for the calculator.
  *
- * Schema version bumps **must** be paired with a [Migration] - never
- * destructive migration on a release build, since users have personal
- * calculation history that they may want to keep.
+ * Schema version bumps **must** be paired with a [Migration] once any
+ * public release has shipped - users have personal calculation history
+ * they may want to keep across upgrades.
+ *
+ * Version history:
+ *  - v1: `history` table.
+ *  - v2: adds `recent_unit_pair` for the Phase 5 unit converter.
+ *  - v3: adds `currency_rate` + `favorite_currency` for Phase 6.
+ *
+ * `exportSchema = false` while pre-release; flip to true and configure
+ * a schema location in `build.gradle` once a migration test suite is
+ * added (then every schema bump shows up in diff).
  */
-// exportSchema = false until the project adds a migration test suite;
-// at that point we'll set up a schema location (build.gradle) and flip
-// this to true so schema changes are reviewable in diff.
-//
-// v2: adds the recent_unit_pair table for the Phase 5 unit converter.
-// v3: adds currency_rate + favorite_currency tables for Phase 6.
-// Migration is destructive-fallback for now; once a real release ships
-// we'll add explicit Migration objects so users keep their history.
 @Database(
     entities = [
         HistoryEntity::class,

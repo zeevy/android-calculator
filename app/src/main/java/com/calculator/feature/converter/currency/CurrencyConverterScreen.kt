@@ -137,8 +137,7 @@ fun CurrencyConverterScreen(
                             .clip(RoundedCornerShape(8.dp))
                             .clickable(enabled = state.allCodes.isNotEmpty()) {
                                 pickerOpen = true
-                            }
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                            }.padding(horizontal = 8.dp, vertical = 4.dp),
                 )
                 Spacer(Modifier.weight(1f))
                 BasicTextField(
@@ -153,7 +152,8 @@ fun CurrencyConverterScreen(
                             textAlign = TextAlign.End,
                         ),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    cursorBrush = androidx.compose.ui.graphics.SolidColor(CurrencyAccent),
+                    cursorBrush = androidx.compose.ui.graphics
+                        .SolidColor(CurrencyAccent),
                 )
             }
             Spacer(Modifier.size(8.dp))
@@ -192,7 +192,7 @@ private fun HeaderInfoLine(state: CurrencyConverterUiState) {
             Text(
                 text = state.errorMessage,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFFFF6B6B),
+                color = ErrorMessageColor,
             )
         state.fetchedAtUtc != null ->
             Text(
@@ -341,21 +341,41 @@ private val moneyFormat: DecimalFormat by lazy {
 private fun formatMoney(value: Double): String =
     if (value == 0.0) "0.00" else moneyFormat.format(value)
 
+/**
+ * Relative-time string for the "last updated" line.
+ *
+ * Bands:
+ *  - <1 minute: "just now"
+ *  - <1 hour:   "Nm ago"
+ *  - <24 hours: "Nh ago"
+ *  - older:     absolute date "d MMM yyyy"
+ *
+ * Absolute fallback (not "Nd ago") because rate caches that old are
+ * approaching staleness; surfacing the absolute date nudges the user
+ * to refresh.
+ */
 private fun formatRelative(epochMillis: Long): String {
     val instant = Instant.ofEpochMilli(epochMillis)
     val now = Instant.now()
-    val seconds = (now.toEpochMilli() - epochMillis) / 1000
+    val seconds = (now.toEpochMilli() - epochMillis) / MILLIS_PER_SECOND
     return when {
-        seconds < 60 -> "just now"
-        seconds < 3_600 -> "${seconds / 60}m ago"
-        seconds < 86_400 -> "${seconds / 3_600}h ago"
+        seconds < SECONDS_PER_MINUTE -> "just now"
+        seconds < SECONDS_PER_HOUR -> "${seconds / SECONDS_PER_MINUTE}m ago"
+        seconds < SECONDS_PER_DAY -> "${seconds / SECONDS_PER_HOUR}h ago"
         else ->
-            DateTimeFormatter.ofPattern("d MMM yyyy")
+            DateTimeFormatter
+                .ofPattern("d MMM yyyy")
                 .withZone(ZoneId.systemDefault())
                 .format(instant)
     }
 }
 
+private const val MILLIS_PER_SECOND = 1_000L
+private const val SECONDS_PER_MINUTE = 60L
+private const val SECONDS_PER_HOUR = 3_600L
+private const val SECONDS_PER_DAY = 86_400L
+
 private val CardBackground = Color(0xFF2C2C2E)
 private val SheetBackground = Color(0xFF1C1C1E)
 private val CurrencyAccent = Color(0xFFFF9F0A)
+private val ErrorMessageColor = Color(0xFFFF6B6B)

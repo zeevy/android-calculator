@@ -30,6 +30,14 @@ class QuickCalculatorTileService : TileService() {
 
     override fun onClick() {
         super.onClick()
+        // Explicit component intent rather than action+category because
+        // the tile lives inside the system's shade process, and that
+        // process doesn't share our class loader - implicit intents
+        // would only work if MainActivity advertised the right
+        // category in the manifest, which is unnecessary here.
+        // FLAG_ACTIVITY_NEW_TASK is required because we're launching
+        // from outside an activity; CLEAR_TOP brings any existing
+        // calculator task forward instead of stacking a duplicate.
         val launchIntent =
             Intent().apply {
                 component = ComponentName(applicationContext, "com.calculator.MainActivity")
@@ -37,6 +45,10 @@ class QuickCalculatorTileService : TileService() {
             }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            // API 34+ requires a PendingIntent so the platform can
+            // attribute the launch to our app rather than to the shade.
+            // FLAG_IMMUTABLE is mandatory on modern Android for any
+            // PendingIntent we don't intend the receiver to mutate.
             val pi =
                 PendingIntent.getActivity(
                     applicationContext,
@@ -46,7 +58,11 @@ class QuickCalculatorTileService : TileService() {
                 )
             startActivityAndCollapse(pi)
         } else {
-            @Suppress("DEPRECATION")
+            // Pre-34 path: the Intent overload is deprecated but still
+            // the only option available, and the platform doesn't yet
+            // require a PendingIntent here. Suppression is local so a
+            // future minSdk bump above 34 will surface it again.
+            @Suppress("DEPRECATION", "StartActivityAndCollapseDeprecated")
             startActivityAndCollapse(launchIntent)
         }
     }

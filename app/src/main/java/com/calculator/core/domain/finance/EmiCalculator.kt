@@ -40,7 +40,7 @@ object EmiCalculator {
                 amortisation = flatAmortisation(principal, months, flat),
             )
         }
-        val r = annualRatePercent / 100.0 / 12.0
+        val r = annualRatePercent / 100.0 / MONTHS_PER_YEAR
         val pow = (1.0 + r).pow(months)
         val emi = principal * r * pow / (pow - 1.0)
         return EmiResult(
@@ -95,6 +95,8 @@ object EmiCalculator {
             )
         }
     }
+
+    private const val MONTHS_PER_YEAR = 12.0
 }
 
 data class EmiResult(

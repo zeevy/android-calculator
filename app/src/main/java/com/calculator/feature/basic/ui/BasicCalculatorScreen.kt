@@ -26,18 +26,17 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.CurrencyExchange
-import androidx.compose.material.icons.filled.Functions
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.MonitorWeight
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Cake
+import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Functions
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocalOffer
-import androidx.compose.material.icons.filled.Percent
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MonitorWeight
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Straighten
@@ -47,7 +46,6 @@ import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
@@ -65,22 +63,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.core.designsystem.theme.CalculatorTheme
@@ -145,123 +143,126 @@ internal fun BasicCalculatorScreenContent(
         LocalKeyTones provides tonesIfEnabled,
         LocalHapticsEnabled provides userSettings.haptics,
     ) {
-    Scaffold(
-        // Hand out insets per-child: outer Column absorbs the status-bar
-        // inset (so the display card sits below the system icons), and
-        // the keypad card absorbs the navigation-bar inset on its bottom
-        // edge (so the bottom row of keys doesn't collide with the
-        // gesture pill).
-        contentWindowInsets = WindowInsets(0.dp),
-    ) { padding ->
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .windowInsetsPadding(WindowInsets.statusBars)
-                    .padding(horizontal = 12.dp)
-                    .padding(top = 8.dp),
-        ) {
-            // Display sits directly on the screen background - no card,
-            // no border. The typographic hierarchy inside (small muted
-            // expression line, big bold result) carries the visual
-            // weight on its own, and the gap before the keypad tray
-            // does the section separation.
-            DisplaySection(
-                state = state,
-                onEvent = onEvent,
-                onOpenMenu = { openSheet = MenuSheet.Tools },
+        Scaffold(
+            // Hand out insets per-child: outer Column absorbs the status-bar
+            // inset (so the display card sits below the system icons), and
+            // the keypad card absorbs the navigation-bar inset on its bottom
+            // edge (so the bottom row of keys doesn't collide with the
+            // gesture pill).
+            contentWindowInsets = WindowInsets(0.dp),
+        ) { padding ->
+            Column(
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-            )
-            Spacer(Modifier.size(8.dp))
-            HorizontalDivider(
-                color = MaterialTheme.colorScheme.outlineVariant,
-                thickness = 1.dp,
-            )
-            Spacer(Modifier.size(12.dp))
-            // No keypad tray. iOS calculator puts keys directly on the
-            // screen background; the colored keys carry the visual
-            // structure on their own.
-            Keypad(
-                scientific = state.scientific,
-                onEvent = onEvent,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .windowInsetsPadding(WindowInsets.navigationBars)
-                        .padding(bottom = 12.dp),
-            )
-        }
-    }
-
-    if (openSheet != null) {
-        ModalBottomSheet(
-            sheetState = sheetState,
-            onDismissRequest = { openSheet = null },
-            // iOS palette: near-black sheet so it sits flat against the
-            // calculator's black canvas, with a light-grey drag handle
-            // to match the modifier-key tone.
-            containerColor = IosSheetBackground,
-            dragHandle = {
-                BottomSheetDefaults.DragHandle(
-                    color = IosKeyModifierContainer,
+                        .fillMaxSize()
+                        .padding(padding)
+                        .windowInsetsPadding(WindowInsets.statusBars)
+                        .padding(horizontal = 12.dp)
+                        .padding(top = 8.dp),
+            ) {
+                // Display sits directly on the screen background - no card,
+                // no border. The typographic hierarchy inside (small muted
+                // expression line, big bold result) carries the visual
+                // weight on its own, and the gap before the keypad tray
+                // does the section separation.
+                DisplaySection(
+                    state = state,
+                    onEvent = onEvent,
+                    onOpenMenu = { openSheet = MenuSheet.Tools },
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
                 )
-            },
-        ) {
-            when (openSheet) {
-                MenuSheet.Tools ->
-                    ToolsSheetContent(
-                        state = state,
-                        onEvent = onEvent,
-                        onOpenHistory = { openSheet = MenuSheet.History },
-                        onOpenSettings = { openSheet = MenuSheet.Settings },
-                        onOpenUnitConverter = {
-                            scope.launch { sheetState.hide() }
-                            openSheet = null
-                            onOpenUnitConverter()
-                        },
-                        onOpenCurrencyConverter = {
-                            scope.launch { sheetState.hide() }
-                            openSheet = null
-                            onOpenCurrencyConverter()
-                        },
-                        onOpenLifeCalc = { route ->
-                            scope.launch { sheetState.hide() }
-                            openSheet = null
-                            onOpenLifeCalc(route)
-                        },
-                        onClose = {
-                            scope.launch { sheetState.hide() }
-                            openSheet = null
-                        },
-                    )
-                MenuSheet.History ->
-                    HistorySheetContent(
-                        onReuseExpression = { expr ->
-                            onEvent(BasicCalculatorEvent.Clear)
-                            onEvent(BasicCalculatorEvent.Append(expr))
-                        },
-                        onClose = {
-                            scope.launch { sheetState.hide() }
-                            openSheet = null
-                        },
-                    )
-                MenuSheet.Settings ->
-                    com.calculator.feature.settings.SettingsSheetContent(
-                        onClose = {
-                            scope.launch { sheetState.hide() }
-                            openSheet = null
-                        },
-                    )
-                null -> Unit
+                Spacer(Modifier.size(8.dp))
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    thickness = 1.dp,
+                )
+                Spacer(Modifier.size(12.dp))
+                // No keypad tray. iOS calculator puts keys directly on the
+                // screen background; the colored keys carry the visual
+                // structure on their own.
+                Keypad(
+                    scientific = state.scientific,
+                    onEvent = onEvent,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .windowInsetsPadding(WindowInsets.navigationBars)
+                            .padding(bottom = 12.dp),
+                )
             }
         }
-    }
+
+        if (openSheet != null) {
+            ModalBottomSheet(
+                sheetState = sheetState,
+                onDismissRequest = { openSheet = null },
+                // iOS palette: near-black sheet so it sits flat against the
+                // calculator's black canvas, with a light-grey drag handle
+                // to match the modifier-key tone.
+                containerColor = IosSheetBackground,
+                dragHandle = {
+                    BottomSheetDefaults.DragHandle(
+                        color = IosKeyModifierContainer,
+                    )
+                },
+            ) {
+                when (openSheet) {
+                    MenuSheet.Tools ->
+                        ToolsSheetContent(
+                            state = state,
+                            onEvent = onEvent,
+                            onOpenHistory = { openSheet = MenuSheet.History },
+                            onOpenSettings = { openSheet = MenuSheet.Settings },
+                            onOpenUnitConverter = {
+                                scope.launch { sheetState.hide() }
+                                openSheet = null
+                                onOpenUnitConverter()
+                            },
+                            onOpenCurrencyConverter = {
+                                scope.launch { sheetState.hide() }
+                                openSheet = null
+                                onOpenCurrencyConverter()
+                            },
+                            onOpenLifeCalc = { route ->
+                                scope.launch { sheetState.hide() }
+                                openSheet = null
+                                onOpenLifeCalc(route)
+                            },
+                            onClose = {
+                                scope.launch { sheetState.hide() }
+                                openSheet = null
+                            },
+                        )
+                    MenuSheet.History ->
+                        HistorySheetContent(
+                            onReuseExpression = { expr ->
+                                onEvent(BasicCalculatorEvent.Clear)
+                                onEvent(BasicCalculatorEvent.Append(expr))
+                            },
+                            onClose = {
+                                scope.launch { sheetState.hide() }
+                                openSheet = null
+                            },
+                        )
+                    MenuSheet.Settings ->
+                        com.calculator.feature.settings.SettingsSheetContent(
+                            onClose = {
+                                scope.launch { sheetState.hide() }
+                                openSheet = null
+                            },
+                        )
+                    null -> Unit
+                }
+            }
+        }
     } // CompositionLocalProvider
 }
+
+/** Which sheet is currently displayed in the modal bottom sheet. */
+private enum class MenuSheet { Tools, History, Settings }
 
 /**
  * App-level tools sheet, summoned from the top-right hamburger button.
@@ -274,10 +275,12 @@ internal fun BasicCalculatorScreenContent(
  * are placeholders for upcoming features (history in Phase 3, converters
  * in Phase 5/6, life calculators in Phase 7) and are tappable but flash
  * a "coming soon" hint to avoid silently swallowing user intent.
+ *
+ * Each lambda routes to a distinct destination; collapsing them into a
+ * single sealed event would push the routing decision into the screen,
+ * hence the suppression of [LongParameterList].
  */
-/** Which sheet is currently displayed in the modal bottom sheet. */
-private enum class MenuSheet { Tools, History, Settings }
-
+@Suppress("LongParameterList")
 @Composable
 private fun ToolsSheetContent(
     state: BasicCalculatorUiState,
@@ -641,7 +644,12 @@ private fun Display(
  *  3. Stop at [minFontSize] - if the string still doesn't fit there,
  *     the trailing characters clip (the alternative is illegible 8sp
  *     text, which is worse than clipping).
+ *
+ * Each parameter maps to a distinct visual lever (size bounds, color,
+ * line cap, modifier) that callers tweak independently, hence the
+ * suppression of [LongParameterList].
  */
+@Suppress("LongParameterList")
 @Composable
 private fun AutoSizeText(
     text: String,
@@ -694,6 +702,7 @@ private fun AutoSizeText(
 }
 
 private const val AUTO_SIZE_STEP_SP = 2f
+
 // Floors are deliberately small so the shrink loop can actually find
 // a size that fits in advanced mode (where the 9-row keypad leaves
 // only ~100dp for the entire display). A previous 28sp floor caused
@@ -701,6 +710,7 @@ private const val AUTO_SIZE_STEP_SP = 2f
 // because the loop bottomed out before finding a fit.
 private val DISPLAY_RESULT_MIN_SIZE = 16.sp
 private val DISPLAY_EXPRESSION_MIN_SIZE = 10.sp
+
 // Up to three lines for the big result line and two for the muted
 // expression-history line. Multi-line first, then font shrink - so a
 // long expression grows downward before any text gets smaller.
@@ -933,6 +943,10 @@ private sealed interface Key {
     }
 }
 
+// Dispatcher for the keypad: one `when` arm per `Key` subtype. Adding a
+// dispatcher class to split this purely for the linter would only obscure
+// the table-style mapping from key to event.
+@Suppress("CyclomaticComplexMethod")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun KeyButton(
@@ -983,7 +997,9 @@ private fun KeyButton(
     // clears the whole expression, in place of the standalone C key.
     val longClick: (() -> Unit)? =
         when (key) {
-            Key.Backspace -> { { onEvent(BasicCalculatorEvent.Clear) } }
+            Key.Backspace -> {
+                { onEvent(BasicCalculatorEvent.Clear) }
+            }
             else -> null
         }
 
@@ -1220,6 +1236,7 @@ private val OperatorLabels = setOf("+", "-", "×", "÷", "%", "^", "π", "e")
 // shape physical desk calculators use. Tweaking this is the single
 // knob for "make keys taller / shorter" without touching layout code.
 private const val BUTTON_ASPECT_RATIO = 1.6f
+
 // Wider aspect ratio for scientific-function and memory rows: same
 // width, smaller height, so those rows are visibly less prominent than
 // the digit/operator rows and free up vertical space for the display.

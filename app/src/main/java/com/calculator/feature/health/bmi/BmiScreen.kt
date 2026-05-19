@@ -17,9 +17,24 @@ import com.calculator.feature.lifecalc.LifeCalcSectionLabel
 import com.calculator.feature.lifecalc.LifeCalcSegmented
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
 
+/**
+ * Body-Mass-Index calculator. Accepts metric (cm + kg) or imperial
+ * (ft + in + lb) input, calls into [BmiCalculator], and reports the
+ * BMI value plus the WHO category label (Underweight/Normal/etc).
+ *
+ * Defaults are global-average adult values (170 cm / 70 kg ≈ BMI 24.2,
+ * which lands in "Normal") so the screen always renders a sensible
+ * result the moment it appears.
+ *
+ * @param onUp Pop the calculator from the back stack.
+ */
 @Composable
 fun BmiScreen(onUp: () -> Unit) {
     var unitIdx by remember { mutableIntStateOf(0) } // 0=Metric, 1=Imperial
+    // Both unit systems' fields are kept in state simultaneously so
+    // toggling units preserves what was last typed in the other system
+    // - common pattern for height/weight where the user might want to
+    // compare "what's 170 cm in feet/inches?".
     // Metric inputs
     var heightCm by remember { mutableStateOf("170") }
     var weightKg by remember { mutableStateOf("70") }

@@ -45,7 +45,8 @@ class LoanCopyTest {
         val lineComment = Regex("//[^\\n]*")
         val stringLiteralRegex = Regex("\"([^\"\\n\\\\]|\\\\.)*\"")
         val codeOnly =
-            sourceRoot.readText()
+            sourceRoot
+                .readText()
                 .replace(blockComment, "")
                 .replace(lineComment, "")
         val userVisibleText =

@@ -7,12 +7,12 @@ import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
 import com.calculator.core.data.converter.RoomUnitConverterRepository
 import com.calculator.core.data.converter.UnitConverterRepository
-import com.calculator.core.data.rates.DefaultRatesRepository
-import com.calculator.core.data.rates.RatesRepository
 import com.calculator.core.data.db.CalculatorDatabase
 import com.calculator.core.data.db.HistoryDao
 import com.calculator.core.data.history.HistoryRepository
 import com.calculator.core.data.history.RoomHistoryRepository
+import com.calculator.core.data.rates.DefaultRatesRepository
+import com.calculator.core.data.rates.RatesRepository
 import com.calculator.core.data.settings.DataStoreSettingsRepository
 import com.calculator.core.data.settings.SettingsRepository
 import dagger.Binds
@@ -43,12 +43,15 @@ object DataModule {
 
     @Provides
     @Singleton
-    fun provideCalculatorDatabase(@ApplicationContext context: Context): CalculatorDatabase =
-        Room.databaseBuilder(
-            context,
-            CalculatorDatabase::class.java,
-            CalculatorDatabase.NAME,
-        )
+    fun provideCalculatorDatabase(
+        @ApplicationContext context: Context,
+    ): CalculatorDatabase =
+        Room
+            .databaseBuilder(
+                context,
+                CalculatorDatabase::class.java,
+                CalculatorDatabase.NAME,
+            )
             // Acceptable while no public release has shipped. Pre-release
             // builds reset their on-device DB across schema bumps; once
             // we ship to Play, every schema bump must come with a

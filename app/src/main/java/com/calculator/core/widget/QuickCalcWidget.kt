@@ -24,14 +24,12 @@ import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
-import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
-import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.state.GlanceStateDefinition
 import androidx.glance.state.PreferencesGlanceStateDefinition
@@ -40,10 +38,10 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
-import androidx.compose.ui.graphics.Color as ComposeColor
 import com.calculator.core.math.AngleMode
 import com.calculator.core.math.EvaluationResult
 import com.calculator.core.math.Evaluator
+import androidx.compose.ui.graphics.Color as ComposeColor
 
 /**
  * A pocket-calculator-shaped home-screen widget.
@@ -70,10 +68,19 @@ class QuickCalcWidget : GlanceAppWidget() {
     }
 }
 
+/**
+ * Broadcast receiver glue declared in the manifest. Glance routes
+ * `APPWIDGET_UPDATE` and `APPWIDGET_DELETED` broadcasts here, which
+ * then delegates to [QuickCalcWidget] for the actual rendering.
+ */
 class QuickCalcWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = QuickCalcWidget()
 }
 
+// DataStore key for the widget's persisted expression. One key (and
+// therefore one widget state) is sufficient because every instance of
+// the widget on the home screen is independent - Glance assigns each
+// its own DataStore file behind the scenes keyed by GlanceId.
 private val ExpressionKey = stringPreferencesKey("widget.expression")
 
 private val OperatorColor = ComposeColor(0xFFFF9F0A)
@@ -215,9 +222,22 @@ class WidgetKeyAction : ActionCallback {
             else -> current + label
         }
 
+    /**
+     * Run the shared [Evaluator] over the user's expression and return
+     * the canonical string form of the result.
+     *
+     * On a tokenizer/evaluator error we deliberately leave the
+     * expression unchanged rather than wiping it - the user just typed
+     * it; clearing on error would be a hostile experience. They can fix
+     * the typo and press `=` again.
+     */
     private fun evaluate(expression: String): String {
         if (expression.isBlank()) return ""
-        // Convert the widget's "-" into the app's canonical "-".
+        // Radian mode is fixed because the widget has no scientific
+        // keys, so the angle-mode choice never affects basic
+        // arithmetic. Building a fresh Evaluator per click is fine -
+        // the constructor is microseconds and the widget rarely
+        // recomputes.
         return when (val result = Evaluator(angleMode = AngleMode.Radian).evaluate(expression)) {
             is EvaluationResult.Success -> result.value.stripTrailingZeros().toPlainString()
             is EvaluationResult.Error -> expression // leave as-is; user can fix and retry

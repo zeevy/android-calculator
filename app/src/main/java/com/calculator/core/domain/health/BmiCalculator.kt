@@ -31,9 +31,9 @@ object BmiCalculator {
      */
     fun imperial(heightFeet: Int, heightInches: Double, weightLb: Double): BmiResult {
         require(heightFeet >= 0) { "feet must be >= 0" }
-        require(heightInches in 0.0..(11.999)) { "inches must be in [0, 12)" }
+        require(heightInches in 0.0..MAX_INCHES_FRACTION) { "inches must be in [0, 12)" }
         require(weightLb > 0) { "weight must be > 0" }
-        val heightM = (heightFeet * 12 + heightInches) * INCH_IN_METRES
+        val heightM = (heightFeet * INCHES_PER_FOOT + heightInches) * INCH_IN_METRES
         val weightKg = weightLb * KG_PER_POUND
         return computeFromMetric(heightM, weightKg)
     }
@@ -48,9 +48,9 @@ object BmiCalculator {
 
     private fun categoryFor(bmi: Double): Category =
         when {
-            bmi < 18.5 -> Category.Underweight
-            bmi < 25.0 -> Category.Normal
-            bmi < 30.0 -> Category.Overweight
+            bmi < UNDERWEIGHT_MAX -> Category.Underweight
+            bmi < NORMAL_MAX -> Category.Normal
+            bmi < OVERWEIGHT_MAX -> Category.Overweight
             else -> Category.Obese
         }
 
@@ -63,8 +63,18 @@ object BmiCalculator {
 
     enum class UnitSystem { Metric, Imperial }
 
+    private const val INCHES_PER_FOOT = 12
+
+    // Largest fractional inches accepted (12.0 would overflow into the
+    // next foot, but anything strictly less is valid).
+    private const val MAX_INCHES_FRACTION = 11.999
     private const val INCH_IN_METRES = 0.0254
     private const val KG_PER_POUND = 0.45359237
+
+    // WHO adult BMI category boundaries (kg/m^2).
+    private const val UNDERWEIGHT_MAX = 18.5
+    private const val NORMAL_MAX = 25.0
+    private const val OVERWEIGHT_MAX = 30.0
 }
 
 data class BmiResult(val bmi: Double, val category: BmiCalculator.Category)

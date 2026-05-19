@@ -125,6 +125,19 @@ fun HistorySheetContent(
     }
 }
 
+/**
+ * Single history row: expression, "= result", timestamp, and a trash
+ * icon on the right.
+ *
+ * Whole-row tap fires [onTap] (reuse), but the icon button sits inside
+ * the same Row and gets first dibs on the gesture by virtue of being
+ * an explicit clickable - tapping it does not also fire the row's
+ * onClick. This is Compose's standard nested-clickable contract.
+ *
+ * @param entry History entry to render.
+ * @param onTap Reuse this expression in the calculator.
+ * @param onDelete Delete this entry from the DAO.
+ */
 @Composable
 private fun HistoryRow(
     entry: HistoryEntry,
@@ -191,6 +204,10 @@ private fun EmptyHistory() {
     }
 }
 
+// Localised short-form date + time (e.g. "5/19/26, 2:31 PM" in en-US,
+// "19/05/26 14:31" in en-GB). `DateFormat.getDateTimeInstance` picks
+// the locale-correct pattern automatically, so we don't need to hand-
+// roll one and lose i18n.
 private fun formatTimestamp(epochMillis: Long): String =
     DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(epochMillis))
 

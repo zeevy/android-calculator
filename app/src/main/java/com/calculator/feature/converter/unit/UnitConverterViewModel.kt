@@ -59,10 +59,28 @@ class UnitConverterViewModel
             viewModelScope.launch { selectCategory(UnitCategory.Length) }
         }
 
+        /**
+         * Switch to [category], loading its units and applying any
+         * saved "recent" pair the user previously picked.
+         *
+         * Resolution rules:
+         *  - "From" unit: use the saved symbol if it still exists in
+         *    the category's table, else fall back to the first unit
+         *    (the canonical, e.g. metre/litre/kilogram).
+         *  - "To" unit: use the saved symbol if it exists, else the
+         *    second unit, else the first (some categories have only
+         *    one common-pair member if a future trim happens).
+         *
+         * Recompute is dispatched after the state is updated so the
+         * output reflects the new units immediately.
+         */
         fun selectCategory(category: UnitCategory) {
             viewModelScope.launch {
                 val units = ConversionTable.unitsFor(category)
                 val saved = repository.recent(category)
+                // `firstOrNull` (not single()) because the saved symbol
+                // may not be in the current unit list if the table has
+                // been trimmed since the user last selected.
                 val from =
                     saved?.first?.let { sym -> units.firstOrNull { it.symbol == sym } }
                         ?: units.first()
@@ -126,6 +144,17 @@ class UnitConverterViewModel
             viewModelScope.launch { repository.record(snap.category, from, to) }
         }
 
+        /**
+         * Recompute [UnitConverterUiState.toOutput] from the current
+         * input and unit selection.
+         *
+         * Bails to an empty output when:
+         *  - Either unit hasn't been resolved yet (transient state
+         *    between `selectCategory` and the next emission).
+         *  - The input doesn't parse as a Double (empty, "-", "1.",
+         *    etc.) - we keep the field as the user typed it but show
+         *    no output rather than rendering "NaN".
+         */
         private fun recompute() {
             _state.update { current ->
                 val from = current.fromUnit
@@ -157,8 +186,8 @@ private fun String.toDoubleOrNullPermissive(): Double? {
 internal fun formatResult(value: Double, significantFigures: Int): String {
     if (value == 0.0 || !value.isFinite()) return if (value.isFinite()) "0" else "—"
     val absValue = abs(value)
-    val sigFigs = significantFigures.coerceIn(1, 16)
-    val useScientific = absValue < 1e-4 || absValue >= 1e15
+    val sigFigs = significantFigures.coerceIn(1, MAX_SIG_FIGS)
+    val useScientific = absValue < SCIENTIFIC_LOWER_BOUND || absValue >= SCIENTIFIC_UPPER_BOUND
     val symbols = DecimalFormatSymbols(Locale.US)
     val format =
         if (useScientific) {
@@ -171,8 +200,14 @@ internal fun formatResult(value: Double, significantFigures: Int): String {
             val digitsAfterPoint =
                 (sigFigs - 1 - floor(log10(absValue)).toInt())
                     .coerceAtLeast(0)
-                    .coerceAtMost(15)
+                    .coerceAtMost(MAX_DECIMAL_DIGITS)
             DecimalFormat("0.${"#".repeat(digitsAfterPoint)}", symbols)
         }
     return format.format(value)
 }
+
+// Double-precision sane bounds for human-readable formatting.
+private const val MAX_SIG_FIGS = 16
+private const val MAX_DECIMAL_DIGITS = 15
+private const val SCIENTIFIC_LOWER_BOUND = 1e-4
+private const val SCIENTIFIC_UPPER_BOUND = 1e15

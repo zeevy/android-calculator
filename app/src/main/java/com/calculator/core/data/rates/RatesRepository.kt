@@ -26,14 +26,38 @@ import javax.inject.Singleton
  * domain layer for testability.
  */
 interface RatesRepository {
+    /**
+     * Emits the currently-cached rate table (or null if the cache is
+     * empty). The Flow stays active for the lifetime of the subscriber
+     * and re-emits when [refresh] writes new data or when [addFavorite]
+     * / [removeFavorite] changes the favourites table - the UI does not
+     * need to poll.
+     */
     fun observeCached(): Flow<Rates?>
 
+    /** Emits the favourite codes in stored order. */
     fun observeFavorites(): Flow<List<String>>
 
+    /**
+     * Hit the network and replace the cache with the new payload.
+     *
+     * @param base ISO 4217 base currency code (e.g. "USD", "INR"). All
+     *   returned rates are expressed relative to this base; the cache
+     *   stores it so the UI knows which currency to treat as 1.0.
+     * @throws Exception when the network call fails or the response
+     *   `result` field is anything other than "success". The caller
+     *   typically reports this as a transient error while leaving the
+     *   stale cache in place.
+     */
     suspend fun refresh(base: String)
 
+    /**
+     * Pin [code] as a favourite. New favourites are appended; existing
+     * favourites keep their stored position.
+     */
     suspend fun addFavorite(code: String)
 
+    /** Unpin [code]; no-op if it wasn't a favourite. */
     suspend fun removeFavorite(code: String)
 }
 
@@ -47,9 +71,15 @@ class DefaultRatesRepository
     ) : RatesRepository {
         override fun observeCached(): Flow<Rates?> =
             ratesDao.observeAll().map { rows ->
+                // Empty cache → expose null so callers can render an
+                // "offline / never refreshed" placeholder instead of a
+                // misleading empty Rates with base "" and no entries.
                 if (rows.isEmpty()) {
                     null
                 } else {
+                    // `replaceAll` writes a single batch so every row shares
+                    // baseCode and fetchedAtUtc; reading them from row 0 is
+                    // safe and avoids scanning the list.
                     Rates(
                         base = rows.first().baseCode,
                         rates = rows.associate { it.code to it.rateVsBase },
@@ -82,6 +112,11 @@ class DefaultRatesRepository
         }
 
         override suspend fun addFavorite(code: String) {
+            // Append after every existing favourite. We don't compact
+            // positions on remove (so the sequence may have gaps), but
+            // `maxPosition()` returns the largest stored value plus we
+            // add 1, which preserves the relative ordering regardless
+            // of gaps. Cheaper than re-numbering on every delete.
             val nextPos = favouritesDao.maxPosition() + 1
             favouritesDao.upsert(FavoriteCurrencyEntity(code = code, position = nextPos))
         }

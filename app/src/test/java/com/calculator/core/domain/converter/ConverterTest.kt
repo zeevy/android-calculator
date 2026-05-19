@@ -10,9 +10,6 @@ import kotlin.math.abs
  * category.
  */
 class ConverterTest {
-    private fun ConverterUnit.lookup(category: UnitCategory): ConverterUnit =
-        ConversionTable.unitsFor(category).single { it.symbol == this.symbol }
-
     private fun near(actual: Double, expected: Double, tolerance: Double = 1e-9) {
         assert(abs(actual - expected) < tolerance) {
             "expected $expected (±$tolerance) but got $actual (diff ${abs(actual - expected)})"

@@ -154,6 +154,13 @@ fun UnitConverterScreen(
     }
 }
 
+/**
+ * Horizontal scrolling chip row of unit categories.
+ *
+ * Uses [LazyRow] (not Row) because the chip count is fixed but visually
+ * unbounded - 11 categories overflow narrow phones, and a LazyRow lets
+ * the user flick to off-screen chips without us having to pre-measure.
+ */
 @Composable
 private fun CategoryRow(
     categories: List<UnitCategory>,
@@ -162,7 +169,8 @@ private fun CategoryRow(
 ) {
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp),
+        contentPadding = androidx.compose.foundation.layout
+            .PaddingValues(vertical = 4.dp),
     ) {
         items(categories) { category ->
             val isSelected = category == selected
@@ -181,6 +189,11 @@ private fun CategoryRow(
     }
 }
 
+/**
+ * Top "From" card with the editable number field. Custom
+ * `decorationBox` paints a faded "0" placeholder when the field is
+ * empty - BasicTextField doesn't expose Material's built-in placeholder.
+ */
 @Composable
 private fun FromCard(
     unit: ConverterUnit?,
@@ -206,7 +219,8 @@ private fun FromCard(
                 keyboardOptions =
                     KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 cursorBrush =
-                    androidx.compose.ui.graphics.SolidColor(ConverterAccent),
+                    androidx.compose.ui.graphics
+                        .SolidColor(ConverterAccent),
                 modifier = Modifier.fillMaxWidth(),
                 decorationBox = { inner ->
                     Box(
@@ -331,8 +345,11 @@ private fun UnitPickerSheet(
                         text = unit.displayName,
                         style = MaterialTheme.typography.bodyLarge,
                         color =
-                            if (unit.symbol == currentSymbol) ConverterAccent
-                            else Color.White,
+                            if (unit.symbol == currentSymbol) {
+                                ConverterAccent
+                            } else {
+                                Color.White
+                            },
                         modifier = Modifier.weight(1f),
                     )
                     Text(

@@ -65,7 +65,8 @@ class BasicCalculatorViewModel
         // current value, so a precision change in Settings takes
         // effect on the next keypress without restarting anything.
         private val precision: StateFlow<Int> =
-            settingsRepository?.settings
+            settingsRepository
+                ?.settings
                 ?.map { it.precision }
                 ?.stateIn(
                     scope = viewModelScope,
@@ -73,6 +74,7 @@ class BasicCalculatorViewModel
                     initialValue = DEFAULT_PRECISION,
                 )
                 ?: MutableStateFlow(DEFAULT_PRECISION).asStateFlow()
+
         // Restore from the SavedStateHandle so calculator state survives
         // process death and config changes. `liveResult` is derived from
         // `expression`, so we recompute it rather than persist it.
@@ -487,7 +489,12 @@ class BasicCalculatorViewModel
          *    becomes the negative operand.
          *  - Expression ends with `)` or `!`: don't try to flip; the
          *    operand isn't a single numeric token.
+         *
+         * Each early return guards a distinct edge case; merging them
+         * into a single return point would only nest the logic and hide
+         * intent, hence the [ReturnCount] suppression.
          */
+        @Suppress("ReturnCount")
         private fun flipSignOfTrailingOperand(expr: String): String {
             if (expr.isEmpty()) return "-"
             val last = expr.last()

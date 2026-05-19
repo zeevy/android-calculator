@@ -20,8 +20,22 @@ import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
 
+/**
+ * Two-way discount calculator.
+ *
+ * **Forward** (mode 0): MRP + percent off → savings + final price.
+ * **Reverse** (mode 1): MRP + paid price → savings + effective percent.
+ *
+ * Defaults render a sane example on entry (MRP 2,000, 20% off → 1,600
+ * final) so the user immediately sees how the rows relate.
+ *
+ * @param onUp Pop the calculator from the back stack.
+ */
 @Composable
 fun DiscountScreen(onUp: () -> Unit) {
+    // Both inputs are kept in state simultaneously rather than being
+    // derived from each other - flipping mode preserves whatever the
+    // user last typed in the other branch instead of overwriting it.
     var mode by remember { mutableIntStateOf(0) } // 0=forward, 1=reverse
     var mrp by remember { mutableStateOf("2000") }
     var percentOff by remember { mutableStateOf("20") }
@@ -69,10 +83,17 @@ fun DiscountScreen(onUp: () -> Unit) {
     }
 }
 
+// Fixed 2-decimal money format - sane default for any currency. Lazy
+// because DecimalFormat instances are not thread-safe and constructing
+// one is cheap relative to keeping a singleton; lazy + by-property
+// avoids the warm-up cost on screens that never render the discount.
 private val money: DecimalFormat by lazy {
     DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale.US))
 }
 
+// Percent shows up to two decimals only when the trailing fractional
+// part is non-zero ("20" not "20.00", but "12.34" stays). The `##`
+// suffix is DecimalFormat shorthand for "include if significant".
 private val percent: DecimalFormat by lazy {
     DecimalFormat("#,##0.##", DecimalFormatSymbols(Locale.US))
 }

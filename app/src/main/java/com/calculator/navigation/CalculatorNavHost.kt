@@ -24,8 +24,7 @@ import com.calculator.feature.health.ovulation.OvulationScreen
  * Navigation actions belong inside individual screens (which receive
  * navigation lambdas from here), keeping route construction in one place
  * and screens unaware of how they are mounted.
- */
-/**
+ *
  * @param startDestinationHint Optional launcher-shortcut hint; if set
  *   to a recognised value ("units", "currency"), the corresponding
  *   screen is pushed onto the back stack right after the basic

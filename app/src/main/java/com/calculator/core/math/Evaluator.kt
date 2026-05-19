@@ -293,7 +293,8 @@ class Evaluator(
         val n = value.toBigInteger()
         if (n > FACTORIAL_CAP) throw DomainException("factorial too large: $value")
         var result = BigInteger.ONE
-        var i = BigInteger.TWO
+        // BigInteger.TWO is API 33+; valueOf works on every JVM target.
+        var i = BigInteger.valueOf(2)
         while (i <= n) {
             result = result.multiply(i)
             i = i.add(BigInteger.ONE)

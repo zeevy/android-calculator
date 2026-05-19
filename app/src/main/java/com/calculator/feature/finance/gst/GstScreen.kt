@@ -26,8 +26,8 @@ import com.calculator.feature.lifecalc.LifeCalcCard
 import com.calculator.feature.lifecalc.LifeCalcNumberField
 import com.calculator.feature.lifecalc.LifeCalcOutputRow
 import com.calculator.feature.lifecalc.LifeCalcSectionLabel
-import com.calculator.feature.lifecalc.LifeCalcSegmented
 import com.calculator.feature.lifecalc.LifeCalcSegmentBackground
+import com.calculator.feature.lifecalc.LifeCalcSegmented
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
@@ -39,11 +39,30 @@ import java.util.Locale
  *
  * Phase 8 will gate visibility to `en-IN` locale; for now the screen is
  * reachable from the tools menu unconditionally.
+ *
+ * Tax split rules:
+ *  - **Intra-state** (within one state): the total GST is split 50/50
+ *    between CGST (collected by the Centre) and SGST (collected by the
+ *    State). IGST is zero.
+ *  - **Inter-state** (between two states): the entire total goes to
+ *    IGST (collected by the Centre, settled later). CGST and SGST are
+ *    zero.
+ *
+ * @param onUp Pop the calculator from the back stack. Wired to the
+ *   scaffold's back affordance.
  */
 @Composable
 fun GstScreen(onUp: () -> Unit) {
+    // Direction and intra/inter are stored as int indices (rather than
+    // booleans) because the segmented control's onSelect handler hands
+    // back the chosen index. Encoding the meaning here keeps the
+    // segmented component generic and reusable across the life-calc
+    // screens.
     var direction by remember { mutableIntStateOf(0) } // 0=forward, 1=reverse
     var intraStateIdx by remember { mutableIntStateOf(0) } // 0=intra, 1=inter
+    // 18% is the most-used standard slab (services, electronics);
+    // ₹1,000 lands the user on a result that's easy to sanity-check
+    // (18% of 1000 = 180, gross = 1180).
     var amount by remember { mutableStateOf("1000") }
     var ratePercent by remember { mutableStateOf("18") }
 
@@ -111,6 +130,17 @@ fun GstScreen(onUp: () -> Unit) {
     }
 }
 
+/**
+ * Quick-select row for the standard GST slabs.
+ *
+ * The four currently-active GST rates in India are 5/12/18/28 percent
+ * (the 0% category is exempt goods and isn't useful for a calculator).
+ * Tapping a chip writes its string value back into the rate field so
+ * the rate input and the chip stay in sync.
+ *
+ * @param selected Currently chosen rate as a percent string ("18" not "18%").
+ * @param onSelect Invoked with the freshly-tapped rate string.
+ */
 @Composable
 private fun RatePresets(selected: String, onSelect: (String) -> Unit) {
     Row(

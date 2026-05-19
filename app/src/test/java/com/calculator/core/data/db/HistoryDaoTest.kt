@@ -30,10 +30,12 @@ class HistoryDaoTest {
     @Before
     fun setUp() {
         db =
-            Room.inMemoryDatabaseBuilder(
-                ApplicationProvider.getApplicationContext(),
-                CalculatorDatabase::class.java,
-            ).allowMainThreadQueries().build()
+            Room
+                .inMemoryDatabaseBuilder(
+                    ApplicationProvider.getApplicationContext(),
+                    CalculatorDatabase::class.java,
+                ).allowMainThreadQueries()
+                .build()
         dao = db.historyDao()
     }
 

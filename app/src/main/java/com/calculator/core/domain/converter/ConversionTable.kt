@@ -98,12 +98,12 @@ object ConversionTable {
     //
     // K = C + 273.15  -> Celsius: factor 1, offset 273.15
     // K = (F + 459.67) × 5/9 -> Fahrenheit: factor 5/9, offset 459.67 × 5/9
-    private val FahrenheitFactor = 5.0 / 9.0
+    private const val FAHRENHEIT_FACTOR = 5.0 / 9.0
     private val Temperature =
         listOf(
             ConverterUnit("K", "Kelvin", 1.0),
             ConverterUnit("°C", "Celsius", 1.0, toCanonicalOffset = 273.15),
-            ConverterUnit("°F", "Fahrenheit", FahrenheitFactor, toCanonicalOffset = 459.67 * FahrenheitFactor),
+            ConverterUnit("°F", "Fahrenheit", FAHRENHEIT_FACTOR, toCanonicalOffset = 459.67 * FAHRENHEIT_FACTOR),
         )
 
     // ---- Speed (canonical: meter per second) ----

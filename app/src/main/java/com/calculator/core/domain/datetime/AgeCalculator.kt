@@ -37,10 +37,12 @@ object AgeCalculator {
                 dob.withYear(today.year)
             } catch (_: java.time.DateTimeException) {
                 // Feb 29 in a non-leap year -> fall back to Feb 28.
-                dob.withYear(today.year).withDayOfMonth(28)
+                dob.withYear(today.year).withDayOfMonth(FEB_LAST_DAY_NON_LEAP)
             }
         return if (!candidate.isBefore(today)) candidate else candidate.plusYears(1)
     }
+
+    private const val FEB_LAST_DAY_NON_LEAP = 28
 }
 
 data class AgeResult(
