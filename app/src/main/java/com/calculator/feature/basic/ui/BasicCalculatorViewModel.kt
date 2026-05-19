@@ -5,16 +5,22 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.calculator.core.data.history.HistoryEntry
 import com.calculator.core.data.history.HistoryRepository
+import com.calculator.core.data.settings.SettingsRepository
 import com.calculator.core.math.AngleMode
 import com.calculator.core.math.EvaluationResult
 import com.calculator.core.math.Evaluator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import java.math.MathContext
+import java.math.RoundingMode
 import javax.inject.Inject
 
 /**
@@ -51,7 +57,22 @@ class BasicCalculatorViewModel
     constructor(
         private val savedStateHandle: SavedStateHandle,
         private val historyRepository: HistoryRepository? = null,
+        settingsRepository: SettingsRepository? = null,
     ) : ViewModel() {
+        // Precision flows in from SettingsRepository, defaulting to
+        // DECIMAL64 when no repo is wired (e.g. unit tests construct
+        // the VM without one). Each `=` and live preview pulls the
+        // current value, so a precision change in Settings takes
+        // effect on the next keypress without restarting anything.
+        private val precision: StateFlow<Int> =
+            settingsRepository?.settings
+                ?.map { it.precision }
+                ?.stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.Eagerly,
+                    initialValue = DEFAULT_PRECISION,
+                )
+                ?: MutableStateFlow(DEFAULT_PRECISION).asStateFlow()
         // Restore from the SavedStateHandle so calculator state survives
         // process death and config changes. `liveResult` is derived from
         // `expression`, so we recompute it rather than persist it.
@@ -388,7 +409,11 @@ class BasicCalculatorViewModel
         }
 
         /** Build a fresh evaluator pinned to the current angle mode. */
-        private fun evaluatorFor(angleMode: AngleMode): Evaluator = Evaluator(angleMode = angleMode)
+        private fun evaluatorFor(angleMode: AngleMode): Evaluator =
+            Evaluator(
+                mathContext = MathContext(precision.value, RoundingMode.HALF_EVEN),
+                angleMode = angleMode,
+            )
 
         /** Best-effort current numeric value: the live result if available, else null. */
         private fun currentDisplayValue(state: BasicCalculatorUiState): BigDecimal? =
@@ -488,6 +513,10 @@ class BasicCalculatorViewModel
         }
 
         private companion object {
+            // Matches DataStoreSettingsRepository.DEFAULT_PRECISION; pulled
+            // in only so the VM can construct an Evaluator without a
+            // settings repo (tests).
+            const val DEFAULT_PRECISION = 12
             const val KEY_EXPRESSION = "calculator.expression"
             const val KEY_ERROR = "calculator.error"
             const val KEY_PENDING_REPEAT = "calculator.pendingRepeat"

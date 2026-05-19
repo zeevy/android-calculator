@@ -4,8 +4,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.calculator.core.data.settings.UserSettings
 import com.calculator.core.designsystem.theme.CalculatorTheme
+import com.calculator.feature.settings.SettingsViewModel
 import com.calculator.navigation.CalculatorNavHost
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -34,9 +41,30 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            CalculatorTheme {
-                CalculatorNavHost()
-            }
+            ThemedCalculatorRoot()
         }
+    }
+}
+
+/**
+ * Reads [SettingsViewModel] for the persisted theme + dynamicColor
+ * choices, then wraps the nav host in a configured [CalculatorTheme].
+ * Lives inside the Activity so hiltViewModel() resolves against the
+ * ComponentActivity's ViewModelStoreOwner.
+ */
+@Composable
+private fun ThemedCalculatorRoot(viewModel: SettingsViewModel = hiltViewModel()) {
+    val settings by viewModel.settings.collectAsState()
+    val darkTheme =
+        when (settings.theme) {
+            UserSettings.ThemeOption.System -> isSystemInDarkTheme()
+            UserSettings.ThemeOption.Light -> false
+            UserSettings.ThemeOption.Dark -> true
+        }
+    CalculatorTheme(
+        darkTheme = darkTheme,
+        dynamicColor = settings.dynamicColor,
+    ) {
+        CalculatorNavHost()
     }
 }

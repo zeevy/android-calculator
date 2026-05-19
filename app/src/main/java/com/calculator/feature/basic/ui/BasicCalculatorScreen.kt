@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MonitorWeight
 import androidx.compose.material.icons.filled.Percent
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.BottomSheetDefaults
@@ -112,8 +113,17 @@ internal fun BasicCalculatorScreenContent(
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     val tones = rememberKeyToneGenerator()
+    // Settings drives sound and haptics toggles. Falling back to defaults
+    // (both on) when the settings VM hasn't emitted yet keeps the UI
+    // responsive during the first frame.
+    val settingsViewModel: com.calculator.feature.settings.SettingsViewModel = hiltViewModel()
+    val userSettings by settingsViewModel.settings.collectAsStateWithLifecycle()
+    val tonesIfEnabled = if (userSettings.sound) tones else null
 
-    CompositionLocalProvider(LocalKeyTones provides tones) {
+    CompositionLocalProvider(
+        LocalKeyTones provides tonesIfEnabled,
+        LocalHapticsEnabled provides userSettings.haptics,
+    ) {
     Scaffold(
         // Hand out insets per-child: outer Column absorbs the status-bar
         // inset (so the display card sits below the system icons), and
@@ -182,10 +192,11 @@ internal fun BasicCalculatorScreenContent(
         ) {
             when (openSheet) {
                 MenuSheet.Tools ->
-                    SettingsSheetContent(
+                    ToolsSheetContent(
                         state = state,
                         onEvent = onEvent,
                         onOpenHistory = { openSheet = MenuSheet.History },
+                        onOpenSettings = { openSheet = MenuSheet.Settings },
                         onClose = {
                             scope.launch { sheetState.hide() }
                             openSheet = null
@@ -197,6 +208,13 @@ internal fun BasicCalculatorScreenContent(
                             onEvent(BasicCalculatorEvent.Clear)
                             onEvent(BasicCalculatorEvent.Append(expr))
                         },
+                        onClose = {
+                            scope.launch { sheetState.hide() }
+                            openSheet = null
+                        },
+                    )
+                MenuSheet.Settings ->
+                    com.calculator.feature.settings.SettingsSheetContent(
                         onClose = {
                             scope.launch { sheetState.hide() }
                             openSheet = null
@@ -222,13 +240,14 @@ internal fun BasicCalculatorScreenContent(
  * a "coming soon" hint to avoid silently swallowing user intent.
  */
 /** Which sheet is currently displayed in the modal bottom sheet. */
-private enum class MenuSheet { Tools, History }
+private enum class MenuSheet { Tools, History, Settings }
 
 @Composable
-private fun SettingsSheetContent(
+private fun ToolsSheetContent(
     state: BasicCalculatorUiState,
     onEvent: (BasicCalculatorEvent) -> Unit,
     onOpenHistory: () -> Unit,
+    onOpenSettings: () -> Unit,
     onClose: () -> Unit,
 ) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
@@ -281,6 +300,13 @@ private fun SettingsSheetContent(
                     enabled = false,
                     selected = false,
                     onTap = onClose,
+                ),
+                ToolTile(
+                    icon = Icons.Filled.Settings,
+                    label = "Settings",
+                    enabled = true,
+                    selected = false,
+                    onTap = onOpenSettings,
                 ),
             )
 
@@ -835,6 +861,8 @@ private fun KeyButton(
     compact: Boolean = false,
 ) {
     val tones = LocalKeyTones.current
+    val hapticsEnabled = LocalHapticsEnabled.current
+    val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
     val rawClick: () -> Unit = {
         when (key) {
             is Key.Symbol -> onEvent(BasicCalculatorEvent.Append(key.label))
@@ -857,11 +885,16 @@ private fun KeyButton(
             Key.Empty -> Unit
         }
     }
-    // Every click also plays its DTMF tone. Tones are silently no-op if
-    // the system refused to give us a ToneGenerator (rare; some OEM
-    // devices restrict STREAM_DTMF for non-phone apps).
+    // Every click plays its DTMF tone (if sound is enabled in settings)
+    // and fires a light haptic tick (if haptics are enabled). Both are
+    // silently no-op if disabled or unavailable.
     val click: () -> Unit = {
         tones?.play(key)
+        if (hapticsEnabled) {
+            haptics.performHapticFeedback(
+                androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress,
+            )
+        }
         rawClick()
     }
 
@@ -1077,6 +1110,12 @@ private fun rememberKeyToneGenerator(): KeyToneGenerator? {
 
 /** CompositionLocal so any key in the tree can play tones without prop drilling. */
 private val LocalKeyTones = compositionLocalOf<KeyToneGenerator?> { null }
+
+/**
+ * Whether key-press haptic feedback should fire. Defaults to true so
+ * existing code paths and previews continue to vibrate.
+ */
+private val LocalHapticsEnabled = compositionLocalOf { true }
 
 private enum class KeyCategory { Digit, Operator, Modifier, Function, Equals }
 
