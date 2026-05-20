@@ -31,9 +31,13 @@ androidx-glance = "1.1.1"
 androidx-startup = "1.2.0"
 
 # Performance / benchmarking
-androidx-benchmark = "1.3.3"
+# 1.4.1 includes the parser fix for the new `pm dump-profiles` stdout
+# preamble ("Waiting for app processes to flush profiles...") that
+# Android 14+ emits - earlier versions threw IllegalStateException
+# during baseline-profile generation on those devices.
+androidx-benchmark = "1.4.1"
 androidx-profileinstaller = "1.4.1"
-baseline-profile-plugin = "1.3.3"
+baseline-profile-plugin = "1.4.1"
 
 # DI
 hilt = "2.55"
