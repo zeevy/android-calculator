@@ -48,6 +48,9 @@ data object BaseConverterRoute
 data object TapeRoute
 
 @Serializable
+data object SmartPasteRoute
+
+@Serializable
 data object BmiRoute
 
 @Serializable

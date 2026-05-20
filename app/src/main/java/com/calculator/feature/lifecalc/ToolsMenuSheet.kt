@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Favorite
@@ -59,6 +60,7 @@ import com.calculator.navigation.InvestmentRoute
 import com.calculator.navigation.LoanRoute
 import com.calculator.navigation.OvulationRoute
 import com.calculator.navigation.PercentRoute
+import com.calculator.navigation.SmartPasteRoute
 import com.calculator.navigation.TapeRoute
 import com.calculator.navigation.TimezoneRoute
 import com.calculator.navigation.TipSplitRoute
@@ -355,6 +357,14 @@ private fun ToolsGrid(
                     label = stringResource(R.string.tool_tape),
                     selected = currentRoute === TapeRoute,
                     onTap = { onNavigate(TapeRoute) },
+                ),
+            )
+            add(
+                ToolTile(
+                    icon = Icons.Filled.ContentPaste,
+                    label = stringResource(R.string.tool_smartpaste),
+                    selected = currentRoute === SmartPasteRoute,
+                    onTap = { onNavigate(SmartPasteRoute) },
                 ),
             )
             add(
