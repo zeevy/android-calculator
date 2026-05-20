@@ -75,6 +75,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.TextUnit
@@ -643,13 +644,20 @@ private fun Display(
             // Bottom line: the dominant element. Style flips to the
             // error palette + slightly smaller ramp when an error is
             // showing so the user sees the message comfortably.
-            AutoSizeText(
+            //
+            // Fixed font size (no auto-shrink). If the text would overflow
+            // two lines at the base size, Compose clips with an ellipsis
+            // at the trailing edge - by design, per user preference, to
+            // keep the typography rhythm stable across every keystroke
+            // instead of having the result jiggle smaller as digits grow.
+            Text(
                 text = bottomText,
                 style = bottomBaseStyle.copy(fontWeight = bottomFontWeight),
                 color = bottomColor,
-                maxFontSize = bottomBaseStyle.fontSize,
-                minFontSize = DISPLAY_RESULT_MIN_SIZE,
                 maxLines = DISPLAY_RESULT_MAX_LINES,
+                softWrap = true,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.End,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -729,21 +737,19 @@ private fun AutoSizeText(
 
 private const val AUTO_SIZE_STEP_SP = 2f
 
-// Floors are deliberately small so the shrink loop can actually find
-// a size that fits in advanced mode (where the 9-row keypad leaves
-// only ~100dp for the entire display). A previous 28sp floor caused
-// the top of the wrapped result line to clip against the separator
-// because the loop bottomed out before finding a fit.
-private val DISPLAY_RESULT_MIN_SIZE = 16.sp
+// Floor for the muted expression-history line. Small so the shrink
+// loop can actually find a size that fits in advanced mode (where the
+// 9-row keypad leaves only ~100dp for the entire display). The result
+// line below does not shrink - it renders at a fixed displayLarge size
+// and ellipsizes if the value doesn't fit in two lines.
 private val DISPLAY_EXPRESSION_MIN_SIZE = 10.sp
 
-// Up to three lines for the big result line and two for the muted
-// expression-history line. Multi-line first, then font shrink - so a
-// long expression grows downward before any text gets smaller.
-// Two lines apiece: the result line never grows past two so a very
-// long answer auto-shrinks to fit; the expression-history line above
-// it stays at two so they have the same vertical budget and the
-// keypad position doesn't shift between modes.
+// Two lines apiece. The result line stays at its base font size and
+// ellipsizes if the value can't fit in two lines (rare in practice).
+// The expression-history line above shrinks instead of ellipsizing so
+// the user can always see the whole expression they've typed. Both
+// rows share the same vertical budget, so the keypad position doesn't
+// shift between modes.
 private const val DISPLAY_RESULT_MAX_LINES = 2
 private const val DISPLAY_EXPRESSION_MAX_LINES = 2
 
