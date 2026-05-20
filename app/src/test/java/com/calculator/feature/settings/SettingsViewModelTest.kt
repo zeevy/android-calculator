@@ -128,5 +128,13 @@ class SettingsViewModelTest {
         override suspend fun setBmiWeightImperial(imperial: Boolean) {
             snapshot.value = snapshot.value.copy(bmiWeightImperial = imperial)
         }
+
+        override suspend fun setLastTzFromZone(zone: String) {
+            snapshot.value = snapshot.value.copy(lastTzFromZone = zone)
+        }
+
+        override suspend fun setLastTzToZone(zone: String) {
+            snapshot.value = snapshot.value.copy(lastTzToZone = zone)
+        }
     }
 }

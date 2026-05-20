@@ -41,6 +41,12 @@ data class UserSettings(
      */
     val bmiHeightImperial: Boolean = false,
     val bmiWeightImperial: Boolean = false,
+    /**
+     * Last-used IANA zone ids in the timezone converter. Defaults to
+     * UTC -> Asia/Kolkata on first launch (the app leans India-first).
+     */
+    val lastTzFromZone: String? = null,
+    val lastTzToZone: String? = null,
 ) {
     enum class ThemeOption { System, Light, Dark }
 }

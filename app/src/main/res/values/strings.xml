@@ -33,6 +33,7 @@
     <string name="tool_bmi">BMI</string>
     <string name="tool_age">Age</string>
     <string name="tool_date_diff">Date diff</string>
+    <string name="tool_timezone">Timezones</string>
     <string name="tool_ovulation">Ovulation</string>
     <string name="tool_settings">Settings</string>
 
@@ -136,6 +137,15 @@
     <string name="datediff_to_label">To</string>
     <string name="datediff_offset">Offset</string>
     <string name="datediff_offset_unit">days</string>
+
+    <string name="tz_title">Timezone converter</string>
+    <string name="tz_from">From</string>
+    <string name="tz_to">To</string>
+    <string name="tz_swap">Swap zones</string>
+    <string name="tz_picker_title">Choose zone</string>
+    <string name="tz_picker_search_hint">Search (e.g. Tokyo, IST)</string>
+    <string name="tz_picker_common">Common</string>
+    <string name="tz_picker_all">All zones</string>
 
     <string name="ovulation_title">Ovulation</string>
     <string name="ovulation_lmp">Last menstrual period</string>

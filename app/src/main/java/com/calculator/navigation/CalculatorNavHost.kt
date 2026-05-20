@@ -8,6 +8,7 @@ import com.calculator.feature.basic.ui.BasicCalculatorScreen
 import com.calculator.feature.converter.unit.UnitConverterScreen
 import com.calculator.feature.datetime.age.AgeScreen
 import com.calculator.feature.datetime.datediff.DateDiffScreen
+import com.calculator.feature.datetime.timezone.TimezoneScreen
 import com.calculator.feature.finance.discount.DiscountScreen
 import com.calculator.feature.finance.gst.GstScreen
 import com.calculator.feature.finance.loan.LoanScreen
@@ -64,6 +65,7 @@ fun CalculatorNavHost(startDestinationHint: String? = null) {
         composable<BmiRoute> { BmiScreen(onUp = navController::popBackStack) }
         composable<AgeRoute> { AgeScreen(onUp = navController::popBackStack) }
         composable<DateDiffRoute> { DateDiffScreen(onUp = navController::popBackStack) }
+        composable<TimezoneRoute> { TimezoneScreen(onUp = navController::popBackStack) }
         composable<OvulationRoute> { OvulationScreen(onUp = navController::popBackStack) }
     }
 }

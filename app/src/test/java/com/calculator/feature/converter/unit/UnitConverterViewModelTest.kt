@@ -256,5 +256,9 @@ class UnitConverterViewModelTest {
         override suspend fun setBmiHeightImperial(imperial: Boolean) = Unit
 
         override suspend fun setBmiWeightImperial(imperial: Boolean) = Unit
+
+        override suspend fun setLastTzFromZone(zone: String) = Unit
+
+        override suspend fun setLastTzToZone(zone: String) = Unit
     }
 }

@@ -42,6 +42,10 @@ interface SettingsRepository {
     suspend fun setBmiHeightImperial(imperial: Boolean)
 
     suspend fun setBmiWeightImperial(imperial: Boolean)
+
+    suspend fun setLastTzFromZone(zone: String)
+
+    suspend fun setLastTzToZone(zone: String)
 }
 
 @Singleton
@@ -67,6 +71,8 @@ class DataStoreSettingsRepository
                     gstRate = prefs[Keys.GstRate] ?: "18",
                     bmiHeightImperial = prefs[Keys.BmiHeightImperial] ?: false,
                     bmiWeightImperial = prefs[Keys.BmiWeightImperial] ?: false,
+                    lastTzFromZone = prefs[Keys.LastTzFromZone],
+                    lastTzToZone = prefs[Keys.LastTzToZone],
                 )
             }
 
@@ -114,6 +120,14 @@ class DataStoreSettingsRepository
             dataStore.edit { it[Keys.BmiWeightImperial] = imperial }
         }
 
+        override suspend fun setLastTzFromZone(zone: String) {
+            dataStore.edit { it[Keys.LastTzFromZone] = zone }
+        }
+
+        override suspend fun setLastTzToZone(zone: String) {
+            dataStore.edit { it[Keys.LastTzToZone] = zone }
+        }
+
         // Centralised keys so renames stay in one place.
         private object Keys {
             val Theme = stringPreferencesKey("theme")
@@ -128,6 +142,8 @@ class DataStoreSettingsRepository
             val GstRate = stringPreferencesKey("gstRate")
             val BmiHeightImperial = booleanPreferencesKey("bmiHeightImperial")
             val BmiWeightImperial = booleanPreferencesKey("bmiWeightImperial")
+            val LastTzFromZone = stringPreferencesKey("lastTzFromZone")
+            val LastTzToZone = stringPreferencesKey("lastTzToZone")
         }
 
         companion object {

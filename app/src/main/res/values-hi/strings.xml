@@ -33,6 +33,7 @@
     <string name="tool_bmi">बीएमआई</string>
     <string name="tool_age">आयु</string>
     <string name="tool_date_diff">तिथि अंतर</string>
+    <string name="tool_timezone">समय क्षेत्र</string>
     <string name="tool_ovulation">ओव्यूलेशन</string>
     <string name="tool_settings">सेटिंग्स</string>
 
@@ -136,6 +137,15 @@
     <string name="datediff_to_label">तक</string>
     <string name="datediff_offset">ऑफ़सेट</string>
     <string name="datediff_offset_unit">दिन</string>
+
+    <string name="tz_title">समय क्षेत्र कनवर्टर</string>
+    <string name="tz_from">से</string>
+    <string name="tz_to">तक</string>
+    <string name="tz_swap">क्षेत्र बदलें</string>
+    <string name="tz_picker_title">क्षेत्र चुनें</string>
+    <string name="tz_picker_search_hint">खोजें (उदा. Tokyo, IST)</string>
+    <string name="tz_picker_common">सामान्य</string>
+    <string name="tz_picker_all">सभी क्षेत्र</string>
 
     <string name="ovulation_title">ओव्यूलेशन</string>
     <string name="ovulation_lmp">अंतिम मासिक धर्म</string>

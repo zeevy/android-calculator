@@ -42,6 +42,9 @@ data object AgeRoute
 data object DateDiffRoute
 
 @Serializable
+data object TimezoneRoute
+
+@Serializable
 data object OvulationRoute
 
 // Future destinations follow the same pattern, e.g.:

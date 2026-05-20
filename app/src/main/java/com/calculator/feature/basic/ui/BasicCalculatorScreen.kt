@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MonitorWeight
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Straighten
@@ -371,6 +372,13 @@ private fun ToolsSheetContent(
                     enabled = true,
                     selected = false,
                     onTap = { onOpenLifeCalc(com.calculator.navigation.DateDiffRoute) },
+                ),
+                ToolTile(
+                    icon = Icons.Filled.Public,
+                    label = stringResource(R.string.tool_timezone),
+                    enabled = true,
+                    selected = false,
+                    onTap = { onOpenLifeCalc(com.calculator.navigation.TimezoneRoute) },
                 ),
                 ToolTile(
                     icon = Icons.Filled.Favorite,
