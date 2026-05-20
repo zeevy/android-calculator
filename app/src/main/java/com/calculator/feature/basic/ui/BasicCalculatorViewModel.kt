@@ -512,8 +512,39 @@ class BasicCalculatorViewModel
                 EvaluationResult.Error.DivisionByZero -> "Can't divide by zero"
                 is EvaluationResult.Error.Syntax -> "Check your expression"
                 is EvaluationResult.Error.UnknownToken -> "Unsupported character"
-                is EvaluationResult.Error.Domain -> "Math out of domain"
+                is EvaluationResult.Error.Domain -> domainMessage(error.reason)
             }
+
+        /**
+         * Map the engine's lower-level domain reason into a short, user-
+         * friendly message. The engine's reasons are precise but technical
+         * (`sqrt(-5) is undefined`, `factorial of negative: -3`); the user
+         * doesn't want to read function names out of the keypad they just
+         * pressed, they want to know *which* rule they bumped into.
+         *
+         * Prefix matching on the reason keeps this in one place and avoids
+         * coupling the UI layer to specific FunctionId enum values - any
+         * new domain rejection added in the engine will fall through to
+         * the generic last branch instead of breaking the build.
+         */
+        @Suppress("ReturnCount")
+        private fun domainMessage(reason: String): String {
+            return when {
+                reason.startsWith("sqrt") -> "Can't take √ of a negative number"
+                reason.startsWith("cbrt") -> "Cube root undefined here"
+                reason.startsWith("log") -> "Log needs a positive number"
+                reason.startsWith("ln") -> "ln needs a positive number"
+                reason.startsWith("asin") -> "asin needs a value between -1 and 1"
+                reason.startsWith("acos") -> "acos needs a value between -1 and 1"
+                reason.startsWith("tan") -> "tan is undefined at this angle"
+                reason.startsWith("factorial of negative") -> "Factorial needs a non-negative number"
+                reason.startsWith("factorial of non-integer") -> "Factorial needs a whole number"
+                reason.startsWith("factorial too large") -> "Factorial is too large to compute"
+                reason.startsWith("power overflow") -> "Result is too large"
+                reason.startsWith("invalid power") -> "That power isn't a real number"
+                else -> "Math out of domain"
+            }
+        }
 
         /**
          * Walk back through the current number segment; return true if a `.`
