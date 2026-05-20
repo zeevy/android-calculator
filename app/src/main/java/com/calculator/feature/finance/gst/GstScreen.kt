@@ -33,6 +33,7 @@ import com.calculator.feature.lifecalc.LifeCalcSectionLabel
 import com.calculator.feature.lifecalc.LifeCalcSegmentBackground
 import com.calculator.feature.lifecalc.LifeCalcSegmented
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
+import com.calculator.navigation.GstRoute
 import java.util.Locale
 
 /**
@@ -50,11 +51,11 @@ import java.util.Locale
  *    IGST (collected by the Centre, settled later). CGST and SGST are
  *    zero.
  *
- * @param onUp Pop the calculator from the back stack. Wired to the
- *   scaffold's back affordance.
+ * @param onNavigate Jump to another tool / home. Wired to the scaffold's
+ *   hamburger menu.
  */
 @Composable
-fun GstScreen(onUp: () -> Unit) {
+fun GstScreen(onNavigate: (Any) -> Unit) {
     // Bidirectional inputs: both net and gross are editable. Whichever
     // the user typed into last is the source; the OTHER is recomputed
     // on every keystroke. Replaces the old forward/reverse mode toggle -
@@ -109,7 +110,11 @@ fun GstScreen(onUp: () -> Unit) {
     val netDisplay = if (lastEdited == 0) netText else derivedNetText
     val grossDisplay = if (lastEdited == 1) grossText else derivedGrossText
 
-    LifeCalculatorScaffold(title = stringResource(R.string.gst_title), onUp = onUp) {
+    LifeCalculatorScaffold(
+        title = stringResource(R.string.gst_title),
+        currentRoute = GstRoute,
+        onNavigate = onNavigate,
+    ) {
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.gst_section_direction))
             LifeCalcSegmented(

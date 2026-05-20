@@ -19,6 +19,7 @@ import com.calculator.feature.lifecalc.LifeCalcOutputRow
 import com.calculator.feature.lifecalc.LifeCalcSectionLabel
 import com.calculator.feature.lifecalc.LifeCalcSegmented
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
+import com.calculator.navigation.BmiRoute
 
 /**
  * Body-Mass-Index calculator. Accepts metric (cm + kg) or imperial
@@ -29,10 +30,11 @@ import com.calculator.feature.lifecalc.LifeCalculatorScaffold
  * which lands in "Normal") so the screen always renders a sensible
  * result the moment it appears.
  *
- * @param onUp Pop the calculator from the back stack.
+ * @param onNavigate Jump to another tool / home. Wired to the scaffold's
+ *   hamburger menu.
  */
 @Composable
-fun BmiScreen(onUp: () -> Unit) {
+fun BmiScreen(onNavigate: (Any) -> Unit) {
     // Read persisted unit preferences so the user lands on whichever
     // unit they used last for each axis. Height and weight have
     // independent toggles - mixing them (feet/inches for height, kg
@@ -58,7 +60,11 @@ fun BmiScreen(onUp: () -> Unit) {
     var heightIn by remember { mutableStateOf("10") }
     var weightLb by remember { mutableStateOf("170") }
 
-    LifeCalculatorScaffold(title = stringResource(R.string.bmi_title), onUp = onUp) {
+    LifeCalculatorScaffold(
+        title = stringResource(R.string.bmi_title),
+        currentRoute = BmiRoute,
+        onNavigate = onNavigate,
+    ) {
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.bmi_section_height))
             LifeCalcSegmented(

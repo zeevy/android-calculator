@@ -21,9 +21,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -38,6 +38,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.calculator.feature.lifecalc.PendingExpressionHolder
+import com.calculator.feature.lifecalc.ToolsMenuOverlay
+import com.calculator.feature.lifecalc.ToolsMenuSheet
+import com.calculator.navigation.BasicCalculatorRoute
+import com.calculator.navigation.UnitConverterRoute
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,10 +72,11 @@ import com.calculator.core.domain.converter.UnitCategory
  */
 @Composable
 fun UnitConverterScreen(
-    onUp: () -> Unit,
+    onNavigate: (Any) -> Unit,
     viewModel: UnitConverterViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    var openSheet by remember { mutableStateOf<ToolsMenuSheet?>(null) }
 
     Column(
         modifier =
@@ -78,26 +84,29 @@ fun UnitConverterScreen(
                 .fillMaxSize()
                 .background(Color.Black)
                 .systemBarsPadding()
-                .padding(horizontal = 16.dp),
+                // 12dp matches the basic calculator's outer padding so
+                // the top-right hamburger sits at the same pixel.
+                .padding(horizontal = 12.dp),
     ) {
-        // App-bar row: back arrow + screen title.
+        // App-bar row: title on the left, hamburger pinned to the right
+        // so it matches the basic calculator's top-right menu position.
         Row(
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onUp) {
-                Icon(
-                    imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.action_back),
-                    tint = Color.White,
-                )
-            }
             Text(
                 text = stringResource(R.string.units_title),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                 color = Color.White,
-                modifier = Modifier.padding(start = 8.dp),
+                modifier = Modifier.weight(1f).padding(start = 8.dp),
             )
+            IconButton(onClick = { openSheet = ToolsMenuSheet.Tools }) {
+                Icon(
+                    imageVector = Icons.Filled.Menu,
+                    contentDescription = stringResource(R.string.basic_open_menu),
+                    tint = Color.White,
+                )
+            }
         }
 
         // Category dropdown: one tap reveals all 11 categories vertically
@@ -165,6 +174,22 @@ fun UnitConverterScreen(
             onDismiss = viewModel::dismissPicker,
         )
     }
+
+    ToolsMenuOverlay(
+        openSheet = openSheet,
+        onDismiss = { openSheet = null },
+        currentRoute = UnitConverterRoute,
+        isOnBasicCalc = false,
+        scientific = false,
+        onToggleScientific = {},
+        onOpenHistory = { openSheet = ToolsMenuSheet.History },
+        onOpenSettings = { openSheet = ToolsMenuSheet.Settings },
+        onNavigate = onNavigate,
+        onReuseExpression = { expr ->
+            PendingExpressionHolder.expression = expr
+            onNavigate(BasicCalculatorRoute)
+        },
+    )
 }
 
 /**

@@ -34,6 +34,7 @@ import com.calculator.feature.lifecalc.LifeCalcOutputRow
 import com.calculator.feature.lifecalc.LifeCalcSectionLabel
 import com.calculator.feature.lifecalc.LifeCalcSegmentBackground
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
+import com.calculator.navigation.AgeRoute
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -48,11 +49,12 @@ import java.time.format.DateTimeFormatter
  * underlying [AgeCalculator] takes "today" as a parameter so the unit
  * tests can pass a fixed date and assert deterministic output.
  *
- * @param onUp Pop the calculator from the back stack.
+ * @param onNavigate Jump to another tool / home. Wired to the scaffold's
+ *   hamburger menu.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AgeScreen(onUp: () -> Unit) {
+fun AgeScreen(onNavigate: (Any) -> Unit) {
     var dob by remember { mutableStateOf(LocalDate.of(DEFAULT_DOB_YEAR, 1, DEFAULT_DOB_DAY)) }
     var pickerOpen by remember { mutableStateOf(false) }
     // Cached for this composition. The result card recomputes when
@@ -61,7 +63,11 @@ fun AgeScreen(onUp: () -> Unit) {
     // a foreground calculator screen.
     val today = LocalDate.now()
 
-    LifeCalculatorScaffold(title = stringResource(R.string.age_title), onUp = onUp) {
+    LifeCalculatorScaffold(
+        title = stringResource(R.string.age_title),
+        currentRoute = AgeRoute,
+        onNavigate = onNavigate,
+    ) {
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.age_section_dob))
             DateRow(date = dob, onClick = { pickerOpen = true })

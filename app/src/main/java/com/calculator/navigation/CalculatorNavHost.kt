@@ -1,6 +1,7 @@
 package com.calculator.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -21,9 +22,13 @@ import com.calculator.feature.health.ovulation.OvulationScreen
  * Single-activity convention: this is the only `NavHost` in the app.
  * Features are registered via `composable<RouteType>` blocks below.
  *
- * Navigation actions belong inside individual screens (which receive
- * navigation lambdas from here), keeping route construction in one place
- * and screens unaware of how they are mounted.
+ * Navigation is driven by a single [openTool] helper - every screen
+ * receives the same `onNavigate: (Any) -> Unit` lambda from here, and
+ * the helper uses `popUpTo(BasicCalculatorRoute)` so the back stack
+ * stays flat: the basic calculator is always the only thing under the
+ * current tool, regardless of how the user got there. That matches the
+ * UI promise that each tool reads as a standalone page reached via the
+ * hamburger menu rather than a stack of forward navigations.
  *
  * @param startDestinationHint Optional launcher-shortcut hint; if set
  *   to a recognised value ("units"), the corresponding screen is
@@ -39,7 +44,7 @@ fun CalculatorNavHost(startDestinationHint: String? = null) {
     // on config change.
     androidx.compose.runtime.LaunchedEffect(startDestinationHint) {
         when (startDestinationHint) {
-            "units" -> navController.navigate(UnitConverterRoute)
+            "units" -> navController.openTool(UnitConverterRoute)
             else -> Unit // "basic" or null - already at start.
         }
     }
@@ -49,23 +54,45 @@ fun CalculatorNavHost(startDestinationHint: String? = null) {
         startDestination = BasicCalculatorRoute,
     ) {
         composable<BasicCalculatorRoute> {
-            BasicCalculatorScreen(
-                onOpenUnitConverter = { navController.navigate(UnitConverterRoute) },
-                onOpenLifeCalc = { route -> navController.navigate(route) },
-            )
+            BasicCalculatorScreen(onNavigate = navController::openTool)
         }
-
         composable<UnitConverterRoute> {
-            UnitConverterScreen(onUp = navController::popBackStack)
+            UnitConverterScreen(onNavigate = navController::openTool)
         }
+        composable<LoanRoute> { LoanScreen(onNavigate = navController::openTool) }
+        composable<GstRoute> { GstScreen(onNavigate = navController::openTool) }
+        composable<DiscountRoute> { DiscountScreen(onNavigate = navController::openTool) }
+        composable<BmiRoute> { BmiScreen(onNavigate = navController::openTool) }
+        composable<AgeRoute> { AgeScreen(onNavigate = navController::openTool) }
+        composable<DateDiffRoute> { DateDiffScreen(onNavigate = navController::openTool) }
+        composable<TimezoneRoute> { TimezoneScreen(onNavigate = navController::openTool) }
+        composable<OvulationRoute> { OvulationScreen(onNavigate = navController::openTool) }
+    }
+}
 
-        composable<LoanRoute> { LoanScreen(onUp = navController::popBackStack) }
-        composable<GstRoute> { GstScreen(onUp = navController::popBackStack) }
-        composable<DiscountRoute> { DiscountScreen(onUp = navController::popBackStack) }
-        composable<BmiRoute> { BmiScreen(onUp = navController::popBackStack) }
-        composable<AgeRoute> { AgeScreen(onUp = navController::popBackStack) }
-        composable<DateDiffRoute> { DateDiffScreen(onUp = navController::popBackStack) }
-        composable<TimezoneRoute> { TimezoneScreen(onUp = navController::popBackStack) }
-        composable<OvulationRoute> { OvulationScreen(onUp = navController::popBackStack) }
+/**
+ * Navigates to [route] while keeping [BasicCalculatorRoute] as the sole
+ * underlying entry.
+ *
+ * Behaviour:
+ *  - To BasicCalculatorRoute: pop the stack back down to it (no new
+ *    instance pushed) so re-tapping Home from any tool returns to the
+ *    same calculator state instead of recreating it.
+ *  - To any other route: pop above the basic calculator first, then
+ *    push, with `launchSingleTop` so re-tapping the current tool's tile
+ *    is a no-op. The user then has BasicCalc + the new tool on the
+ *    stack, regardless of how many tools they bounced through to get
+ *    there.
+ */
+internal fun NavController.openTool(route: Any) {
+    if (route === BasicCalculatorRoute) {
+        // popBackStack to basic calc; if it's already the top, nothing
+        // happens (which is the desired no-op).
+        popBackStack(BasicCalculatorRoute, inclusive = false)
+        return
+    }
+    navigate(route) {
+        popUpTo(BasicCalculatorRoute) { saveState = false }
+        launchSingleTop = true
     }
 }

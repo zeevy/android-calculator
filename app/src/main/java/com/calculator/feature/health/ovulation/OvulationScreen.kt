@@ -1,5 +1,7 @@
 package com.calculator.feature.health.ovulation
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -19,15 +21,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.calculator.R
 import com.calculator.core.domain.health.OvulationCalculator
 import com.calculator.feature.datetime.age.DateRow
 import com.calculator.feature.lifecalc.LifeCalcAccent
 import com.calculator.feature.lifecalc.LifeCalcCard
-import com.calculator.feature.lifecalc.LifeCalcOutputRow
 import com.calculator.feature.lifecalc.LifeCalcSectionLabel
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
+import com.calculator.navigation.OvulationRoute
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -49,11 +52,12 @@ import java.time.format.DateTimeFormatter
  * because the figures are statistical and the screen must not read as
  * either medical advice or a contraception tool.
  *
- * @param onUp Pop the calculator from the back stack.
+ * @param onNavigate Jump to another tool / home. Wired to the scaffold's
+ *   hamburger menu.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OvulationScreen(onUp: () -> Unit) {
+fun OvulationScreen(onNavigate: (Any) -> Unit) {
     // Seed the LMP to ~two weeks ago so on first open the user sees a
     // populated result roughly centred on today's date. They will replace
     // it with their actual LMP via the picker.
@@ -61,7 +65,11 @@ fun OvulationScreen(onUp: () -> Unit) {
     var cycleDays by remember { mutableIntStateOf(OvulationCalculator.DEFAULT_CYCLE_DAYS) }
     var pickerOpen by remember { mutableStateOf(false) }
 
-    LifeCalculatorScaffold(title = stringResource(R.string.ovulation_title), onUp = onUp) {
+    LifeCalculatorScaffold(
+        title = stringResource(R.string.ovulation_title),
+        currentRoute = OvulationRoute,
+        onNavigate = onNavigate,
+    ) {
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.ovulation_lmp))
             DateRow(date = lmp, onClick = { pickerOpen = true })
@@ -102,12 +110,16 @@ fun OvulationScreen(onUp: () -> Unit) {
                     color = Color.White.copy(alpha = 0.55f),
                 )
             } else {
-                LifeCalcOutputRow(
+                // Stacked rows: weekday + full date strings (and the
+                // fertile-window range "Tue, 19 May - Sun, 24 May 2026")
+                // are too wide to share a line with their labels without
+                // wrapping awkwardly, so each value sits below its label.
+                StackedOutput(
                     label = stringResource(R.string.ovulation_ovulation_date),
                     value = format(result.ovulation),
                     accent = true,
                 )
-                LifeCalcOutputRow(
+                StackedOutput(
                     label = stringResource(R.string.ovulation_fertile_window),
                     value = stringResource(
                         R.string.ovulation_fertile_window_format,
@@ -115,11 +127,11 @@ fun OvulationScreen(onUp: () -> Unit) {
                         format(result.fertileEnd),
                     ),
                 )
-                LifeCalcOutputRow(
+                StackedOutput(
                     label = stringResource(R.string.ovulation_next_period),
                     value = format(result.nextPeriod),
                 )
-                LifeCalcOutputRow(
+                StackedOutput(
                     label = stringResource(R.string.ovulation_due_date),
                     value = format(result.estimatedDueDate),
                 )
@@ -173,6 +185,29 @@ fun OvulationScreen(onUp: () -> Unit) {
 // week to plan around.
 private fun format(date: LocalDate): String =
     date.format(DateTimeFormatter.ofPattern("EEE, d MMM yyyy"))
+
+/**
+ * Label-above-value output row. Used for the result card here because
+ * the date strings include the weekday and don't fit cleanly to the
+ * right of their labels on a phone-width line.
+ */
+@Composable
+private fun StackedOutput(label: String, value: String, accent: Boolean = false) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = Color.White.copy(alpha = 0.7f),
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontWeight = if (accent) FontWeight.Bold else FontWeight.SemiBold,
+            ),
+            color = if (accent) LifeCalcAccent else Color.White,
+        )
+    }
+}
 
 // Default seed of "two weeks ago" gives the chart a sensible starting
 // position centred around an average ovulation date.

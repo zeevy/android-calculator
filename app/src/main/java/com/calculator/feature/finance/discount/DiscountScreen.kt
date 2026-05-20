@@ -18,6 +18,7 @@ import com.calculator.feature.lifecalc.LifeCalcNumberField
 import com.calculator.feature.lifecalc.LifeCalcOutputRow
 import com.calculator.feature.lifecalc.LifeCalcSectionLabel
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
+import com.calculator.navigation.DiscountRoute
 import java.util.Locale
 
 /**
@@ -35,10 +36,11 @@ import java.util.Locale
  * Defaults render a sane example on entry (MRP 2,000, 20% off → 1,600
  * final) so the user immediately sees how the rows relate.
  *
- * @param onUp Pop the calculator from the back stack.
+ * @param onNavigate Jump to another tool / home. Wired to the scaffold's
+ *   hamburger menu.
  */
 @Composable
-fun DiscountScreen(onUp: () -> Unit) {
+fun DiscountScreen(onNavigate: (Any) -> Unit) {
     var mrp by remember { mutableStateOf("2000") }
     var percentOff by remember { mutableStateOf("20") }
     var finalPrice by remember { mutableStateOf("1600") }
@@ -65,7 +67,11 @@ fun DiscountScreen(onUp: () -> Unit) {
     val finalDisplay =
         if (lastEdited == 1) finalPrice else result?.finalPrice?.let { plain(it) } ?: finalPrice
 
-    LifeCalculatorScaffold(title = stringResource(R.string.discount_title), onUp = onUp) {
+    LifeCalculatorScaffold(
+        title = stringResource(R.string.discount_title),
+        currentRoute = DiscountRoute,
+        onNavigate = onNavigate,
+    ) {
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.discount_section_inputs))
             LifeCalcNumberField(

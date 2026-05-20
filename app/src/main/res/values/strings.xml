@@ -23,6 +23,7 @@
     <string name="basic_open_menu">Open menu</string>
 
     <!-- Tools menu tile labels -->
+    <string name="tool_home">Home</string>
     <string name="tool_basic">Basic</string>
     <string name="tool_advanced">Advanced</string>
     <string name="tool_history">History</string>

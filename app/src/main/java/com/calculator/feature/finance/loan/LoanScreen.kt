@@ -21,6 +21,7 @@ import com.calculator.feature.lifecalc.LifeCalcNumberField
 import com.calculator.feature.lifecalc.LifeCalcOutputRow
 import com.calculator.feature.lifecalc.LifeCalcSectionLabel
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
+import com.calculator.navigation.LoanRoute
 import java.util.Locale
 
 /**
@@ -36,12 +37,12 @@ import java.util.Locale
  * copy implies the app *is* a lender or pre-qualifier, the listing is
  * subject to additional review and possible takedown).
  *
- * @param onUp Pop the calculator from the back stack. Wired to the
- *   scaffold's back affordance; defined as a `() -> Unit` rather than a
+ * @param onNavigate Jump to another tool / home. Wired to the scaffold's
+ *   hamburger menu; defined as `(Any) -> Unit` rather than a
  *   `NavController` so previews can pass a no-op.
  */
 @Composable
-fun LoanScreen(onUp: () -> Unit) {
+fun LoanScreen(onNavigate: (Any) -> Unit) {
     // Sensible defaults that immediately render a populated result card
     // so first-time users see the shape of the output without having to
     // type anything. Numbers are stored as strings (not Double) because
@@ -51,7 +52,11 @@ fun LoanScreen(onUp: () -> Unit) {
     var rate by remember { mutableStateOf("10") }
     var months by remember { mutableStateOf("12") }
 
-    LifeCalculatorScaffold(title = stringResource(R.string.loan_title), onUp = onUp) {
+    LifeCalculatorScaffold(
+        title = stringResource(R.string.loan_title),
+        currentRoute = LoanRoute,
+        onNavigate = onNavigate,
+    ) {
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.loan_section_inputs))
             LifeCalcNumberField(

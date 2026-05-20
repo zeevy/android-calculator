@@ -55,6 +55,7 @@ import com.calculator.feature.lifecalc.LifeCalcCard
 import com.calculator.feature.lifecalc.LifeCalcSectionLabel
 import com.calculator.feature.lifecalc.LifeCalcSegmentBackground
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
+import com.calculator.navigation.TimezoneRoute
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -75,17 +76,22 @@ import java.time.format.DateTimeFormatter
  * source. The swap button between cards exchanges the (zone, time)
  * pairs.
  *
- * @param onUp Pop the screen from the back stack.
+ * @param onNavigate Jump to another tool / home. Wired to the scaffold's
+ *   hamburger menu.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimezoneScreen(
-    onUp: () -> Unit,
+    onNavigate: (Any) -> Unit,
     viewModel: TimezoneViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    LifeCalculatorScaffold(title = stringResource(R.string.tz_title), onUp = onUp) {
+    LifeCalculatorScaffold(
+        title = stringResource(R.string.tz_title),
+        currentRoute = TimezoneRoute,
+        onNavigate = onNavigate,
+    ) {
         // From card
         ZoneCard(
             sectionLabel = stringResource(R.string.tz_from),

@@ -29,32 +29,16 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.Cake
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Functions
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.MonitorWeight
-import androidx.compose.material.icons.filled.Public
-import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -63,7 +47,6 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -89,9 +72,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.R
 import com.calculator.core.designsystem.theme.CalculatorTheme
 import com.calculator.core.math.AngleMode
-import com.calculator.feature.history.HistorySheetContent
+import com.calculator.feature.lifecalc.ToolsMenuOverlay
+import com.calculator.feature.lifecalc.ToolsMenuSheet
+import com.calculator.navigation.BasicCalculatorRoute
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
 /**
@@ -103,16 +87,31 @@ import java.math.BigDecimal
  */
 @Composable
 fun BasicCalculatorScreen(
-    onOpenUnitConverter: () -> Unit = {},
-    onOpenLifeCalc: (Any) -> Unit = {},
+    onNavigate: (Any) -> Unit = {},
     viewModel: BasicCalculatorViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // On first composition, pick up any expression or scientific-mode
+    // hint a tool page stashed for us. The holder is one-shot - read
+    // once, then null it out so re-navigating back doesn't re-apply.
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        val holder = com.calculator.feature.lifecalc.PendingExpressionHolder
+        holder.scientificMode?.let { desired ->
+            holder.scientificMode = null
+            if (state.scientific != desired) {
+                viewModel.onEvent(BasicCalculatorEvent.ToggleScientific)
+            }
+        }
+        holder.expression?.let { pending ->
+            holder.expression = null
+            viewModel.onEvent(BasicCalculatorEvent.Clear)
+            viewModel.onEvent(BasicCalculatorEvent.Append(pending))
+        }
+    }
     BasicCalculatorScreenContent(
         state = state,
         onEvent = viewModel::onEvent,
-        onOpenUnitConverter = onOpenUnitConverter,
-        onOpenLifeCalc = onOpenLifeCalc,
+        onNavigate = onNavigate,
     )
 }
 
@@ -128,17 +127,9 @@ fun BasicCalculatorScreen(
 internal fun BasicCalculatorScreenContent(
     state: BasicCalculatorUiState,
     onEvent: (BasicCalculatorEvent) -> Unit,
-    onOpenUnitConverter: () -> Unit = {},
-    onOpenLifeCalc: (Any) -> Unit = {},
+    onNavigate: (Any) -> Unit = {},
 ) {
-    var openSheet by remember { mutableStateOf<MenuSheet?>(null) }
-    // skipPartiallyExpanded: the sheet jumps straight to its fully-expanded
-    // anchor on open instead of stopping at the half-screen detent. All
-    // three sheets we host (Tools grid, History list, Settings panel) are
-    // functional menus rather than gallery thumbnails - the half-state
-    // just hides content and forces the user to swipe up to see it.
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val scope = rememberCoroutineScope()
+    var openSheet by remember { mutableStateOf<ToolsMenuSheet?>(null) }
     val tones = rememberKeyToneGenerator()
     // Settings drives sound and haptics toggles. Falling back to defaults
     // (both on) when the settings VM hasn't emitted yet keeps the UI
@@ -176,7 +167,7 @@ internal fun BasicCalculatorScreenContent(
                 DisplaySection(
                     state = state,
                     onEvent = onEvent,
-                    onOpenMenu = { openSheet = MenuSheet.Tools },
+                    onOpenMenu = { openSheet = ToolsMenuSheet.Tools },
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -203,278 +194,23 @@ internal fun BasicCalculatorScreenContent(
             }
         }
 
-        if (openSheet != null) {
-            ModalBottomSheet(
-                sheetState = sheetState,
-                onDismissRequest = { openSheet = null },
-                // iOS palette: near-black sheet so it sits flat against the
-                // calculator's black canvas, with a light-grey drag handle
-                // to match the modifier-key tone.
-                containerColor = IosSheetBackground,
-                // contentColor is intentionally forced to white. The sheet
-                // background is hardcoded dark regardless of the system
-                // theme, so we can't let Material derive contentColor from
-                // the theme - in light mode it would resolve to a black
-                // onSurface and titles like "History" would render black
-                // on the dark sheet (effectively invisible).
-                contentColor = Color.White,
-                dragHandle = {
-                    BottomSheetDefaults.DragHandle(
-                        color = IosKeyModifierContainer,
-                    )
-                },
-            ) {
-                when (openSheet) {
-                    MenuSheet.Tools ->
-                        ToolsSheetContent(
-                            state = state,
-                            onEvent = onEvent,
-                            onOpenHistory = { openSheet = MenuSheet.History },
-                            onOpenSettings = { openSheet = MenuSheet.Settings },
-                            onOpenUnitConverter = {
-                                scope.launch { sheetState.hide() }
-                                openSheet = null
-                                onOpenUnitConverter()
-                            },
-                            onOpenLifeCalc = { route ->
-                                scope.launch { sheetState.hide() }
-                                openSheet = null
-                                onOpenLifeCalc(route)
-                            },
-                            onClose = {
-                                scope.launch { sheetState.hide() }
-                                openSheet = null
-                            },
-                        )
-                    MenuSheet.History ->
-                        HistorySheetContent(
-                            onReuseExpression = { expr ->
-                                onEvent(BasicCalculatorEvent.Clear)
-                                onEvent(BasicCalculatorEvent.Append(expr))
-                            },
-                            onClose = {
-                                scope.launch { sheetState.hide() }
-                                openSheet = null
-                            },
-                        )
-                    MenuSheet.Settings ->
-                        com.calculator.feature.settings.SettingsSheetContent(
-                            onClose = {
-                                scope.launch { sheetState.hide() }
-                                openSheet = null
-                            },
-                        )
-                    null -> Unit
-                }
-            }
-        }
+        ToolsMenuOverlay(
+            openSheet = openSheet,
+            onDismiss = { openSheet = null },
+            currentRoute = BasicCalculatorRoute,
+            isOnBasicCalc = true,
+            scientific = state.scientific,
+            onToggleScientific = { onEvent(BasicCalculatorEvent.ToggleScientific) },
+            onOpenHistory = { openSheet = ToolsMenuSheet.History },
+            onOpenSettings = { openSheet = ToolsMenuSheet.Settings },
+            onNavigate = onNavigate,
+            onReuseExpression = { expr ->
+                onEvent(BasicCalculatorEvent.Clear)
+                onEvent(BasicCalculatorEvent.Append(expr))
+            },
+        )
     } // CompositionLocalProvider
 }
-
-/** Which sheet is currently displayed in the modal bottom sheet. */
-private enum class MenuSheet { Tools, History, Settings }
-
-/**
- * App-level tools sheet, summoned from the top-right hamburger button.
- *
- * Modelled on the Mi Calculator tools menu: a grid of icon + label
- * tiles, one tap to jump to a mode/tool. The currently-active mode is
- * highlighted with the primary container colour.
- *
- * Today the working tiles are Basic and Advanced (scientific). The rest
- * are placeholders for upcoming features (history in Phase 3, converters
- * in Phase 5/6, life calculators in Phase 7) and are tappable but flash
- * a "coming soon" hint to avoid silently swallowing user intent.
- *
- * Each lambda routes to a distinct destination; collapsing them into a
- * single sealed event would push the routing decision into the screen,
- * hence the suppression of [LongParameterList].
- */
-@Suppress("LongParameterList")
-@Composable
-private fun ToolsSheetContent(
-    state: BasicCalculatorUiState,
-    onEvent: (BasicCalculatorEvent) -> Unit,
-    onOpenHistory: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onOpenUnitConverter: () -> Unit,
-    onOpenLifeCalc: (Any) -> Unit,
-    onClose: () -> Unit,
-) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        val tiles =
-            listOf(
-                ToolTile(
-                    icon = Icons.Filled.Calculate,
-                    label = stringResource(R.string.tool_basic),
-                    enabled = true,
-                    selected = !state.scientific,
-                    onTap = {
-                        if (state.scientific) onEvent(BasicCalculatorEvent.ToggleScientific)
-                        onClose()
-                    },
-                ),
-                ToolTile(
-                    icon = Icons.Filled.Functions,
-                    label = stringResource(R.string.tool_advanced),
-                    enabled = true,
-                    selected = state.scientific,
-                    onTap = {
-                        if (!state.scientific) onEvent(BasicCalculatorEvent.ToggleScientific)
-                        onClose()
-                    },
-                ),
-                ToolTile(
-                    icon = Icons.Filled.Straighten,
-                    label = stringResource(R.string.tool_units),
-                    enabled = true,
-                    selected = false,
-                    onTap = onOpenUnitConverter,
-                ),
-                ToolTile(
-                    icon = Icons.Filled.AccountBalance,
-                    label = stringResource(R.string.tool_loan),
-                    enabled = true,
-                    selected = false,
-                    onTap = { onOpenLifeCalc(com.calculator.navigation.LoanRoute) },
-                ),
-                ToolTile(
-                    icon = Icons.Filled.Receipt,
-                    label = stringResource(R.string.tool_gst),
-                    enabled = true,
-                    selected = false,
-                    onTap = { onOpenLifeCalc(com.calculator.navigation.GstRoute) },
-                ),
-                ToolTile(
-                    icon = Icons.Filled.LocalOffer,
-                    label = stringResource(R.string.tool_discount),
-                    enabled = true,
-                    selected = false,
-                    onTap = { onOpenLifeCalc(com.calculator.navigation.DiscountRoute) },
-                ),
-                ToolTile(
-                    icon = Icons.Filled.MonitorWeight,
-                    label = stringResource(R.string.tool_bmi),
-                    enabled = true,
-                    selected = false,
-                    onTap = { onOpenLifeCalc(com.calculator.navigation.BmiRoute) },
-                ),
-                ToolTile(
-                    icon = Icons.Filled.Cake,
-                    label = stringResource(R.string.tool_age),
-                    enabled = true,
-                    selected = false,
-                    onTap = { onOpenLifeCalc(com.calculator.navigation.AgeRoute) },
-                ),
-                ToolTile(
-                    icon = Icons.Filled.DateRange,
-                    label = stringResource(R.string.tool_date_diff),
-                    enabled = true,
-                    selected = false,
-                    onTap = { onOpenLifeCalc(com.calculator.navigation.DateDiffRoute) },
-                ),
-                ToolTile(
-                    icon = Icons.Filled.Public,
-                    label = stringResource(R.string.tool_timezone),
-                    enabled = true,
-                    selected = false,
-                    onTap = { onOpenLifeCalc(com.calculator.navigation.TimezoneRoute) },
-                ),
-                ToolTile(
-                    icon = Icons.Filled.Favorite,
-                    label = stringResource(R.string.tool_ovulation),
-                    enabled = true,
-                    selected = false,
-                    onTap = { onOpenLifeCalc(com.calculator.navigation.OvulationRoute) },
-                ),
-                ToolTile(
-                    icon = Icons.Filled.History,
-                    label = stringResource(R.string.tool_history),
-                    enabled = true,
-                    selected = false,
-                    onTap = onOpenHistory,
-                ),
-                ToolTile(
-                    icon = Icons.Filled.Settings,
-                    label = stringResource(R.string.tool_settings),
-                    enabled = true,
-                    selected = false,
-                    onTap = onOpenSettings,
-                ),
-            )
-
-        tiles.chunked(TOOL_TILE_COLUMNS).forEach { rowTiles ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                rowTiles.forEach { tile ->
-                    ToolTileButton(tile = tile, modifier = Modifier.weight(1f))
-                }
-                // Pad the trailing slot(s) so partial rows keep tile size.
-                repeat(TOOL_TILE_COLUMNS - rowTiles.size) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-            }
-            Spacer(Modifier.size(8.dp))
-        }
-
-        Spacer(Modifier.size(16.dp))
-    }
-}
-
-/** A single tile (icon + label) inside the [SettingsSheetContent] grid. */
-private data class ToolTile(
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
-    val label: String,
-    val enabled: Boolean,
-    val selected: Boolean,
-    val onTap: () -> Unit,
-)
-
-@Composable
-private fun ToolTileButton(tile: ToolTile, modifier: Modifier = Modifier) {
-    // iOS palette: selected tile uses the same orange as the operator
-    // keys; enabled tiles use the digit-key dark grey; disabled tiles
-    // fade toward the function-key medium grey at 60% alpha so they
-    // read as placeholders without disappearing entirely.
-    val containerColor =
-        when {
-            tile.selected -> IosKeyOperator
-            tile.enabled -> IosKeyDigitContainer
-            else -> IosKeyDigitContainer.copy(alpha = 0.6f)
-        }
-    val contentColor =
-        when {
-            tile.selected -> Color.White
-            tile.enabled -> Color.White
-            else -> Color.White.copy(alpha = 0.5f)
-        }
-    Column(
-        modifier =
-            modifier
-                .clip(RoundedCornerShape(20.dp))
-                .background(containerColor)
-                .clickable(enabled = tile.enabled, onClick = tile.onTap)
-                .padding(vertical = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(
-            imageVector = tile.icon,
-            contentDescription = tile.label,
-            tint = contentColor,
-            modifier = Modifier.size(24.dp),
-        )
-        Spacer(Modifier.size(6.dp))
-        Text(
-            text = tile.label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = contentColor,
-        )
-    }
-}
-
-private const val TOOL_TILE_COLUMNS = 3
 
 /**
  * Display section: expression + live preview bottom-right, mode chips
@@ -531,19 +267,15 @@ private fun DisplaySection(
             }
         }
 
-        // Hamburger: status-bar inset keeps it below the system icons, then
-        // a 40dp box (vs IconButton's default 48dp) trims the visible gap
-        // between status bar and glyph from ~12dp to ~8dp.
-        Box(
+        // Hamburger: 48dp IconButton matches the tool-page scaffold's
+        // top-right hamburger pixel-for-pixel so switching between basic
+        // calc and a tool doesn't visibly shift the icon.
+        androidx.compose.material3.IconButton(
+            onClick = onOpenMenu,
             modifier =
                 Modifier
                     .align(Alignment.TopEnd)
-                    .windowInsetsPadding(WindowInsets.statusBars)
-                    .padding(end = 4.dp, top = 4.dp)
-                    .size(40.dp)
-                    .clip(androidx.compose.foundation.shape.CircleShape)
-                    .clickable(onClick = onOpenMenu),
-            contentAlignment = Alignment.Center,
+                    .windowInsetsPadding(WindowInsets.statusBars),
         ) {
             Icon(
                 imageVector = Icons.Filled.Menu,
@@ -1413,7 +1145,6 @@ private val IosKeyDigitContainer = Color(0xFF505050)
 private val IosKeyFunctionContainer = Color(0xFF707070)
 private val IosKeyModifierContainer = Color(0xFFA5A5A5)
 private val IosKeyOperator = Color(0xFFFF9F0A)
-private val IosSheetBackground = Color(0xFF1C1C1E)
 
 // ----- Previews -----
 

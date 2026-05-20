@@ -1,5 +1,7 @@
 package com.calculator.feature.datetime.datediff
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -13,17 +15,22 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import com.calculator.R
 import com.calculator.core.domain.datetime.DateDiffCalculator
 import com.calculator.feature.datetime.age.DateRow
+import com.calculator.feature.lifecalc.LifeCalcAccent
 import com.calculator.feature.lifecalc.LifeCalcCard
 import com.calculator.feature.lifecalc.LifeCalcNumberField
 import com.calculator.feature.lifecalc.LifeCalcOutputRow
 import com.calculator.feature.lifecalc.LifeCalcSectionLabel
 import com.calculator.feature.lifecalc.LifeCalcSegmented
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
+import com.calculator.navigation.DateDiffRoute
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -41,11 +48,12 @@ import java.time.format.DateTimeFormatter
  * integer day count, returns the resulting calendar date. Offset is
  * stored as a string so the field can show "" or "-" mid-edit.
  *
- * @param onUp Pop the calculator from the back stack.
+ * @param onNavigate Jump to another tool / home. Wired to the scaffold's
+ *   hamburger menu.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DateDiffScreen(onUp: () -> Unit) {
+fun DateDiffScreen(onNavigate: (Any) -> Unit) {
     var mode by remember { mutableIntStateOf(0) } // 0 = two dates, 1 = date + offset
     // Defaults seed a sample 1-year span so the result card has
     // something to display on first render. The single picker state
@@ -57,7 +65,11 @@ fun DateDiffScreen(onUp: () -> Unit) {
     var offsetDays by remember { mutableStateOf("90") }
     var openPicker by remember { mutableStateOf<Picker?>(null) }
 
-    LifeCalculatorScaffold(title = stringResource(R.string.datediff_title), onUp = onUp) {
+    LifeCalculatorScaffold(
+        title = stringResource(R.string.datediff_title),
+        currentRoute = DateDiffRoute,
+        onNavigate = onNavigate,
+    ) {
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.datediff_section_mode))
             LifeCalcSegmented(
@@ -123,11 +135,23 @@ fun DateDiffScreen(onUp: () -> Unit) {
                         color = Color.White.copy(alpha = 0.55f),
                     )
                 } else {
-                    LifeCalcOutputRow(
-                        label = stringResource(R.string.datediff_label_resulting_date),
-                        value = result.format(DateTimeFormatter.ofPattern("EEEE, d MMM yyyy")),
-                        accent = true,
-                    )
+                    // Stacked layout: full "Wednesday, 18 February 2026"
+                    // strings are too wide to share a line with the
+                    // label without ellipsising, so we drop the value to
+                    // its own row.
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = stringResource(R.string.datediff_label_resulting_date),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color.White.copy(alpha = 0.7f),
+                        )
+                        Text(
+                            text = result.format(DateTimeFormatter.ofPattern("EEEE, d MMM yyyy")),
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = LifeCalcAccent,
+                            modifier = Modifier,
+                        )
+                    }
                 }
             }
         }
