@@ -52,6 +52,13 @@ android {
                 .toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // androidx.benchmark refuses to run on emulators by default because
+        // timings are unreliable. CI only has an emulator, and the committed
+        // baseline-startup.json was deliberately measured on the same
+        // Pixel 6 AVD, so accept the trade-off and suppress the EMULATOR
+        // error class. Real-device runs (developer laptops) still produce
+        // strict numbers.
+        testInstrumentationRunnerArguments["androidx.benchmark.suppressErrors"] = "EMULATOR"
     }
 
     targetProjectPath = ":app"
