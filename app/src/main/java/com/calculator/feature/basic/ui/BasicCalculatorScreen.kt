@@ -740,7 +740,11 @@ private val DISPLAY_EXPRESSION_MIN_SIZE = 10.sp
 // Up to three lines for the big result line and two for the muted
 // expression-history line. Multi-line first, then font shrink - so a
 // long expression grows downward before any text gets smaller.
-private const val DISPLAY_RESULT_MAX_LINES = 3
+// Two lines apiece: the result line never grows past two so a very
+// long answer auto-shrinks to fit; the expression-history line above
+// it stays at two so they have the same vertical budget and the
+// keypad position doesn't shift between modes.
+private const val DISPLAY_RESULT_MAX_LINES = 2
 private const val DISPLAY_EXPRESSION_MAX_LINES = 2
 
 /**
