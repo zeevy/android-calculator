@@ -67,7 +67,8 @@ fun GstScreen(onNavigate: (Any) -> Unit) {
     // initial-recomposition default of "18% / intra" matches the
     // first-launch fallback anyway, so no visible flash.
     val settingsViewModel: com.calculator.feature.settings.SettingsViewModel =
-        androidx.hilt.navigation.compose.hiltViewModel()
+        androidx.hilt.navigation.compose
+            .hiltViewModel()
     val userSettings by settingsViewModel.settings.collectAsStateWithLifecycle()
 
     var netText by remember { mutableStateOf("1000") }

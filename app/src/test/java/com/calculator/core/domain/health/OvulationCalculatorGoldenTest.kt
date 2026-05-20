@@ -64,7 +64,11 @@ class OvulationCalculatorGoldenTest {
         assertEquals(LocalDate.parse(start), r.fertileStart)
         assertEquals(LocalDate.parse(end), r.fertileEnd)
         // Window length is exactly 7 days (start..end inclusive)
-        assertEquals(6, java.time.temporal.ChronoUnit.DAYS.between(r.fertileStart, r.fertileEnd))
+        assertEquals(
+            6,
+            java.time.temporal.ChronoUnit.DAYS
+                .between(r.fertileStart, r.fertileEnd),
+        )
     }
 
     @DisplayName("due date = LMP + 280 days (Naegele's rule)")

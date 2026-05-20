@@ -265,13 +265,11 @@ class EvaluatorPropertyTest {
      * stay readable in failure messages and so multiplied/squared
      * results stay inside a few dozen digits.
      */
-    private fun smallDecimal(): Arb<String> {
-        return Arb.double(min = -1000.0, max = 1000.0).map { d ->
-            // Round to 4 decimal places so the literal we feed back into
-            // the engine is exact (BigDecimal(String) is exact;
-            // BigDecimal(Double) carries the binary-float wobble).
-            BigDecimal(d).setScale(4, java.math.RoundingMode.HALF_EVEN).toPlainString()
-        }
+    private fun smallDecimal(): Arb<String> = Arb.double(min = -1000.0, max = 1000.0).map { d ->
+        // Round to 4 decimal places so the literal we feed back into
+        // the engine is exact (BigDecimal(String) is exact;
+        // BigDecimal(Double) carries the binary-float wobble).
+        BigDecimal(d).setScale(4, java.math.RoundingMode.HALF_EVEN).toPlainString()
     }
 
     /**
@@ -285,18 +283,14 @@ class EvaluatorPropertyTest {
         return BigDecimal(x, MathContext(12)).toPlainString()
     }
 
-    private fun EvaluationResult.expectExact(): BigDecimal {
-        return when (this) {
-            is EvaluationResult.Success -> value
-            else -> fail("expected Success but got $this")
-        }
+    private fun EvaluationResult.expectExact(): BigDecimal = when (this) {
+        is EvaluationResult.Success -> value
+        else -> fail("expected Success but got $this")
     }
 
-    private fun EvaluationResult.expectSuccessLocal(): BigDecimal {
-        return when (this) {
-            is EvaluationResult.Success -> value
-            else -> fail("expected Success but got $this")
-        }
+    private fun EvaluationResult.expectSuccessLocal(): BigDecimal = when (this) {
+        is EvaluationResult.Success -> value
+        else -> fail("expected Success but got $this")
     }
 
     private fun assertExact(a: BigDecimal, b: BigDecimal, message: String) {
@@ -315,4 +309,3 @@ class EvaluatorPropertyTest {
         }
     }
 }
-

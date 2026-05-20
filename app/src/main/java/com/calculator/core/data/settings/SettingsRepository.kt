@@ -136,6 +136,7 @@ class DataStoreSettingsRepository
             val Sound = booleanPreferencesKey("sound")
             val Precision = intPreferencesKey("precision")
             val CrashOptIn = booleanPreferencesKey("crashOptIn")
+
             // Per-tool last-selection memory.
             val LastUnitCategory = stringPreferencesKey("lastUnitCategory")
             val GstIntraState = booleanPreferencesKey("gstIntraState")

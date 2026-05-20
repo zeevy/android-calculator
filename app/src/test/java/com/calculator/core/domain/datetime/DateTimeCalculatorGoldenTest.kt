@@ -62,8 +62,8 @@ class DateTimeCalculatorGoldenTest {
         "2020-01-01,    2020-02-01,    31",
         "2020-01-01,    2021-01-01,    366", // 2020 is a leap year
         "2021-01-01,    2022-01-01,    365",
-        "2024-02-28,    2024-03-01,    2",   // Feb 29 exists in 2024
-        "2025-02-28,    2025-03-01,    1",   // Feb 29 does not exist in 2025
+        "2024-02-28,    2024-03-01,    2", // Feb 29 exists in 2024
+        "2025-02-28,    2025-03-01,    1", // Feb 29 does not exist in 2025
         "2025-05-20,    2025-05-20,    0",
     )
     fun dateDifferenceTotalDays(start: String, end: String, expectedDays: Int) {
@@ -90,9 +90,9 @@ class DateTimeCalculatorGoldenTest {
         "2025-01-01,    1,      2025-01-02",
         "2025-01-01,    31,     2025-02-01",
         "2025-01-01,    365,    2026-01-01",
-        "2024-02-28,    1,      2024-02-29",   // leap year
+        "2024-02-28,    1,      2024-02-29", // leap year
         "2024-02-28,    2,      2024-03-01",
-        "2025-02-28,    1,      2025-03-01",   // non-leap year
+        "2025-02-28,    1,      2025-03-01", // non-leap year
         "2025-12-31,    1,      2026-01-01",
         // Negative offsets (subtract)
         "2025-01-01,    -1,     2024-12-31",

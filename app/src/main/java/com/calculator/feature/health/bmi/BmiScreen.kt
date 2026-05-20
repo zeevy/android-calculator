@@ -4,13 +4,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.R
 import com.calculator.core.domain.health.BmiCalculator
 import com.calculator.feature.lifecalc.LifeCalcCard
@@ -44,7 +44,8 @@ fun BmiScreen(onNavigate: (Any) -> Unit) {
     // Imperial silently interpreted the 93 as pounds and reported
     // "Underweight" (BMI 12 instead of 27).
     val settingsViewModel: com.calculator.feature.settings.SettingsViewModel =
-        androidx.hilt.navigation.compose.hiltViewModel()
+        androidx.hilt.navigation.compose
+            .hiltViewModel()
     val userSettings by settingsViewModel.settings.collectAsStateWithLifecycle()
     var heightUnitIdx by remember(userSettings.bmiHeightImperial) {
         mutableIntStateOf(if (userSettings.bmiHeightImperial) 1 else 0)

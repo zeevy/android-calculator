@@ -2,7 +2,6 @@ package com.calculator.feature.datetime.timezone
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -259,7 +258,8 @@ private fun ZonePickerSheet(
                 onValueChange = { query = it },
                 singleLine = true,
                 textStyle = TextStyle(color = Color.White, fontSize = 16.sp),
-                cursorBrush = androidx.compose.ui.graphics.SolidColor(LifeCalcAccent),
+                cursorBrush = androidx.compose.ui.graphics
+                    .SolidColor(LifeCalcAccent),
                 modifier =
                     Modifier
                         .padding(horizontal = 24.dp)

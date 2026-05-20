@@ -13,15 +13,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -235,7 +235,10 @@ private fun DisplaySection(
             lastValidPreview = state.lastValidPreview,
             onCopyResult = { text ->
                 if (text.isNotBlank()) {
-                    clipboard.setText(androidx.compose.ui.text.AnnotatedString(text))
+                    clipboard.setText(
+                        androidx.compose.ui.text
+                            .AnnotatedString(text),
+                    )
                     android.widget.Toast
                         .makeText(context, R.string.basic_copied, android.widget.Toast.LENGTH_SHORT)
                         .show()
@@ -331,10 +334,11 @@ private fun DisplaySection(
  *     | Post-equals ("5+3=8")         | committed expr | expression (8)    |
  *     | After-= chain ("8+2")         | expression     | liveResult        |
  *     | Error                         | expression     | error (red)       |
+ *
+ * `internal` (not `private`) so the headless Robolectric Compose UI
+ * tests can host this composable directly with synthetic state and
+ * assert the rendered text. It's still hidden from other modules.
  */
-// `internal` (not `private`) so the headless Robolectric Compose UI
-// tests can host this composable directly with synthetic state and
-// assert the rendered text. It's still hidden from other modules.
 @Suppress("LongParameterList")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -415,7 +419,10 @@ internal fun Display(
                             onLongClick = onPasteRequested,
                             indication = null,
                             interactionSource =
-                                remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                remember {
+                                    androidx.compose.foundation.interaction
+                                        .MutableInteractionSource()
+                                },
                         ),
             )
             Spacer(Modifier.size(4.dp))
@@ -447,7 +454,10 @@ internal fun Display(
                             onLongClick = { onCopyResult(bottomText) },
                             indication = null,
                             interactionSource =
-                                remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                remember {
+                                    androidx.compose.foundation.interaction
+                                        .MutableInteractionSource()
+                                },
                         ),
             )
         }
@@ -556,9 +566,10 @@ private const val DISPLAY_EXPRESSION_MAX_LINES = 2
  *
  * Portrait is enforced by the manifest, so no landscape branch lives
  * here - foldables / multi-window get the same vertical stacking.
+ *
+ * `internal` so the headless Compose UI test in src/test/ can host
+ * the keypad and drive button presses against a fake onEvent capture.
  */
-// `internal` so the headless Compose UI test in src/test/ can host
-// the keypad and drive button presses against a fake onEvent capture.
 @Composable
 internal fun Keypad(
     scientific: Boolean,
@@ -1167,6 +1178,7 @@ private const val BUTTON_ASPECT_RATIO_COMPACT = 2.6f
 // the calculator reads as a single visual system. Literal colors rather
 // than theme roles because the iOS feel is recognisable specifically by
 // these hexes; M3 dynamic-color would dilute it.
+
 /**
  * Pull the first plausibly-numeric token out of a pasted string.
  *

@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -32,17 +31,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import com.calculator.feature.lifecalc.PendingExpressionHolder
-import com.calculator.feature.lifecalc.ToolsMenuOverlay
-import com.calculator.feature.lifecalc.ToolsMenuSheet
-import com.calculator.navigation.BasicCalculatorRoute
-import com.calculator.navigation.UnitConverterRoute
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,6 +52,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.calculator.R
 import com.calculator.core.domain.converter.ConverterUnit
 import com.calculator.core.domain.converter.UnitCategory
+import com.calculator.feature.lifecalc.PendingExpressionHolder
+import com.calculator.feature.lifecalc.ToolsMenuOverlay
+import com.calculator.feature.lifecalc.ToolsMenuSheet
+import com.calculator.navigation.BasicCalculatorRoute
+import com.calculator.navigation.UnitConverterRoute
 
 /**
  * Full-screen unit converter.
@@ -270,8 +269,7 @@ private fun CategoryDropdown(
                                 .clickable {
                                     onSelect(category)
                                     sheetOpen = false
-                                }
-                                .padding(horizontal = 24.dp, vertical = 14.dp),
+                                }.padding(horizontal = 24.dp, vertical = 14.dp),
                     ) {
                         Text(
                             text = category.displayName,

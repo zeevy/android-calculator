@@ -9,7 +9,9 @@
     - Mark format strings with `xliff:g` so translators know not to alter
       placeholders (added when the first formatted string is introduced).
 -->
-<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="MissingTranslation">
     <string name="app_name">Calculator</string>
 
     <!-- Basic calculator -->

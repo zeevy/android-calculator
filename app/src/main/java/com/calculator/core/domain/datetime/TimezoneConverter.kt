@@ -51,18 +51,18 @@ object TimezoneConverter {
     val COMMON_ZONES: List<String> =
         listOf(
             "UTC",
-            "Asia/Kolkata",         // IST
-            "Asia/Tokyo",           // JST
-            "Asia/Shanghai",        // CST
+            "Asia/Kolkata", // IST
+            "Asia/Tokyo", // JST
+            "Asia/Shanghai", // CST
             "Asia/Singapore",
-            "Asia/Dubai",           // GST
-            "Europe/London",        // GMT / BST
-            "Europe/Paris",         // CET / CEST
+            "Asia/Dubai", // GST
+            "Europe/London", // GMT / BST
+            "Europe/Paris", // CET / CEST
             "Europe/Berlin",
-            "America/New_York",     // EST / EDT
-            "America/Chicago",      // CST / CDT
-            "America/Los_Angeles",  // PST / PDT
-            "Australia/Sydney",     // AEST / AEDT
+            "America/New_York", // EST / EDT
+            "America/Chicago", // CST / CDT
+            "America/Los_Angeles", // PST / PDT
+            "Australia/Sydney", // AEST / AEDT
         )
 
     /**

@@ -300,7 +300,8 @@ class BasicCalculatorViewModel
             // Always push to the in-memory tape - it's process-wide and
             // cheap. The persistent history below is best-effort and may
             // be skipped when no repository is wired (tests / previews).
-            com.calculator.feature.tape.TapeHolder.add(expression, result)
+            com.calculator.feature.tape.TapeHolder
+                .add(expression, result)
             val repo = historyRepository ?: return
             viewModelScope.launch {
                 runCatching {
@@ -532,22 +533,20 @@ class BasicCalculatorViewModel
          * the generic last branch instead of breaking the build.
          */
         @Suppress("ReturnCount")
-        private fun domainMessage(reason: String): String {
-            return when {
-                reason.startsWith("sqrt") -> "Can't take √ of a negative number"
-                reason.startsWith("cbrt") -> "Cube root undefined here"
-                reason.startsWith("log") -> "Log needs a positive number"
-                reason.startsWith("ln") -> "ln needs a positive number"
-                reason.startsWith("asin") -> "asin needs a value between -1 and 1"
-                reason.startsWith("acos") -> "acos needs a value between -1 and 1"
-                reason.startsWith("tan") -> "tan is undefined at this angle"
-                reason.startsWith("factorial of negative") -> "Factorial needs a non-negative number"
-                reason.startsWith("factorial of non-integer") -> "Factorial needs a whole number"
-                reason.startsWith("factorial too large") -> "Factorial is too large to compute"
-                reason.startsWith("power overflow") -> "Result is too large"
-                reason.startsWith("invalid power") -> "That power isn't a real number"
-                else -> "Math out of domain"
-            }
+        private fun domainMessage(reason: String): String = when {
+            reason.startsWith("sqrt") -> "Can't take √ of a negative number"
+            reason.startsWith("cbrt") -> "Cube root undefined here"
+            reason.startsWith("log") -> "Log needs a positive number"
+            reason.startsWith("ln") -> "ln needs a positive number"
+            reason.startsWith("asin") -> "asin needs a value between -1 and 1"
+            reason.startsWith("acos") -> "acos needs a value between -1 and 1"
+            reason.startsWith("tan") -> "tan is undefined at this angle"
+            reason.startsWith("factorial of negative") -> "Factorial needs a non-negative number"
+            reason.startsWith("factorial of non-integer") -> "Factorial needs a whole number"
+            reason.startsWith("factorial too large") -> "Factorial is too large to compute"
+            reason.startsWith("power overflow") -> "Result is too large"
+            reason.startsWith("invalid power") -> "That power isn't a real number"
+            else -> "Math out of domain"
         }
 
         /**

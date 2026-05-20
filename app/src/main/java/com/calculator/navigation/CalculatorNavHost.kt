@@ -7,8 +7,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.calculator.feature.shortcuts.RecentToolsRegistry
-import com.calculator.feature.shortcuts.ToolShortcutCatalog
 import com.calculator.feature.basic.ui.BasicCalculatorScreen
 import com.calculator.feature.converter.base.BaseConverterScreen
 import com.calculator.feature.converter.unit.UnitConverterScreen
@@ -23,6 +21,8 @@ import com.calculator.feature.finance.tipsplit.TipSplitScreen
 import com.calculator.feature.health.bmi.BmiScreen
 import com.calculator.feature.health.ovulation.OvulationScreen
 import com.calculator.feature.math.percent.PercentScreen
+import com.calculator.feature.shortcuts.RecentToolsRegistry
+import com.calculator.feature.shortcuts.ToolShortcutCatalog
 import com.calculator.feature.tape.TapeScreen
 
 /**
@@ -53,7 +53,8 @@ fun CalculatorNavHost(startDestinationHint: String? = null) {
     // on config change.
     LaunchedEffect(startDestinationHint) {
         if (startDestinationHint.isNullOrBlank() || startDestinationHint == "basic") return@LaunchedEffect
-        ToolShortcutCatalog.byId(startDestinationHint)
+        ToolShortcutCatalog
+            .byId(startDestinationHint)
             ?.let { navController.openTool(it.route) }
     }
 

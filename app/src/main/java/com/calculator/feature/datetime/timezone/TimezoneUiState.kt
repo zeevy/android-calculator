@@ -32,10 +32,15 @@ data class TimezoneUiState(
     /** Active modal sub-picker, if any. */
     sealed interface Picker {
         data object FromZone : Picker
+
         data object ToZone : Picker
+
         data object FromDate : Picker
+
         data object FromTime : Picker
+
         data object ToDate : Picker
+
         data object ToTime : Picker
     }
 }

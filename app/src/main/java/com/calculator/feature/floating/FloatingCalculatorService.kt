@@ -157,11 +157,16 @@ class FloatingCalculatorService : Service() {
         fun digit(id: Int, d: String) {
             root.findViewById<Button>(id).setOnClickListener { onDigit(d) }
         }
-        digit(R.id.floating_0, "0"); digit(R.id.floating_1, "1")
-        digit(R.id.floating_2, "2"); digit(R.id.floating_3, "3")
-        digit(R.id.floating_4, "4"); digit(R.id.floating_5, "5")
-        digit(R.id.floating_6, "6"); digit(R.id.floating_7, "7")
-        digit(R.id.floating_8, "8"); digit(R.id.floating_9, "9")
+        digit(R.id.floating_0, "0")
+        digit(R.id.floating_1, "1")
+        digit(R.id.floating_2, "2")
+        digit(R.id.floating_3, "3")
+        digit(R.id.floating_4, "4")
+        digit(R.id.floating_5, "5")
+        digit(R.id.floating_6, "6")
+        digit(R.id.floating_7, "7")
+        digit(R.id.floating_8, "8")
+        digit(R.id.floating_9, "9")
 
         root.findViewById<Button>(R.id.floating_dot).setOnClickListener { onDot() }
         // Backspace: tap deletes one character, long-press clears the
@@ -263,8 +268,11 @@ class FloatingCalculatorService : Service() {
                 // without a MathContext; pass DECIMAL64 so 1/3 doesn't
                 // raise ArithmeticException.
                 Op.DIV ->
-                    if (rhs.signum() == 0) null
-                    else lhs.divide(rhs, MathContext.DECIMAL64)
+                    if (rhs.signum() == 0) {
+                        null
+                    } else {
+                        lhs.divide(rhs, MathContext.DECIMAL64)
+                    }
             }
         }.getOrNull()
 
@@ -301,7 +309,8 @@ class FloatingCalculatorService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
-        val notif: Notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL)
+        val notif: Notification = NotificationCompat
+            .Builder(this, NOTIFICATION_CHANNEL)
             .setSmallIcon(R.drawable.ic_qs_calculator)
             .setContentTitle(getString(R.string.floating_notif_title))
             .setContentText(getString(R.string.floating_notif_body))

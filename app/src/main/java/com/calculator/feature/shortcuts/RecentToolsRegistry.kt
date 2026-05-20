@@ -62,7 +62,8 @@ internal object RecentToolsRegistry {
     }
 
     private fun readRecents(prefs: android.content.SharedPreferences): List<String> =
-        prefs.getString(KEY_LIST, "")
+        prefs
+            .getString(KEY_LIST, "")
             ?.split(",")
             ?.filter { it.isNotBlank() }
             ?: emptyList()
@@ -81,7 +82,8 @@ internal object RecentToolsRegistry {
     private fun buildFloatShortcut(context: Context): ShortcutInfoCompat {
         val intent = Intent(Intent.ACTION_VIEW)
             .setClassName(context, FloatingShortcutActivity::class.java.name)
-        return ShortcutInfoCompat.Builder(context, FLOAT_SHORTCUT_ID)
+        return ShortcutInfoCompat
+            .Builder(context, FLOAT_SHORTCUT_ID)
             .setShortLabel(context.getString(R.string.shortcut_floating_short))
             .setLongLabel(context.getString(R.string.shortcut_floating_long))
             .setIcon(IconCompat.createWithResource(context, R.mipmap.ic_launcher_round))
@@ -94,7 +96,8 @@ internal object RecentToolsRegistry {
         val intent = Intent(Intent.ACTION_VIEW)
             .setClassName(context, MainActivity::class.java.name)
             .putExtra(MainActivity.SHORTCUT_DESTINATION, toolId)
-        return ShortcutInfoCompat.Builder(context, "recent_$toolId")
+        return ShortcutInfoCompat
+            .Builder(context, "recent_$toolId")
             .setShortLabel(context.getString(entry.shortLabelRes))
             .setLongLabel(context.getString(entry.longLabelRes))
             .setIcon(IconCompat.createWithResource(context, R.mipmap.ic_launcher_round))

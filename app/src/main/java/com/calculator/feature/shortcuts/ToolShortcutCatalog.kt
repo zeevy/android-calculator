@@ -61,6 +61,6 @@ internal object ToolShortcutCatalog {
     private val byRouteMap = entries.associateBy { it.route }
 
     fun byId(id: String): Entry? = byIdMap[id]
+
     fun idOf(route: Any): String? = byRouteMap[route]?.id
 }
-
