@@ -97,14 +97,14 @@ class ScientificEvaluatorTest {
     }
 
     @Test
-    fun tangentNearHalfPiIsLarge() {
-        // Math.tan(pi/2) doesn't actually return infinity because pi/2 in
-        // Double isn't exactly pi/2 - it returns ~1.63e16. The calculator
-        // surfaces this as a Success with a very large number rather than
-        // a domain error, matching how desk calculators behave near the
-        // asymptote. We just assert the magnitude is huge.
-        val value = radEvaluator.evaluate("tan(π÷2)").success()
-        assert(value.abs().toDouble() > 1e10) { "expected huge tangent, got $value" }
+    fun tangentAtHalfPiIsDomainError() {
+        // The engine detects the tan asymptote by checking cos(arg) for
+        // near-zero before evaluating, so tan(π÷2) returns Domain
+        // regardless of the fact that Math.tan(approxπ/2) only produces
+        // a huge finite value (~1.6e16) - it never reaches Infinity in
+        // Double. See [TAN_ASYMPTOTE_EPSILON] in Evaluator.
+        val result = radEvaluator.evaluate("tan(π÷2)")
+        assertInstanceOf(EvaluationResult.Error.Domain::class.java, result)
     }
 
     // ----- Logarithms -----

@@ -265,7 +265,22 @@ class Evaluator(
             when (func) {
                 FunctionId.Sin -> Math.sin(toRadians(raw))
                 FunctionId.Cos -> Math.cos(toRadians(raw))
-                FunctionId.Tan -> Math.tan(toRadians(raw))
+                FunctionId.Tan -> {
+                    // Asymptote detection: at odd multiples of π/2 the
+                    // true value of tan is ±Infinity, but because π/2
+                    // isn't exactly representable in Double, Math.tan
+                    // returns a huge *finite* result (~1.6e16) for both
+                    // tan(π÷2) in radians and tan(90) in degrees. The
+                    // engine's isInfinite() check downstream never fires
+                    // for these, so we detect the asymptote independently
+                    // by checking the denominator (cos) for near-zero
+                    // before computing tan.
+                    val radians = toRadians(raw)
+                    if (kotlin.math.abs(Math.cos(radians)) < TAN_ASYMPTOTE_EPSILON) {
+                        throw DomainException("tan($arg) is undefined")
+                    }
+                    Math.tan(radians)
+                }
                 FunctionId.Asin -> fromRadians(Math.asin(raw))
                 FunctionId.Acos -> fromRadians(Math.acos(raw))
                 FunctionId.Atan -> fromRadians(Math.atan(raw))
@@ -339,6 +354,14 @@ class Evaluator(
         // sin(1e-10) ≈ 1e-10 still round-trip cleanly, while sin(π)'s
         // ~1.22e-16 noise collapses to 0.
         private const val TRANSCENDENTAL_ZERO_EPSILON = 1e-12
+
+        // tan asymptote detection: tan(x) = sin(x)/cos(x), so the
+        // denominator approaches zero at π/2 + kπ. Threshold 1e-12 is
+        // identical to the zero-snap epsilon - well above any noise
+        // from the JDK trig library, well below any legitimate small
+        // cosine that would produce a normal (large but bounded) tan
+        // value the user actually wanted.
+        private const val TAN_ASYMPTOTE_EPSILON = 1e-12
     }
 }
 

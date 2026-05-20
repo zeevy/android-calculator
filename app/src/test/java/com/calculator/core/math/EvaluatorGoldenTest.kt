@@ -110,6 +110,72 @@ class EvaluatorGoldenTest {
         // squared / cubed via the engine's symbol form
         "'3^2',                     9",
         "'4^3',                     64",
+        // power right-associativity: 2^3^2 should be 2^(3^2) = 2^9 = 512,
+        // NOT (2^3)^2 = 64. Standard math convention.
+        "'2^3^2',                   512",
+        "'3^2^2',                   81",
+        // unary minus edge cases
+        "'--5',                     5",
+        "'---5',                    -5",
+        "'-(2+3)',                  -5",
+        "'-(-(2+3))',               5",
+        "'2×-3',                    -6",
+        "'-3×-2',                   6",
+        "'5+-3',                    2",
+        "'5--3',                    8",
+        // -2^2 = -(2^2) = -4 (power binds tighter than unary minus)
+        "'-2^2',                    -4",
+        "'-2^3',                    -8",
+        "'(-2)^2',                  4",
+        "'(-2)^3',                  -8",
+        // nested factorial: (5!)! is huge so don't go there; 3!! is
+        // (3!)! = 6! = 720 by left-to-right reading (the engine
+        // doesn't implement the math-double-factorial 3!! = 3×1)
+        "'3!!',                     720",
+        "'(2+3)!',                  120",
+        "'5!+5',                    125",
+        "'5!×2',                    240",
+        "'5+5!',                    125",
+        // percent
+        "'5%',                      0.05",
+        "'50%',                     0.5",
+        "'100%',                    1",
+        "'200+10%',                 200.1",
+        "'5%×2',                    0.1",
+        // long chains
+        "'1+2+3+4+5+6+7+8+9+10',    55",
+        "'1×2×3×4×5×6×7',           5040",
+        "'1+1+1+1+1+1+1+1+1+1',     10",
+        // deeply nested parens
+        "'((((((1+1))))))',         2",
+        "'(((1)))+(((2)))',         3",
+        // number format
+        "'.5',                      0.5",
+        "'5.',                      5",
+        "'.5+.5',                   1",
+        "'0.5+0.5',                 1",
+        // mixed operators with parens
+        "'(1+2)×(3+4)',             21",
+        "'(10-2)÷(2×2)',            2",
+        "'2×(3+4)-5',               9",
+        // larger factorials still in range
+        "'15!',                     1307674368000",
+        "'20!',                     2432902008176640000",
+        // squared/cubed shortcuts
+        "'5^2',                     25",
+        "'5^3',                     125",
+        "'10^2',                    100",
+        // zero in various places
+        "'0+5',                     5",
+        "'5+0',                     5",
+        "'5-0',                     5",
+        "'5×0',                     0",
+        "'0×5',                     0",
+        "'0!',                      1",
+        // power identity
+        "'5^1',                     5",
+        "'1^100',                   1",
+        "'0^5',                     0",
     )
     fun exactArithmetic(expression: String, expected: String) {
         val value = rad.evaluate(expression).expectSuccess()
@@ -175,6 +241,41 @@ class EvaluatorGoldenTest {
         // power with fractional exponent
         "'8^(1÷3)',                 2",
         "'27^(1÷3)',                3",
+        // function chaining
+        "'sin(cos(0))',             0.84147098480789",
+        "'cos(sin(0))',             1",
+        "'sqrt(sqrt(16))',          2",
+        "'log(sqrt(100))',          1",
+        "'log(log(10))',            0",
+        "'sin(asin(0.3))',          0.3",
+        "'cos(acos(0.3))',          0.3",
+        "'tan(atan(0.5))',          0.5",
+        // mixed arithmetic + transcendentals
+        "'sin(π÷2)+cos(0)',         2",
+        "'sin(π)+cos(π)',           -1",
+        "'2×sin(π÷6)',              1",
+        "'log(10)+log(100)',        3",
+        "'sqrt(9)+sqrt(16)',        7",
+        // larger trig multiples (rad)
+        "'sin(2×π)',                0",
+        "'cos(2×π)',                1",
+        "'sin(π÷6)+sin(π÷6)',       1",
+        // log edge values
+        "'log(1000000)',            6",
+        "'log(0.001)',              -3",
+        "'ln(1)',                   0",
+        // exp / pow constants
+        "'e^0',                     1",
+        "'e^1',                     2.71828182845904",
+        // sqrt edge values
+        "'sqrt(0.25)',              0.5",
+        "'sqrt(100)',               10",
+        "'sqrt(10000)',             100",
+        // cbrt around zero
+        "'cbrt(0.125)',             0.5",
+        "'cbrt(-0.125)',            -0.5",
+        // arctan of large arg approaches π/2
+        "'atan(1000000)',           1.5707953267948",
     )
     fun transcendentalsRadians(expression: String, expected: String) {
         val value = rad.evaluate(expression).expectSuccess()
@@ -203,6 +304,26 @@ class EvaluatorGoldenTest {
         "'acos(0)',                 90",
         "'acos(1)',                 0",
         "'atan(1)',                 45",
+        // extreme angles in degrees
+        "'sin(270)',                -1",
+        "'sin(360)',                0",
+        "'sin(720)',                0",
+        "'cos(270)',                0",
+        "'cos(360)',                1",
+        "'cos(-90)',                0",
+        "'sin(-30)',                -0.5",
+        "'cos(-60)',                0.5",
+        "'tan(-45)',                -1",
+        "'tan(135)',                -1",
+        // 30/60/90 triangle multiples
+        "'sin(30)+sin(60)',         1.3660254037844",
+        "'cos(30)+cos(60)',         1.3660254037844",
+        // asin/acos inverse
+        "'asin(-0.5)',              -30",
+        "'asin(-1)',                -90",
+        "'acos(-1)',                180",
+        "'acos(0.5)',               60",
+        "'atan(-1)',                -45",
     )
     fun transcendentalsDegrees(expression: String, expected: String) {
         val value = deg.evaluate(expression).expectSuccess()
@@ -213,6 +334,26 @@ class EvaluatorGoldenTest {
     // Error cases: every row asserts a specific [Error] subtype is
     // returned (never thrown, per the engine's documented contract).
     // ------------------------------------------------------------------
+
+    /**
+     * Degree-mode error case: tan(90°) at the asymptote. 90.0 is an
+     * exact Double, so Math.tan returns Infinity and the engine's
+     * isInfinite() check fires correctly. (In radian mode the same
+     * angle - π/2 - is approximated and Math.tan returns a huge but
+     * finite value, so radian asymptotes don't reliably trip this
+     * branch and aren't catalogued here.)
+     */
+    @org.junit.jupiter.api.Test
+    fun tan90DegreesIsDomainError() {
+        val result = deg.evaluate("tan(90)")
+        assertInstanceOf(EvaluationResult.Error.Domain::class.java, result)
+    }
+
+    @org.junit.jupiter.api.Test
+    fun tan270DegreesIsDomainError() {
+        val result = deg.evaluate("tan(270)")
+        assertInstanceOf(EvaluationResult.Error.Domain::class.java, result)
+    }
 
     @DisplayName("error paths")
     @ParameterizedTest(name = "{0} -> {1}")
@@ -240,6 +381,34 @@ class EvaluatorGoldenTest {
         "'acos(-2)',                Domain",
         "'(-3)!',                   Domain",
         "'1001!',                   Domain",
+        "'1.5!',                    Domain",
+        "'(-0.5)!',                 Domain",
+        "'10000!',                  Domain",
+        // power producing infinity (Math.pow overflow at ~1e308)
+        "'10^1000',                 Domain",
+        // syntax: empty parens, lonely operators, double dots
+        "'()',                      Syntax",
+        "'(())',                    Syntax",
+        // 5..5: the second `.` starts a "number" that's just a dot,
+        // which the tokenizer reports as UnknownToken rather than Syntax.
+        "'5..5',                    UnknownToken",
+        "'1++1',                    Syntax",
+        "'1+×1',                    Syntax",
+        // unsupported chars
+        "'1+a',                     UnknownToken",
+        "'$5',                      UnknownToken",
+        "'1#1',                     UnknownToken",
+        // division by very-small produces a valid (large) result, not an
+        // error - assert it doesn't error here is a positive case, but
+        // include the literal 0 ones that are
+        "'5÷0÷5',                   DivisionByZero",
+        // tan at asymptotes (π/2 + kπ): the engine detects these by
+        // checking cos(arg) for near-zero, not by relying on isInfinite,
+        // because Math.tan returns a huge finite value (~1.6e16) rather
+        // than Infinity at these inputs. Both radian and degree forms
+        // are caught.
+        "'tan(π÷2)',                Domain",
+        "'tan(3×π÷2)',              Domain",
     )
     fun errorPaths(expression: String, kind: String) {
         val result = rad.evaluate(expression)
