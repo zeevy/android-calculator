@@ -137,7 +137,15 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons)
     debugImplementation(libs.compose.ui.tooling)
-    debugImplementation(libs.compose.ui.test.manifest)
+    // Robolectric `createComposeRule()` launches a generic
+    // ComponentActivity declared by the compose-ui-test-manifest AAR.
+    // Adding it as `implementation` makes the declaration land in the
+    // merged manifest of every build variant (debug / release /
+    // benchmark) so testReleaseUnitTest and testBenchmarkUnitTest can
+    // resolve the activity. The AAR contains only the manifest stub -
+    // no runtime code, so the production cost is one extra `<activity>`
+    // line.
+    implementation(libs.compose.ui.test.manifest)
 
     // ----- AndroidX core / lifecycle / navigation -----
     implementation(libs.androidx.core.ktx)
