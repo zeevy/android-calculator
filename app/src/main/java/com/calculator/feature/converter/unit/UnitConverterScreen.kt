@@ -25,8 +25,6 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.SwapVert
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -167,67 +165,92 @@ fun UnitConverterScreen(
 }
 
 /**
- * Category picker rendered as a single button + dropdown menu.
+ * Category picker rendered as a single trigger pill plus a modal
+ * bottom-sheet list of all 11 categories.
  *
- * Replaces the earlier horizontal-scroll chip row: that hid most of
- * the 11 categories below the right edge on a portrait phone, so
- * users had to discover the off-screen ones by swiping. The dropdown
- * shows everything in one tap, with the current selection marked by
- * a check icon for fast eye-tracking.
+ * Compared to the dropdown variant: the sheet uses the full width of
+ * the screen, every option has a comfortable touch target with the
+ * selected one highlighted, and the picker reads as a dedicated
+ * "choose one" step instead of a contextual menu floating off the
+ * trigger.
  *
- * Internal `expanded` state is local to the composable; the parent
- * only needs to know about [onSelect] firing.
+ * Internal `sheetOpen` state is local; the parent only needs to know
+ * when [onSelect] fires.
  */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun CategoryDropdown(
     categories: List<UnitCategory>,
     selected: UnitCategory,
     onSelect: (UnitCategory) -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    Box(modifier = Modifier.fillMaxWidth()) {
-        // The triggering "field": a full-width pill that shows the
-        // current category and a down-chevron. Tapping anywhere on it
-        // toggles the menu.
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(CardBackground)
-                    .clickable { expanded = !expanded }
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+    var sheetOpen by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // Trigger pill: identical shell to the dropdown variant so users
+    // who tried both see the same affordance up top.
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .background(CardBackground)
+                .clickable { sheetOpen = true }
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+    ) {
+        Text(
+            text = selected.displayName,
+            style = MaterialTheme.typography.titleMedium,
+            color = Color.White,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            imageVector = Icons.Filled.ArrowDropDown,
+            contentDescription = null,
+            tint = Color.White,
+        )
+    }
+
+    if (sheetOpen) {
+        ModalBottomSheet(
+            sheetState = sheetState,
+            onDismissRequest = { sheetOpen = false },
+            containerColor = Color.Black,
+            // Force-white content so titles render correctly in light
+            // system theme too - same fix we applied to the main
+            // calculator's bottom sheets.
+            contentColor = Color.White,
         ) {
-            Text(
-                text = selected.displayName,
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White,
-                modifier = Modifier.weight(1f),
-            )
-            Icon(
-                imageVector = Icons.Filled.ArrowDropDown,
-                contentDescription = null,
-                tint = Color.White,
-            )
-        }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            // Anchored to the box - sits directly under the trigger.
-            modifier = Modifier.background(CardBackground),
-        ) {
-            categories.forEach { category ->
-                val isSelected = category == selected
-                DropdownMenuItem(
-                    text = {
+            Column(modifier = Modifier.padding(bottom = 16.dp)) {
+                Text(
+                    text = "Category",
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                    color = Color.White,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                )
+                categories.forEach { category ->
+                    val isSelected = category == selected
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onSelect(category)
+                                    sheetOpen = false
+                                }
+                                .padding(horizontal = 24.dp, vertical = 14.dp),
+                    ) {
                         Text(
                             text = category.displayName,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = if (isSelected) ConverterAccent else Color.White,
-                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f),
                         )
-                    },
-                    trailingIcon = {
                         if (isSelected) {
                             Icon(
                                 imageVector = Icons.Filled.Check,
@@ -235,12 +258,8 @@ private fun CategoryDropdown(
                                 tint = ConverterAccent,
                             )
                         }
-                    },
-                    onClick = {
-                        onSelect(category)
-                        expanded = false
-                    },
-                )
+                    }
+                }
             }
         }
     }
