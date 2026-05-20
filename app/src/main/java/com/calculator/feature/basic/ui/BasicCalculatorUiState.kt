@@ -50,6 +50,18 @@ data class BasicCalculatorUiState(
      *   next `=`).
      */
     val lastCommittedExpression: String? = null,
+    /**
+     * Most recent successfully computed preview, preserved across
+     * intermediate states where the live expression isn't evaluable.
+     *
+     * Used by the display's bottom (result) line as a sticky fallback
+     * so typing the next operator (`5+3` → `5+3+`) doesn't blank the
+     * result row - the previous `8` stays visible until the user
+     * provides enough input for a new preview to compute. Cleared
+     * when the expression is emptied (Clear / Backspace-to-empty)
+     * because there's no longer any "previous result" to remember.
+     */
+    val lastValidPreview: String? = null,
 )
 
 /**

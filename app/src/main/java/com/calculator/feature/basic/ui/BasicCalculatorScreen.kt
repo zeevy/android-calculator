@@ -487,6 +487,7 @@ private fun DisplaySection(
             preview = state.liveResult,
             error = state.errorMessage,
             lastCommittedExpression = state.lastCommittedExpression,
+            lastValidPreview = state.lastValidPreview,
             modifier =
                 Modifier
                     .fillMaxSize()
@@ -577,26 +578,34 @@ private fun Display(
     preview: String?,
     error: String?,
     lastCommittedExpression: String?,
+    lastValidPreview: String?,
     modifier: Modifier = Modifier,
 ) {
-    // What the top (input) line should display. The committed-expression
-    // takes priority because it's what the user just pressed `=` on; the
-    // current expression takes over the moment they start typing again.
-    // We only fall back to the expression for the top line when there's
-    // a live preview below (i.e. we have a separate "result" to show
-    // beneath the input) - this keeps the top line from echoing a lone
-    // "5" in both rows before any operator is typed.
-    val topText: String =
-        when {
-            lastCommittedExpression != null -> lastCommittedExpression
-            error != null -> expression.ifBlank { "" }
-            preview != null -> expression
-            else -> ""
-        }
+    // Top (input) line: always the expression, with the committed-
+    // expression preferred when it's set (i.e. after `=`). We do NOT
+    // gate this on `preview != null` because the live preview can
+    // disappear mid-typing - typing the next operator (`5+3` -> `5+3+`)
+    // makes the preview unevaluable, and gating on it would blank the
+    // top line on every operator press. Showing the expression
+    // unconditionally keeps the layout stable across every keystroke.
+    val topText: String = lastCommittedExpression ?: expression
+    // Bottom (result) line: result only - never the expression itself.
+    // Priority order:
+    //   1. error message (red)
+    //   2. live preview from the current expression
+    //   3. lastValidPreview - the most recent computable result,
+    //      held across non-evaluable intermediate states so typing
+    //      `5+3` → `5+3+` keeps showing `8` instead of blanking
+    //   4. "0" if the calculator is at rest (expression blank and
+    //      nothing held)
+    //   5. "" otherwise - shouldn't happen in practice because
+    //      lastValidPreview persists whenever the expression isn't
+    //      blank, but a defensive fallback keeps the line non-null
     val bottomText: String =
         error
             ?: preview
-            ?: expression.ifBlank { "0" }
+            ?: lastValidPreview
+            ?: if (expression.isBlank()) "0" else ""
     val bottomColor =
         if (error != null) {
             MaterialTheme.colorScheme.error

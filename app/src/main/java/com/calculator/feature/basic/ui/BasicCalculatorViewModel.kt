@@ -93,15 +93,21 @@ class BasicCalculatorViewModel
                     .get<String>(KEY_MEMORY)
                     ?.let { runCatching { BigDecimal(it) }.getOrNull() }
                     ?: BigDecimal.ZERO
+            val restoredPreview = preview(expression, angleMode)
             return BasicCalculatorUiState(
                 expression = expression,
-                liveResult = preview(expression, angleMode),
+                liveResult = restoredPreview,
                 errorMessage = savedStateHandle.get<String>(KEY_ERROR),
                 pendingRepeat = savedStateHandle.get<String>(KEY_PENDING_REPEAT),
                 scientific = savedStateHandle.get<Boolean>(KEY_SCIENTIFIC) ?: false,
                 angleMode = angleMode,
                 memory = memory,
                 lastCommittedExpression = savedStateHandle.get<String>(KEY_LAST_COMMITTED),
+                // Persisted snapshot of the last computable result. Falls
+                // back to whatever the recomputed preview gives us if the
+                // saved key is missing (older sessions / fresh install).
+                lastValidPreview =
+                    savedStateHandle.get<String>(KEY_LAST_PREVIEW) ?: restoredPreview,
             )
         }
 
@@ -113,6 +119,7 @@ class BasicCalculatorViewModel
             savedStateHandle[KEY_ANGLE_MODE] = state.angleMode.name
             savedStateHandle[KEY_MEMORY] = state.memory.toPlainString()
             savedStateHandle[KEY_LAST_COMMITTED] = state.lastCommittedExpression
+            savedStateHandle[KEY_LAST_PREVIEW] = state.lastValidPreview
         }
 
         /** Dispatch a user event - typically called from the UI on key press. */
@@ -135,10 +142,11 @@ class BasicCalculatorViewModel
         private fun append(symbol: String) =
             _state.update { current ->
                 val next = nextExpressionAfterAppend(current, symbol)
+                val newPreview = preview(next, current.angleMode)
                 current
                     .copy(
                         expression = next,
-                        liveResult = preview(next, current.angleMode),
+                        liveResult = newPreview,
                         errorMessage = null,
                         // Any non-`=` input breaks the repeat-equals chain.
                         pendingRepeat = null,
@@ -149,6 +157,11 @@ class BasicCalculatorViewModel
                         // "what produced the result" line; the new
                         // expression is what matters now.
                         lastCommittedExpression = null,
+                        // Hold the previous result across intermediate
+                        // non-computable states (e.g. `5+3` -> `5+3+`).
+                        // [holdPreview] clears when the expression itself
+                        // is wiped to nothing.
+                        lastValidPreview = holdPreview(next, newPreview, current.lastValidPreview),
                     ).also(::persist)
             }
 
@@ -200,16 +213,18 @@ class BasicCalculatorViewModel
         private fun backspace() =
             _state.update { current ->
                 val next = current.expression.dropLast(1)
+                val newPreview = preview(next, current.angleMode)
                 current
                     .copy(
                         expression = next,
-                        liveResult = preview(next, current.angleMode),
+                        liveResult = newPreview,
                         errorMessage = null,
                         pendingRepeat = null,
                         // Backspace edits the expression; the previously-
                         // committed "history" line no longer corresponds to
                         // what's on screen, so drop it.
                         lastCommittedExpression = null,
+                        lastValidPreview = holdPreview(next, newPreview, current.lastValidPreview),
                     ).also(::persist)
             }
 
@@ -256,6 +271,10 @@ class BasicCalculatorViewModel
                                 // line keeps showing what was committed even after the
                                 // bottom line collapses to the canonical result.
                                 lastCommittedExpression = toEvaluate,
+                                // The committed result IS the most recent valid
+                                // preview - record it so chained operators
+                                // after `=` continue showing it on the result row.
+                                lastValidPreview = canonicalResult,
                             ).also(::persist)
                     }
 
@@ -269,6 +288,10 @@ class BasicCalculatorViewModel
                                 // expression that's still on screen IS the input,
                                 // and the bottom row will surface the error.
                                 lastCommittedExpression = null,
+                                // Keep the previously-known good preview - the
+                                // error message takes precedence in the UI, but
+                                // recovering from the error shouldn't blank the
+                                // result row.
                             ).also(::persist)
                 }
             }
@@ -331,15 +354,17 @@ class BasicCalculatorViewModel
                             current.expression.last() == '(' -> current.expression + mem
                         else -> current.expression + "×" + mem
                     }
+                val newPreview = preview(next, current.angleMode)
                 current
                     .copy(
                         expression = next,
-                        liveResult = preview(next, current.angleMode),
+                        liveResult = newPreview,
                         errorMessage = null,
                         pendingRepeat = null,
                         // MR rewrites the expression; the old history line no
                         // longer matches what's on screen.
                         lastCommittedExpression = null,
+                        lastValidPreview = holdPreview(next, newPreview, current.lastValidPreview),
                     ).also(::persist)
             }
 
@@ -367,16 +392,18 @@ class BasicCalculatorViewModel
         private fun signFlip() =
             _state.update { current ->
                 val flipped = flipSignOfTrailingOperand(current.expression)
+                val newPreview = preview(flipped, current.angleMode)
                 current
                     .copy(
                         expression = flipped,
-                        liveResult = preview(flipped, current.angleMode),
+                        liveResult = newPreview,
                         errorMessage = null,
                         pendingRepeat = null,
                         // SignFlip rewrites the expression in place; the
                         // previous history line no longer corresponds to
                         // what's on screen.
                         lastCommittedExpression = null,
+                        lastValidPreview = holdPreview(flipped, newPreview, current.lastValidPreview),
                     ).also(::persist)
             }
 
@@ -437,6 +464,29 @@ class BasicCalculatorViewModel
                 is EvaluationResult.Error -> null
             }
         }
+
+        /**
+         * Resolve the `lastValidPreview` value to persist on this state
+         * update.
+         *
+         * Rules:
+         *  - Expression went blank (Clear, Backspace-to-empty) → clear
+         *    the held preview; there's no "previous result" to remember.
+         *  - New preview is computable → it becomes the new held value.
+         *  - New preview is null but expression is non-blank → keep the
+         *    previous held value so the bottom row doesn't blank out
+         *    mid-typing (`5+3` → `5+3+` still shows the `8` underneath).
+         */
+        private fun holdPreview(
+            nextExpression: String,
+            newPreview: String?,
+            previousHeld: String?,
+        ): String? =
+            when {
+                nextExpression.isBlank() -> null
+                newPreview != null -> newPreview
+                else -> previousHeld
+            }
 
         /** Build a fresh evaluator pinned to the current angle mode. */
         private fun evaluatorFor(angleMode: AngleMode): Evaluator =
@@ -559,6 +609,7 @@ class BasicCalculatorViewModel
             const val KEY_ANGLE_MODE = "calculator.angleMode"
             const val KEY_MEMORY = "calculator.memory"
             const val KEY_LAST_COMMITTED = "calculator.lastCommittedExpression"
+            const val KEY_LAST_PREVIEW = "calculator.lastValidPreview"
 
             /** Characters the keypad treats as binary arithmetic operators. */
             val ArithmeticOperators = setOf('+', '-', '×', '÷', '*', '/', '^')
