@@ -22,7 +22,11 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,6 +34,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -95,8 +102,11 @@ fun UnitConverterScreen(
             )
         }
 
-        // Category tabs (horizontal scroll so all 11 fit on any screen width).
-        CategoryRow(
+        // Category dropdown: one tap reveals all 11 categories vertically
+        // with the current selection marked. Replaced an earlier
+        // horizontal-scroll chip row that hid most of the categories
+        // off-screen on narrow phones.
+        CategoryDropdown(
             categories = UnitCategory.entries,
             selected = state.category,
             onSelect = viewModel::selectCategory,
@@ -157,36 +167,81 @@ fun UnitConverterScreen(
 }
 
 /**
- * Horizontal scrolling chip row of unit categories.
+ * Category picker rendered as a single button + dropdown menu.
  *
- * Uses [LazyRow] (not Row) because the chip count is fixed but visually
- * unbounded - 11 categories overflow narrow phones, and a LazyRow lets
- * the user flick to off-screen chips without us having to pre-measure.
+ * Replaces the earlier horizontal-scroll chip row: that hid most of
+ * the 11 categories below the right edge on a portrait phone, so
+ * users had to discover the off-screen ones by swiping. The dropdown
+ * shows everything in one tap, with the current selection marked by
+ * a check icon for fast eye-tracking.
+ *
+ * Internal `expanded` state is local to the composable; the parent
+ * only needs to know about [onSelect] firing.
  */
 @Composable
-private fun CategoryRow(
+private fun CategoryDropdown(
     categories: List<UnitCategory>,
     selected: UnitCategory,
     onSelect: (UnitCategory) -> Unit,
 ) {
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = androidx.compose.foundation.layout
-            .PaddingValues(vertical = 4.dp),
-    ) {
-        items(categories) { category ->
-            val isSelected = category == selected
+    var expanded by remember { mutableStateOf(false) }
+    Box(modifier = Modifier.fillMaxWidth()) {
+        // The triggering "field": a full-width pill that shows the
+        // current category and a down-chevron. Tapping anywhere on it
+        // toggles the menu.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(CardBackground)
+                    .clickable { expanded = !expanded }
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+        ) {
             Text(
-                text = category.displayName,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (isSelected) Color.Black else Color.White,
-                modifier =
-                    Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(if (isSelected) ConverterAccent else CardBackground)
-                        .clickable { onSelect(category) }
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                text = selected.displayName,
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White,
+                modifier = Modifier.weight(1f),
             )
+            Icon(
+                imageVector = Icons.Filled.ArrowDropDown,
+                contentDescription = null,
+                tint = Color.White,
+            )
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            // Anchored to the box - sits directly under the trigger.
+            modifier = Modifier.background(CardBackground),
+        ) {
+            categories.forEach { category ->
+                val isSelected = category == selected
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = category.displayName,
+                            color = if (isSelected) ConverterAccent else Color.White,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    },
+                    trailingIcon = {
+                        if (isSelected) {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = null,
+                                tint = ConverterAccent,
+                            )
+                        }
+                    },
+                    onClick = {
+                        onSelect(category)
+                        expanded = false
+                    },
+                )
+            }
         }
     }
 }
