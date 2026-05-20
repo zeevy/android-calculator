@@ -42,19 +42,4 @@
         </intent>
     </shortcut>
 
-    <shortcut
-        android:shortcutId="currency_converter"
-        android:icon="@mipmap/ic_launcher_round"
-        android:shortcutShortLabel="@string/shortcut_currency_short"
-        android:shortcutLongLabel="@string/shortcut_currency_long">
-        <intent
-            android:action="android.intent.action.VIEW"
-            android:targetPackage="com.calculator"
-            android:targetClass="com.calculator.MainActivity">
-            <extra
-                android:name="com.calculator.SHORTCUT_DESTINATION"
-                android:value="currency" />
-        </intent>
-    </shortcut>
-
 </shortcuts>

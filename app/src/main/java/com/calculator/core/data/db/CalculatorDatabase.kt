@@ -14,6 +14,8 @@ import androidx.room.RoomDatabase
  *  - v1: `history` table.
  *  - v2: adds `recent_unit_pair` for the Phase 5 unit converter.
  *  - v3: adds `currency_rate` + `favorite_currency` for Phase 6.
+ *  - v4: drops `currency_rate` + `favorite_currency` because the
+ *    currency-converter feature was removed.
  *
  * `exportSchema = false` while pre-release; flip to true and configure
  * a schema location in `build.gradle` once a migration test suite is
@@ -23,20 +25,14 @@ import androidx.room.RoomDatabase
     entities = [
         HistoryEntity::class,
         RecentUnitPairEntity::class,
-        CurrencyRateEntity::class,
-        FavoriteCurrencyEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 abstract class CalculatorDatabase : RoomDatabase() {
     abstract fun historyDao(): HistoryDao
 
     abstract fun recentUnitPairDao(): RecentUnitPairDao
-
-    abstract fun currencyRateDao(): CurrencyRateDao
-
-    abstract fun favoriteCurrencyDao(): FavoriteCurrencyDao
 
     companion object {
         const val NAME = "calculator.db"

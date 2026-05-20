@@ -8,13 +8,13 @@
 
 ## 1. Product Vision
 
-A modern, offline-first, multi-purpose calculator for Android that bundles a standard calculator, scientific mode, unit/currency converters, and a suite of everyday "life" calculators (loan, GST, BMI, age, discount, date diff, ovulation) into a single clean, fast, ad-free experience.
+A modern, fully-offline, multi-purpose calculator for Android that bundles a standard calculator, scientific mode, a unit converter, and a suite of everyday "life" calculators (loan, GST, BMI, age, discount, date diff, ovulation) into a single clean, fast, ad-free experience.
 
 ## 2. Goals & Non-Goals
 
 ### Goals
 - Cover the day-to-day math needs of an average user without forcing them to install separate apps.
-- Work fully offline for everything except live currency rates.
+- Work fully offline. No network calls. No permissions declared.
 - Look and feel native on modern Android (Material 3 / Material You, dynamic color, light & dark themes).
 - Keep the app lightweight (target installed size < 15 MB).
 
@@ -24,6 +24,7 @@ A modern, offline-first, multi-purpose calculator for Android that bundles a sta
 - Programmer mode (hex / bin / bitwise) - deferred to v2.
 - Account sync / cloud history.
 - Multi-platform (iOS, web) - Android only for now.
+- Currency conversion - removed during development; live FX rates would require network + a permission, which conflicts with the "fully offline, zero permissions" goal. Deferred indefinitely.
 
 ## 3. Target Platform & Tech Stack
 
@@ -36,8 +37,8 @@ A modern, offline-first, multi-purpose calculator for Android that bundles a sta
 | Architecture | MVVM + Unidirectional Data Flow, single-activity |
 | DI | Hilt |
 | Async | Kotlin Coroutines + Flow |
-| Persistence | Room (history, cached currency rates, favourites) + DataStore Preferences (user settings) |
-| Networking | Retrofit + OkHttp + kotlinx.serialization (currency rates only) |
+| Persistence | Room (history, recent unit pairs) + DataStore Preferences (user settings) |
+| Networking | None. App is fully offline; no permissions declared. |
 | Math Engine | Custom evaluator: `BigDecimal` for arithmetic/precision-sensitive ops; bounded `Double` with rounding for transcendental ops (sin/cos/log/exp). Optionally back transcendentals with a BigMath-style library if precision is insufficient. |
 | Build | Gradle Kotlin DSL, Version Catalogs (libs.versions.toml), R8 minification + resource shrinking on release |
 | Performance | Baseline Profiles (Macrobenchmark-generated), Startup library for lightweight init |
@@ -71,11 +72,11 @@ A modern, offline-first, multi-purpose calculator for Android that bundles a sta
 - Two-pane input (from / to), tap to swap, decimal precision configurable.
 - Last used unit pair remembered per category.
 
-### 4.4 Currency Converter (must-have, online)
-- ~150 fiat currencies. Daily rates fetched from a public free API (e.g. exchangerate.host or open.er-api.com).
-- Cache last fetched rates with timestamp; show "last updated" and allow offline use of cached data.
-- Manual "refresh rates" action.
-- Multi-currency view: pin favourites.
+### 4.4 Currency Converter (removed)
+Originally specified as a must-have. Removed during development to keep
+the app fully offline with zero permissions. Live FX rates require
+network access, which conflicts with the "no INTERNET permission"
+positioning. See section 2 (Non-Goals).
 
 ### 4.5 Life Calculators (must-have)
 Each is a focused screen with its own inputs/outputs:
@@ -88,7 +89,7 @@ Each is a focused screen with its own inputs/outputs:
 - **Ovulation** - last menstrual period (LMP) + average cycle length → predicted ovulation date, six-day fertile window, next period date, estimated due date (Naegele's rule). Educational estimate only with an in-screen disclaimer; explicitly not a contraception tool.
 
 ### 4.6 Cross-Cutting Features
-- Settings: theme (system / light / dark), dynamic color toggle, haptics, sound, decimal precision, default currency, default unit system, opt-in crash reporting.
+- Settings: theme (system / light / dark), dynamic color toggle, haptics, sound, decimal precision, default unit system, opt-in crash reporting.
 - Search bar on home to jump straight to any tool.
 - **Launcher shortcuts** (long-press app icon) for "New calculation" and top 2 tools (Android 7.1+ static + dynamic shortcuts).
 - **Quick Settings tile** (stretch): tap from notification shade to open the basic calculator.
@@ -105,9 +106,9 @@ Each is a focused screen with its own inputs/outputs:
 | Install size | < 15 MB (release AAB after R8 + resource shrinking) |
 | Accessibility | TalkBack labels on every key, min touch target 48dp, dynamic font scaling, contrast AA, high-contrast mode support (Android 14+) |
 | Internationalisation | English + Hindi at launch; string-resource based, RTL-safe; locale-aware number formatting and date pickers |
-| Privacy | No PII collected; currency API calls send no identifiers; no third-party analytics by default; any crash reporting is strictly opt-in and disclosed in settings |
-| Permissions | `INTERNET` only (normal, manifest-declared, used solely for currency rates). No runtime permissions. |
-| Offline | All non-currency features work fully offline; currency uses last cached rates when offline |
+| Privacy | No PII collected; no network calls; no third-party analytics by default; any crash reporting is strictly opt-in and disclosed in settings |
+| Permissions | None. Manifest declares zero permissions; no runtime permissions either. |
+| Offline | Fully offline. Every feature works without a network connection. |
 | Backup | Android Auto Backup enabled for settings & history; sensitive data excluded via `backup_rules.xml` (no sensitive data expected, but rules file authored for clarity) |
 
 ## 6. UX & Design Principles
@@ -125,13 +126,13 @@ Each is a focused screen with its own inputs/outputs:
 app/
   feature/
     basic/         Basic + scientific calculator (ui/, domain/, data/)
-    converter/     Unit + currency (ui/, domain/, data/)
+    converter/     Unit converter (ui/, domain/, data/)
     finance/       Loan, GST, discount (ui/, domain/, data/)
-    health/        BMI (ui/, domain/)
+    health/        BMI, ovulation (ui/, domain/)
     datetime/      Age, date diff (ui/, domain/)
   core/
     math/          Expression parser + evaluator (BigDecimal + bounded Double)
-    data/          Room DB, DAOs, DataStore, network (Retrofit)
+    data/          Room DB, DAOs, DataStore
     domain/        Shared use-cases (pure Kotlin, no Android deps)
     designsystem/  Theme, colors, typography, shared Compose components
     common/        Utilities, formatters, locale helpers
@@ -144,18 +145,15 @@ app/
 
 - **Room DB**
   - `history` (id, expression, result, timestampUtc, type)
-  - `favorite_currencies` (code, position)
   - `recent_unit_pair` (category, fromUnit, toUnit)
-  - `currency_rate` (code, rateVsBase, baseCode, fetchedAtUtc) - cached exchange-rate table
-- **DataStore Preferences** - user settings only (theme, dynamic-color flag, haptics, sound, precision, default currency, default unit system, crash-reporting opt-in).
-- **External API** - one currency-rates provider, key-less if possible; abstracted behind a `RatesRepository` so it can be swapped without touching feature code.
+- **DataStore Preferences** - user settings only (theme, dynamic-color flag, haptics, sound, precision, default unit system, crash-reporting opt-in).
+- **External APIs** - none. The currency-rates provider was removed when the currency converter feature was deleted; no network access is wired up.
 
 ## 9. Testing Strategy
 
 - **Unit tests (JUnit5)** for the math engine - precedence, unary minus, division by zero, very large/small numbers, transcendental rounding, locale-specific decimal separators.
 - **Unit tests** for each life-calculator's formula (deterministic golden-input/golden-output cases).
-- **Repository tests** with a fake currency-rates API (no network in tests).
-- **Compose UI tests (JUnit4 + AndroidX Test)** for key flows: basic calculation, scientific mode, currency offline behaviour, every life calculator.
+- **Compose UI tests (JUnit4 + AndroidX Test or Robolectric)** for key flows: basic calculation, scientific mode, unit conversion, every life calculator.
 - **Screenshot tests** (Paparazzi or Roborazzi) for the design system in light / dark / dynamic-color variants.
 - **Macrobenchmark** module to measure cold-start and generate Baseline Profiles in CI.
 - **Static analysis** in CI: ktlint, detekt, Android Lint at error severity.
@@ -168,14 +166,13 @@ app/
 |---|---|
 | M1 (Week 1-2) | Project skeleton, design system, basic calculator + history, CI pipeline |
 | M2 (Week 3) | Scientific mode, settings, themes (dynamic color, dark/light) |
-| M3 (Week 4-5) | Unit converter, currency converter (online + cached) |
+| M3 (Week 4-5) | Unit converter |
 | M4 (Week 6) | Life calculators (loan, GST, BMI, age, discount, date diff) |
 | M5 (Week 7) | Accessibility, i18n (en + hi), Baseline Profile generation, Play Console internal track |
 | M6 (Week 8) | Closed beta → Production rollout |
 
 ## 11. Risks & Open Questions
 
-- **Currency API rate limits / longevity** - free APIs can disappear; mitigate with a swappable repository and graceful "stale rates" UI.
 - **Math precision for transcendentals** - `BigDecimal` has no native sin/cos/log. Decision: arithmetic on `BigDecimal`; transcendental ops on bounded `Double` with rounding. Revisit (BigMath / mpmath-style) if user-reported precision bugs appear.
 - **Locale decimal separator** (`,` vs `.`) - must parse and render per-locale without breaking the engine. Date pickers must also be locale-aware.
 - **Regional features** (GST is India-only) - hide/show based on locale or expose as an opt-in tool.

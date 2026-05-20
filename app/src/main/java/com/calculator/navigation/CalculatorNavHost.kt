@@ -5,7 +5,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.calculator.feature.basic.ui.BasicCalculatorScreen
-import com.calculator.feature.converter.currency.CurrencyConverterScreen
 import com.calculator.feature.converter.unit.UnitConverterScreen
 import com.calculator.feature.datetime.age.AgeScreen
 import com.calculator.feature.datetime.datediff.DateDiffScreen
@@ -26,10 +25,9 @@ import com.calculator.feature.health.ovulation.OvulationScreen
  * and screens unaware of how they are mounted.
  *
  * @param startDestinationHint Optional launcher-shortcut hint; if set
- *   to a recognised value ("units", "currency"), the corresponding
- *   screen is pushed onto the back stack right after the basic
- *   calculator so back returns to the calculator instead of leaving
- *   the app.
+ *   to a recognised value ("units"), the corresponding screen is
+ *   pushed onto the back stack right after the basic calculator so
+ *   back returns to the calculator instead of leaving the app.
  */
 @Composable
 fun CalculatorNavHost(startDestinationHint: String? = null) {
@@ -41,7 +39,6 @@ fun CalculatorNavHost(startDestinationHint: String? = null) {
     androidx.compose.runtime.LaunchedEffect(startDestinationHint) {
         when (startDestinationHint) {
             "units" -> navController.navigate(UnitConverterRoute)
-            "currency" -> navController.navigate(CurrencyConverterRoute)
             else -> Unit // "basic" or null - already at start.
         }
     }
@@ -53,17 +50,12 @@ fun CalculatorNavHost(startDestinationHint: String? = null) {
         composable<BasicCalculatorRoute> {
             BasicCalculatorScreen(
                 onOpenUnitConverter = { navController.navigate(UnitConverterRoute) },
-                onOpenCurrencyConverter = { navController.navigate(CurrencyConverterRoute) },
                 onOpenLifeCalc = { route -> navController.navigate(route) },
             )
         }
 
         composable<UnitConverterRoute> {
             UnitConverterScreen(onUp = navController::popBackStack)
-        }
-
-        composable<CurrencyConverterRoute> {
-            CurrencyConverterScreen(onUp = navController::popBackStack)
         }
 
         composable<LoanRoute> { LoanScreen(onUp = navController::popBackStack) }

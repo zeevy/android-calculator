@@ -27,7 +27,6 @@
     <string name="tool_advanced">Advanced</string>
     <string name="tool_history">History</string>
     <string name="tool_units">Units</string>
-    <string name="tool_currency">Currency</string>
     <string name="tool_loan">Loan</string>
     <string name="tool_gst">GST</string>
     <string name="tool_discount">Discount</string>
@@ -81,14 +80,6 @@
     <string name="units_from">From</string>
     <string name="units_to">To</string>
     <string name="units_swap">Swap</string>
-
-    <!-- Currency converter -->
-    <string name="currency_title">Currency</string>
-    <string name="currency_updated_just_now">just now</string>
-    <string name="currency_no_data">No data yet.</string>
-    <string name="currency_no_cache">No cached rates. Tap refresh to fetch.</string>
-    <string name="currency_pin">Pin</string>
-    <string name="currency_unpin">Unpin</string>
 
     <!-- Life calculators -->
     <string name="loan_title">Loan estimator</string>
@@ -162,17 +153,9 @@
     <string name="shortcut_new_calc_long">New calculation</string>
     <string name="shortcut_units_short">Units</string>
     <string name="shortcut_units_long">Unit converter</string>
-    <string name="shortcut_currency_short">Currency</string>
-    <string name="shortcut_currency_long">Currency converter</string>
 
     <!-- History extras -->
     <string name="history_copied_toast">Copied to clipboard</string>
-
-    <!-- Currency converter extras -->
-    <string name="currency_refresh">Refresh rates</string>
-    <string name="currency_updated_format">Updated <xliff:g id="when" example="just now">%1$s</xliff:g></string>
-    <string name="currency_updated_minutes_format"><xliff:g id="minutes" example="5">%1$d</xliff:g>m ago</string>
-    <string name="currency_updated_hours_format"><xliff:g id="hours" example="3">%1$d</xliff:g>h ago</string>
 
     <!-- Loan extras -->
     <string name="loan_rate_suffix">%</string>

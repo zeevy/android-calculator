@@ -27,7 +27,6 @@
     <string name="tool_advanced">उन्नत</string>
     <string name="tool_history">इतिहास</string>
     <string name="tool_units">इकाइयाँ</string>
-    <string name="tool_currency">मुद्रा</string>
     <string name="tool_loan">ऋण</string>
     <string name="tool_gst">जीएसटी</string>
     <string name="tool_discount">छूट</string>
@@ -81,14 +80,6 @@
     <string name="units_from">से</string>
     <string name="units_to">तक</string>
     <string name="units_swap">अदला-बदली</string>
-
-    <!-- Currency converter -->
-    <string name="currency_title">मुद्रा</string>
-    <string name="currency_updated_just_now">अभी अभी</string>
-    <string name="currency_no_data">अभी कोई डेटा नहीं.</string>
-    <string name="currency_no_cache">कोई कैश्ड दर नहीं. लाने के लिए ताज़ा करें टैप करें.</string>
-    <string name="currency_pin">पिन करें</string>
-    <string name="currency_unpin">अनपिन करें</string>
 
     <!-- Life calculators -->
     <string name="loan_title">ऋण अनुमानक</string>
@@ -162,17 +153,9 @@
     <string name="shortcut_new_calc_long">नई गणना</string>
     <string name="shortcut_units_short">इकाइयाँ</string>
     <string name="shortcut_units_long">इकाई कनवर्टर</string>
-    <string name="shortcut_currency_short">मुद्रा</string>
-    <string name="shortcut_currency_long">मुद्रा कनवर्टर</string>
 
     <!-- History extras -->
     <string name="history_copied_toast">क्लिपबोर्ड पर कॉपी किया गया</string>
-
-    <!-- Currency converter extras -->
-    <string name="currency_refresh">दरें ताज़ा करें</string>
-    <string name="currency_updated_format"><xliff:g id="when" example="just now">%1$s</xliff:g> अपडेट किया गया</string>
-    <string name="currency_updated_minutes_format"><xliff:g id="minutes" example="5">%1$d</xliff:g> मिनट पहले</string>
-    <string name="currency_updated_hours_format"><xliff:g id="hours" example="3">%1$d</xliff:g> घंटे पहले</string>
 
     <!-- Loan extras -->
     <string name="loan_rate_suffix">%</string>

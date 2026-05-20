@@ -3,9 +3,11 @@
   Calculator AndroidManifest.
 
   Notes:
-    - INTERNET is the only declared permission; it is used exclusively by the
-      currency-rate converter. Every other feature works fully offline.
-    - There are no runtime-permission requests; this manifest entry alone is sufficient.
+    - No permissions are declared. The app works fully offline: the
+      INTERNET permission was removed when the currency converter
+      feature was deleted (it was the only network caller).
+    - There are no runtime-permission requests; the app's surface area
+      doesn't need them.
     - Auto Backup is enabled (backupAgent rules in backup_rules.xml) so user
       preferences and history survive a reinstall.
     - The activity declares a Material 3 SplashScreen theme; the theme then
@@ -13,8 +15,6 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
-    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:name=".CalculatorApplication"

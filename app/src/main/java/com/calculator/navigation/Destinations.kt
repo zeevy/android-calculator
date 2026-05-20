@@ -24,9 +24,6 @@ data object BasicCalculatorRoute
 data object UnitConverterRoute
 
 @Serializable
-data object CurrencyConverterRoute
-
-@Serializable
 data object LoanRoute
 
 @Serializable
@@ -49,4 +46,3 @@ data object OvulationRoute
 
 // Future destinations follow the same pattern, e.g.:
 // @Serializable data object SettingsRoute
-// @Serializable data class CurrencyConverterRoute(val baseCurrency: String? = null)

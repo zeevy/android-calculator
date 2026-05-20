@@ -4,7 +4,7 @@ Project-level guidance for Claude Code when working in this repository. Read thi
 
 ## Project overview
 
-An **open-source Android calculator** inspired by Mi Calculator (`com.miui.calculator` by Xiaomi Inc.). Goal: a modern, offline-first, multi-purpose calculator with basic + scientific math, unit/currency converters, and life calculators (loan/EMI, GST, BMI, age, discount, date diff). Ad-free, no analytics by default, Apache 2.0 licensed, published to GitHub.
+An **open-source Android calculator** inspired by Mi Calculator (`com.miui.calculator` by Xiaomi Inc.). Goal: a modern, fully-offline, multi-purpose calculator with basic + scientific math, a unit converter, and life calculators (loan/EMI, GST, BMI, age, discount, date diff). Ad-free, no analytics, no network calls, no permissions declared. Apache 2.0 licensed, published to GitHub.
 
 See [REQUIREMENTS.md](REQUIREMENTS.md) for the full product specification - it is the source of truth for scope and non-functional targets.
 
@@ -20,8 +20,8 @@ See [REQUIREMENTS.md](REQUIREMENTS.md) for the full product specification - it i
 | Navigation | Navigation Compose with **type-safe routes** (serializable route classes) |
 | DI | Hilt |
 | Async | Kotlin Coroutines + Flow |
-| Persistence | Room (history, currency rate cache, favourites) + DataStore Preferences (user settings only) |
-| Network | Retrofit + OkHttp + kotlinx.serialization - **currency rates only**, no other network calls |
+| Persistence | Room (history, recent unit pairs) + DataStore Preferences (user settings only) |
+| Network | None. App is fully offline; no permissions declared. |
 | Math engine | Custom evaluator: `BigDecimal` for arithmetic, bounded `Double` with rounding for transcendentals (sin/cos/log/exp). Revisit BigMath-style libs only if precision bugs appear. |
 | Build | Gradle Kotlin DSL, **Version Catalogs** (`gradle/libs.versions.toml`), R8 minification + resource shrinking on release |
 | Performance | Baseline Profiles via Macrobenchmark, AndroidX Startup for lightweight init |
@@ -41,13 +41,13 @@ app/
   src/main/java/com/calculator/
     feature/            # User-facing features (each owns ui/, domain/, data/)
       basic/            # Basic + scientific calculator
-      converter/        # Unit + currency
+      converter/        # Unit converter
       finance/          # Loan, GST, discount
-      health/           # BMI
+      health/           # BMI, ovulation
       datetime/         # Age, date diff
     core/
       math/             # Expression parser + evaluator (pure Kotlin, no Android deps)
-      data/             # Room DB, DAOs, DataStore, network (Retrofit)
+      data/             # Room DB, DAOs, DataStore
       domain/           # Cross-feature use-cases (pure Kotlin)
       designsystem/     # Theme, colors, typography, shared Compose components
       common/           # Utilities, formatters, locale helpers
@@ -140,7 +140,7 @@ These come from the user's global preferences and apply to every commit, file, a
 
 - **GST calculator is India-specific.** Hide or expose by locale, never hardcode it as universally available.
 - **Loan/EMI calculator: use neutral language.** Google Play's personal-loans policy bans wording that implies the app is a lender. Strings must read as a calculator, not a lending tool.
-- **Currency rates require `INTERNET`.** It is the only network-gated feature. Everything else must work fully offline; rate-converter falls back to the last cached `currency_rate` table when offline.
+- **No network calls.** The app is fully offline. The currency converter (the only previous network caller) was removed; the manifest declares zero permissions. Don't add Retrofit / OkHttp / INTERNET back without an explicit conversation about the trade-off - the "no permissions" story is part of the app's positioning.
 - **Locale decimal separator.** Parse and render numbers per-locale (`,` in many EU locales, `.` in US/IN). The math engine accepts both via a locale-aware formatter at the UI boundary - the engine itself works on canonical `.`-separated strings.
 - **Crash reporting is opt-in.** Default off, disclosed in settings. Do not wire up Crashlytics or Firebase without an explicit user toggle.
 - **No analytics in v1.** Do not add Firebase Analytics, no third-party SDKs that phone home.

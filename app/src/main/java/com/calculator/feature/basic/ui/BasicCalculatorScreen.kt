@@ -29,7 +29,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Functions
@@ -101,7 +100,6 @@ import java.math.BigDecimal
 @Composable
 fun BasicCalculatorScreen(
     onOpenUnitConverter: () -> Unit = {},
-    onOpenCurrencyConverter: () -> Unit = {},
     onOpenLifeCalc: (Any) -> Unit = {},
     viewModel: BasicCalculatorViewModel = hiltViewModel(),
 ) {
@@ -110,7 +108,6 @@ fun BasicCalculatorScreen(
         state = state,
         onEvent = viewModel::onEvent,
         onOpenUnitConverter = onOpenUnitConverter,
-        onOpenCurrencyConverter = onOpenCurrencyConverter,
         onOpenLifeCalc = onOpenLifeCalc,
     )
 }
@@ -128,7 +125,6 @@ internal fun BasicCalculatorScreenContent(
     state: BasicCalculatorUiState,
     onEvent: (BasicCalculatorEvent) -> Unit,
     onOpenUnitConverter: () -> Unit = {},
-    onOpenCurrencyConverter: () -> Unit = {},
     onOpenLifeCalc: (Any) -> Unit = {},
 ) {
     var openSheet by remember { mutableStateOf<MenuSheet?>(null) }
@@ -236,11 +232,6 @@ internal fun BasicCalculatorScreenContent(
                                 openSheet = null
                                 onOpenUnitConverter()
                             },
-                            onOpenCurrencyConverter = {
-                                scope.launch { sheetState.hide() }
-                                openSheet = null
-                                onOpenCurrencyConverter()
-                            },
                             onOpenLifeCalc = { route ->
                                 scope.launch { sheetState.hide() }
                                 openSheet = null
@@ -303,7 +294,6 @@ private fun ToolsSheetContent(
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenUnitConverter: () -> Unit,
-    onOpenCurrencyConverter: () -> Unit,
     onOpenLifeCalc: (Any) -> Unit,
     onClose: () -> Unit,
 ) {
@@ -336,13 +326,6 @@ private fun ToolsSheetContent(
                     enabled = true,
                     selected = false,
                     onTap = onOpenUnitConverter,
-                ),
-                ToolTile(
-                    icon = Icons.Filled.CurrencyExchange,
-                    label = stringResource(R.string.tool_currency),
-                    enabled = true,
-                    selected = false,
-                    onTap = onOpenCurrencyConverter,
                 ),
                 ToolTile(
                     icon = Icons.Filled.AccountBalance,
