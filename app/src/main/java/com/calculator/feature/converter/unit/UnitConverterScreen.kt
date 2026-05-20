@@ -111,10 +111,12 @@ fun UnitConverterScreen(
         )
         Spacer(Modifier.size(24.dp))
 
-        // From / Swap / To stack.
+        // From / Swap / To stack. Both fields are editable; the
+        // ViewModel tracks `lastEdited` and rewrites the OTHER side
+        // on every keystroke.
         FromCard(
             unit = state.fromUnit,
-            value = state.fromInput,
+            value = state.fromText,
             onValueChange = viewModel::setFromInput,
             onPickUnit = { viewModel.openPicker(UnitConverterUiState.PickerSide.From) },
         )
@@ -138,7 +140,8 @@ fun UnitConverterScreen(
         Spacer(Modifier.size(12.dp))
         ToCard(
             unit = state.toUnit,
-            value = state.toOutput,
+            value = state.toText,
+            onValueChange = viewModel::setToInput,
             onPickUnit = { viewModel.openPicker(UnitConverterUiState.PickerSide.To) },
         )
     }
@@ -321,24 +324,59 @@ private fun FromCard(
     }
 }
 
+/**
+ * Symmetric to [FromCard]: same editable text field, same placeholder,
+ * same styling. Whichever side the user types into becomes the source
+ * for conversion - the ViewModel rewrites the other side on every
+ * keystroke. The `decorationBox` paints the faded "0" placeholder
+ * because BasicTextField doesn't expose Material's built-in one.
+ */
 @Composable
 private fun ToCard(
     unit: ConverterUnit?,
     value: String,
+    onValueChange: (String) -> Unit,
     onPickUnit: () -> Unit,
 ) {
     UnitCard {
         Column(modifier = Modifier.padding(16.dp)) {
             UnitChooser(unit = unit, onClick = onPickUnit, label = stringResource(R.string.units_to))
             Spacer(Modifier.size(12.dp))
-            Text(
-                text = value.ifEmpty { "0" },
-                style =
-                    MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
-                color = if (value.isEmpty()) Color.White.copy(alpha = 0.3f) else Color.White,
-                maxLines = 1,
-                textAlign = TextAlign.End,
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                singleLine = true,
+                textStyle =
+                    TextStyle(
+                        color = Color.White,
+                        fontSize = 36.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.End,
+                    ),
+                keyboardOptions =
+                    KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                cursorBrush =
+                    androidx.compose.ui.graphics
+                        .SolidColor(ConverterAccent),
                 modifier = Modifier.fillMaxWidth(),
+                decorationBox = { inner ->
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.CenterEnd,
+                    ) {
+                        if (value.isEmpty()) {
+                            Text(
+                                text = "0",
+                                color = Color.White.copy(alpha = 0.3f),
+                                style =
+                                    MaterialTheme.typography.displayMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                    ),
+                            )
+                        }
+                        inner()
+                    }
+                },
             )
         }
     }

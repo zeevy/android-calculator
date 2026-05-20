@@ -52,7 +52,7 @@ class UnitConverterViewModelTest {
             // Default pair for Length: m -> km (units[0] vs units[1]).
             viewModel.setFromInput("1000")
             advanceUntilIdle()
-            assertEquals("1", viewModel.state.value.toOutput)
+            assertEquals("1", viewModel.state.value.toText)
         }
 
     @Test
@@ -67,7 +67,7 @@ class UnitConverterViewModelTest {
             advanceUntilIdle()
             // 1 m -> mile is 6.21371e-4. At precision 6 we render the
             // first 6 significant figures as "0.000621371".
-            val out = viewModel.state.value.toOutput
+            val out = viewModel.state.value.toText
             assertTrue(out.startsWith("0.000621"), "got $out")
         }
 
@@ -93,11 +93,72 @@ class UnitConverterViewModelTest {
                 viewModel.state.value.toUnit
                     ?.symbol,
             )
-            assertEquals("1", viewModel.state.value.fromInput)
+            assertEquals("1", viewModel.state.value.fromText)
             // toOutput goes through NumberFormatter so the running
             // locale adds grouping ("1,000" in en-US, "1.000" in de-DE).
             // Test JVM defaults to en-US; expect the comma-grouped form.
-            assertEquals("1,000", viewModel.state.value.toOutput)
+            assertEquals("1,000", viewModel.state.value.toText)
+        }
+
+    @Test
+    fun `typing in the to field updates the from output (reverse direction)`() =
+        runTest(dispatcher) {
+            advanceUntilIdle()
+            viewModel.selectCategory(UnitCategory.Length)
+            advanceUntilIdle()
+            // Default pair: m -> km. Type "1" into the To (km) side and
+            // assert From (m) recomputes to the equivalent.
+            viewModel.setToInput("1")
+            advanceUntilIdle()
+            assertEquals(UnitConverterUiState.PickerSide.To, viewModel.state.value.lastEdited)
+            assertEquals("1,000", viewModel.state.value.fromText)
+            assertEquals("1", viewModel.state.value.toText)
+        }
+
+    @Test
+    fun `editing the from side after editing the to side flips lastEdited and recomputes`() =
+        runTest(dispatcher) {
+            advanceUntilIdle()
+            viewModel.selectCategory(UnitCategory.Length)
+            advanceUntilIdle()
+            // First edit on the To side
+            viewModel.setToInput("5")
+            advanceUntilIdle()
+            assertEquals(UnitConverterUiState.PickerSide.To, viewModel.state.value.lastEdited)
+            assertEquals("5,000", viewModel.state.value.fromText)
+            // User now edits the From side - lastEdited must flip back
+            viewModel.setFromInput("2000")
+            advanceUntilIdle()
+            assertEquals(UnitConverterUiState.PickerSide.From, viewModel.state.value.lastEdited)
+            assertEquals("2", viewModel.state.value.toText)
+        }
+
+    @Test
+    fun `changing the to unit while the source is the to side recomputes from`() =
+        runTest(dispatcher) {
+            advanceUntilIdle()
+            viewModel.selectCategory(UnitCategory.Length)
+            advanceUntilIdle()
+            viewModel.setToInput("1")
+            advanceUntilIdle()
+            assertEquals("1,000", viewModel.state.value.fromText) // 1 km -> 1000 m
+            val mile = ConversionTable.unitsFor(UnitCategory.Length).single { it.symbol == "mi" }
+            viewModel.setToUnit(mile)
+            advanceUntilIdle()
+            // 1 mi -> m is 1609.344. At precision 6 it renders with grouping.
+            val out = viewModel.state.value.fromText
+            assertTrue(out.startsWith("1,609"), "got $out")
+        }
+
+    @Test
+    fun `empty to-input clears the from output`() =
+        runTest(dispatcher) {
+            advanceUntilIdle()
+            viewModel.selectCategory(UnitCategory.Length)
+            advanceUntilIdle()
+            viewModel.setToInput("")
+            advanceUntilIdle()
+            assertEquals("", viewModel.state.value.fromText)
         }
 
     @Test
@@ -108,7 +169,7 @@ class UnitConverterViewModelTest {
             advanceUntilIdle()
             viewModel.setFromInput("")
             advanceUntilIdle()
-            assertEquals("", viewModel.state.value.toOutput)
+            assertEquals("", viewModel.state.value.toText)
         }
 
     @Test

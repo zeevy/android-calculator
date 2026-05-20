@@ -113,17 +113,49 @@ class UnitConverterViewModel
             recompute()
         }
 
+        /**
+         * Text typed into the "from" field. Marks From as the source
+         * side; the next [recompute] will rewrite [toText] from this.
+         */
         fun setFromInput(text: String) {
-            _state.update { it.copy(fromInput = text) }
+            _state.update {
+                it.copy(fromText = text, lastEdited = UnitConverterUiState.PickerSide.From)
+            }
             recompute()
         }
 
+        /**
+         * Text typed into the "to" field. Marks To as the source side;
+         * the next [recompute] will rewrite [fromText] in reverse.
+         */
+        fun setToInput(text: String) {
+            _state.update {
+                it.copy(toText = text, lastEdited = UnitConverterUiState.PickerSide.To)
+            }
+            recompute()
+        }
+
+        /**
+         * Swap the From and To units. Carries the previous "result"
+         * (whichever side was the non-source) across to the new From
+         * field, and resets the source to From so the new To recomputes
+         * from it. So `1000 m → 1 km`, after swap: `1 km → 1,000 m`,
+         * which is what the user expects when they tap the swap arrow
+         * mid-conversion.
+         */
         fun swap() {
             _state.update {
+                val previousResult =
+                    when (it.lastEdited) {
+                        UnitConverterUiState.PickerSide.From -> it.toText
+                        UnitConverterUiState.PickerSide.To -> it.fromText
+                    }
                 it.copy(
                     fromUnit = it.toUnit,
                     toUnit = it.fromUnit,
-                    fromInput = it.toOutput,
+                    fromText = previousResult,
+                    toText = "",
+                    lastEdited = UnitConverterUiState.PickerSide.From,
                 )
             }
             recordRecent()
@@ -146,25 +178,47 @@ class UnitConverterViewModel
         }
 
         /**
-         * Recompute [UnitConverterUiState.toOutput] from the current
-         * input and unit selection.
+         * Recompute the *non-source* side from the source side. Source
+         * is [UnitConverterUiState.lastEdited]; if it's From, convert
+         * From -> To and overwrite [UnitConverterUiState.toText];
+         * otherwise convert To -> From and overwrite
+         * [UnitConverterUiState.fromText].
          *
-         * Bails to an empty output when:
+         * Bails to an empty target field when:
          *  - Either unit hasn't been resolved yet (transient state
          *    between `selectCategory` and the next emission).
-         *  - The input doesn't parse as a Double (empty, "-", "1.",
-         *    etc.) - we keep the field as the user typed it but show
-         *    no output rather than rendering "NaN".
+         *  - The source text doesn't parse as a Double (empty, "-",
+         *    "1.", etc.) - we keep the source field exactly as the
+         *    user typed it but blank the target rather than rendering
+         *    "NaN".
          */
         private fun recompute() {
             _state.update { current ->
                 val from = current.fromUnit
                 val to = current.toUnit
-                if (from == null || to == null) return@update current.copy(toOutput = "")
-                val value = current.fromInput.toDoubleOrNullPermissive()
-                if (value == null) return@update current.copy(toOutput = "")
-                val raw = Converter.convert(value, from, to)
-                current.copy(toOutput = formatResult(raw, current.precision))
+                if (from == null || to == null) {
+                    return@update when (current.lastEdited) {
+                        UnitConverterUiState.PickerSide.From -> current.copy(toText = "")
+                        UnitConverterUiState.PickerSide.To -> current.copy(fromText = "")
+                    }
+                }
+                when (current.lastEdited) {
+                    UnitConverterUiState.PickerSide.From -> {
+                        val value = current.fromText.toDoubleOrNullPermissive()
+                            ?: return@update current.copy(toText = "")
+                        val raw = Converter.convert(value, from, to)
+                        current.copy(toText = formatResult(raw, current.precision))
+                    }
+                    UnitConverterUiState.PickerSide.To -> {
+                        val value = current.toText.toDoubleOrNullPermissive()
+                            ?: return@update current.copy(fromText = "")
+                        // Reverse direction: input now lives in `to` units,
+                        // result lives in `from` units. Converter is
+                        // symmetric, just swap the argument order.
+                        val raw = Converter.convert(value, to, from)
+                        current.copy(fromText = formatResult(raw, current.precision))
+                    }
+                }
             }
         }
     }
