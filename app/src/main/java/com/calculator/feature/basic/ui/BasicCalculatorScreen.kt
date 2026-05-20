@@ -211,6 +211,13 @@ internal fun BasicCalculatorScreenContent(
                 // calculator's black canvas, with a light-grey drag handle
                 // to match the modifier-key tone.
                 containerColor = IosSheetBackground,
+                // contentColor is intentionally forced to white. The sheet
+                // background is hardcoded dark regardless of the system
+                // theme, so we can't let Material derive contentColor from
+                // the theme - in light mode it would resolve to a black
+                // onSurface and titles like "History" would render black
+                // on the dark sheet (effectively invisible).
+                contentColor = Color.White,
                 dragHandle = {
                     BottomSheetDefaults.DragHandle(
                         color = IosKeyModifierContainer,
