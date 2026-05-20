@@ -13,6 +13,7 @@ import com.calculator.feature.datetime.timezone.TimezoneScreen
 import com.calculator.feature.finance.discount.DiscountScreen
 import com.calculator.feature.finance.gst.GstScreen
 import com.calculator.feature.finance.loan.LoanScreen
+import com.calculator.feature.finance.tipsplit.TipSplitScreen
 import com.calculator.feature.health.bmi.BmiScreen
 import com.calculator.feature.health.ovulation.OvulationScreen
 
@@ -62,6 +63,7 @@ fun CalculatorNavHost(startDestinationHint: String? = null) {
         composable<LoanRoute> { LoanScreen(onNavigate = navController::openTool) }
         composable<GstRoute> { GstScreen(onNavigate = navController::openTool) }
         composable<DiscountRoute> { DiscountScreen(onNavigate = navController::openTool) }
+        composable<TipSplitRoute> { TipSplitScreen(onNavigate = navController::openTool) }
         composable<BmiRoute> { BmiScreen(onNavigate = navController::openTool) }
         composable<AgeRoute> { AgeScreen(onNavigate = navController::openTool) }
         composable<DateDiffRoute> { DateDiffScreen(onNavigate = navController::openTool) }

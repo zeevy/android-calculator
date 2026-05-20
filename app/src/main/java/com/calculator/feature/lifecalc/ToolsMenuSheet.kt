@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.MonitorWeight
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.BottomSheetDefaults
@@ -52,6 +53,7 @@ import com.calculator.navigation.GstRoute
 import com.calculator.navigation.LoanRoute
 import com.calculator.navigation.OvulationRoute
 import com.calculator.navigation.TimezoneRoute
+import com.calculator.navigation.TipSplitRoute
 import com.calculator.navigation.UnitConverterRoute
 import kotlinx.coroutines.launch
 
@@ -265,6 +267,14 @@ private fun ToolsGrid(
                     label = stringResource(R.string.tool_discount),
                     selected = currentRoute === DiscountRoute,
                     onTap = { onNavigate(DiscountRoute) },
+                ),
+            )
+            add(
+                ToolTile(
+                    icon = Icons.Filled.Restaurant,
+                    label = stringResource(R.string.tool_tipsplit),
+                    selected = currentRoute === TipSplitRoute,
+                    onTap = { onNavigate(TipSplitRoute) },
                 ),
             )
             add(

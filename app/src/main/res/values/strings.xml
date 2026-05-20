@@ -31,6 +31,7 @@
     <string name="tool_loan">Loan</string>
     <string name="tool_gst">GST</string>
     <string name="tool_discount">Discount</string>
+    <string name="tool_tipsplit">Tip &amp; split</string>
     <string name="tool_bmi">BMI</string>
     <string name="tool_age">Age</string>
     <string name="tool_date_diff">Date diff</string>
@@ -184,6 +185,19 @@
     <string name="discount_section_result">Result</string>
     <string name="discount_percent_suffix">%</string>
     <string name="discount_error_invalid">Enter valid numbers (final must be in 0..MRP).</string>
+
+    <!-- Tip & split -->
+    <string name="tipsplit_title">Tip &amp; split</string>
+    <string name="tipsplit_section_inputs">Inputs</string>
+    <string name="tipsplit_section_result">Result</string>
+    <string name="tipsplit_bill">Bill amount</string>
+    <string name="tipsplit_tip_percent">Tip</string>
+    <string name="tipsplit_people">People</string>
+    <string name="tipsplit_round_up">Round up per person</string>
+    <string name="tipsplit_tip_amount">Tip amount</string>
+    <string name="tipsplit_total">Total</string>
+    <string name="tipsplit_per_person">Per person</string>
+    <string name="tipsplit_error_invalid">Enter a valid bill and tip %.</string>
 
     <!-- BMI extras -->
     <string name="bmi_section_result">Result</string>

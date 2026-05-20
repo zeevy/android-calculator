@@ -33,6 +33,9 @@ data object GstRoute
 data object DiscountRoute
 
 @Serializable
+data object TipSplitRoute
+
+@Serializable
 data object BmiRoute
 
 @Serializable
