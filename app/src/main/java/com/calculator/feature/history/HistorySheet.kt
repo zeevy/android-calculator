@@ -262,8 +262,7 @@ private fun HistoryRow(
                 .combinedClickable(
                     onClick = onTap,
                     onLongClick = copyOnLongPress,
-                )
-                .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                ).padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {

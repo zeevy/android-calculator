@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import com.calculator.core.common.format.NumberFormatter
 import com.calculator.core.domain.finance.DiscountCalculator
 import com.calculator.feature.lifecalc.LifeCalcCard
 import com.calculator.feature.lifecalc.LifeCalcNumberField
@@ -16,7 +17,6 @@ import com.calculator.feature.lifecalc.LifeCalcOutputRow
 import com.calculator.feature.lifecalc.LifeCalcSectionLabel
 import com.calculator.feature.lifecalc.LifeCalcSegmented
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
-import com.calculator.core.common.format.NumberFormatter
 import java.util.Locale
 
 /**

@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.calculator.core.common.format.NumberFormatter
 import com.calculator.core.domain.finance.GstCalculator
 import com.calculator.feature.lifecalc.LifeCalcAccent
 import com.calculator.feature.lifecalc.LifeCalcCard
@@ -29,7 +30,6 @@ import com.calculator.feature.lifecalc.LifeCalcSectionLabel
 import com.calculator.feature.lifecalc.LifeCalcSegmentBackground
 import com.calculator.feature.lifecalc.LifeCalcSegmented
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
-import com.calculator.core.common.format.NumberFormatter
 import java.util.Locale
 
 /**

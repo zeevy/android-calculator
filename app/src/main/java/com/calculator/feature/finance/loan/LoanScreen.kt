@@ -12,13 +12,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.calculator.core.common.format.NumberFormatter
 import com.calculator.core.domain.finance.EmiCalculator
 import com.calculator.feature.lifecalc.LifeCalcCard
 import com.calculator.feature.lifecalc.LifeCalcNumberField
 import com.calculator.feature.lifecalc.LifeCalcOutputRow
 import com.calculator.feature.lifecalc.LifeCalcSectionLabel
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
-import com.calculator.core.common.format.NumberFormatter
 import java.util.Locale
 
 /**
