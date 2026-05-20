@@ -322,7 +322,7 @@ class FloatingCalculatorService : Service() {
         const val ACTION_STOP = "com.calculator.feature.floating.action.STOP"
         private const val NOTIFICATION_CHANNEL = "floating_calculator"
         private const val NOTIFICATION_ID = 1001
-        private const val WIDTH_DP = 320
+        private const val WIDTH_DP = 260
         private const val INITIAL_X_DP = 24
         private const val INITIAL_Y_DP = 120
 
