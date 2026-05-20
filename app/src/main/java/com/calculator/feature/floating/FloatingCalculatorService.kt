@@ -164,8 +164,14 @@ class FloatingCalculatorService : Service() {
         digit(R.id.floating_8, "8"); digit(R.id.floating_9, "9")
 
         root.findViewById<Button>(R.id.floating_dot).setOnClickListener { onDot() }
-        root.findViewById<Button>(R.id.floating_C).setOnClickListener { onClear() }
-        root.findViewById<Button>(R.id.floating_back).setOnClickListener { onBackspace() }
+        // Backspace: tap deletes one character, long-press clears the
+        // whole expression. Replaces a separate C key.
+        val backspace = root.findViewById<Button>(R.id.floating_back)
+        backspace.setOnClickListener { onBackspace() }
+        backspace.setOnLongClickListener {
+            onClear()
+            true
+        }
         root.findViewById<Button>(R.id.floating_pct).setOnClickListener { onPercent() }
         root.findViewById<Button>(R.id.floating_add).setOnClickListener { onOp(Op.ADD) }
         root.findViewById<Button>(R.id.floating_sub).setOnClickListener { onOp(Op.SUB) }
