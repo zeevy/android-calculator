@@ -1,5 +1,6 @@
 package com.calculator.baselineprofile
 
+import android.os.Build
 import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.FrameTimingMetric
 import androidx.benchmark.macro.StartupMode
@@ -8,6 +9,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
+import org.junit.Assume.assumeFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,6 +30,15 @@ class FrameTimingBenchmark {
 
     @Test
     fun keypadTapping() {
+        // FrameTimingMetric reads SurfaceFlinger frame traces. The stripped
+        // aosp_atd emulator image used in CI does not produce them, so the
+        // metric returns zero samples and the test crashes. Skip on
+        // emulators; real-device runs (the only environment where frame
+        // timings are meaningful anyway) still execute.
+        assumeFalse(
+            "Skipped: FrameTimingMetric needs real rendering, emulator returns 0 samples",
+            isEmulator(),
+        )
         rule.measureRepeated(
             packageName = TARGET_PACKAGE,
             metrics = listOf(FrameTimingMetric()),
@@ -52,6 +63,19 @@ class FrameTimingBenchmark {
             },
         )
     }
+
+    private fun isEmulator(): Boolean =
+        Build.FINGERPRINT.startsWith("generic") ||
+            Build.FINGERPRINT.startsWith("unknown") ||
+            Build.MODEL.contains("google_sdk") ||
+            Build.MODEL.contains("Emulator") ||
+            Build.MODEL.contains("Android SDK built for") ||
+            Build.MANUFACTURER.contains("Genymotion") ||
+            Build.HARDWARE.contains("goldfish") ||
+            Build.HARDWARE.contains("ranchu") ||
+            Build.PRODUCT.contains("sdk_") ||
+            Build.PRODUCT.contains("emulator") ||
+            Build.PRODUCT.contains("simulator")
 
     companion object {
         private val TARGET_PACKAGE: String by lazy {
