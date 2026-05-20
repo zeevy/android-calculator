@@ -58,16 +58,16 @@ print(data['startup_p50_ms'])
 # Macrobenchmark's benchmarkData.json schema (1.3.x):
 #   {
 #     'benchmarks': [
-#       { 'name': 'startupCompilationBaselineProfiles_compilationMode=Partial...',
-#         'metrics': { 'startupMs': { 'minimum':..., 'maximum':..., 'median':... } } },
+#       { 'name': 'startupCompilationBaselineProfiles',
+#         'metrics': { 'timeToInitialDisplayMs': { 'minimum':..., 'maximum':..., 'median':..., 'runs': [...] } } },
 #       ...
 #     ]
 #   }
-# We match against the test method name; if Macrobenchmark drops the
-# suffix in a future release, the python below will fall back to any
-# row containing 'BaselineProfile'.
+# `StartupTimingMetric` historically emitted 'startupMs' but renamed
+# to 'timeToInitialDisplayMs' (TTID) in 1.2+. Try both so the script
+# survives a version bump in either direction.
 measured_p50=$(python3 -c "
-import json, sys, re
+import json, sys
 with open('$DATA_FILE') as f:
     data = json.load(f)
 candidates = [
@@ -77,12 +77,13 @@ candidates = [
 if not candidates:
     print('NO_MATCH', file=sys.stderr)
     sys.exit(2)
-metric = candidates[0].get('metrics', {}).get('startupMs', {})
+metrics = candidates[0].get('metrics', {})
+metric = metrics.get('timeToInitialDisplayMs') or metrics.get('startupMs') or {}
 # Macrobenchmark uses 'median' as the P50 (the value the gate is
 # benchmarking against).
 p50 = metric.get('median')
 if p50 is None:
-    print('NO_MEDIAN', file=sys.stderr)
+    print('NO_MEDIAN keys=' + ','.join(metrics.keys()), file=sys.stderr)
     sys.exit(2)
 print(f'{p50:.1f}')
 ")
