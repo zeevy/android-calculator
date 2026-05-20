@@ -216,12 +216,24 @@ class Evaluator(
         right: BigDecimal,
     ): BigDecimal =
         when (op) {
-            Operator.Add -> left.add(right, mathContext)
-            Operator.Subtract -> left.subtract(right, mathContext)
-            Operator.Multiply -> left.multiply(right, mathContext)
+            // Add / subtract / multiply on terminating-decimal operands are
+            // *always exact* and always terminate, so we deliberately do NOT
+            // pass [mathContext] here - rounding would silently turn
+            // 33333333333333333333 + 33333333333333333333 into
+            // 66666666666666670000 (16 sig figs + trailing zeros) when the
+            // true answer 66666666666666666666 fits in a BigDecimal just
+            // fine. The display layer ellipsizes if the result is too long
+            // to render in two lines, which is the right place to draw a
+            // visual cap. The engine's job is to be correct.
+            Operator.Add -> left.add(right)
+            Operator.Subtract -> left.subtract(right)
+            Operator.Multiply -> left.multiply(right)
             Operator.Divide -> {
-                // BigDecimal.divide with non-terminating decimals requires a MathContext,
-                // which we always provide. Division by zero is rethrown as ArithmeticException.
+                // Division is the one operator where bounded precision is
+                // mandatory: BigDecimal.divide with a non-terminating
+                // quotient (e.g. 1 / 3) throws ArithmeticException unless a
+                // MathContext is supplied. Division by zero is allowed to
+                // surface as ArithmeticException and is caught upstream.
                 left.divide(right, mathContext)
             }
             Operator.Power -> powerOf(left, right)
