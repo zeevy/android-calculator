@@ -195,13 +195,13 @@
     <string name="tipsplit_section_inputs">Inputs</string>
     <string name="tipsplit_section_result">Result</string>
     <string name="tipsplit_bill">Bill amount</string>
-    <string name="tipsplit_tip_percent">Tip</string>
+    <string name="tipsplit_tip_amount_input">Tip amount</string>
     <string name="tipsplit_people">People</string>
     <string name="tipsplit_round_up">Round up per person</string>
     <string name="tipsplit_tip_amount">Tip amount</string>
     <string name="tipsplit_total">Total</string>
     <string name="tipsplit_per_person">Per person</string>
-    <string name="tipsplit_error_invalid">Enter a valid bill and tip %.</string>
+    <string name="tipsplit_error_invalid">Enter a valid bill and tip amount.</string>
 
     <!-- Investment (SIP / compound interest) -->
     <string name="investment_title">Investment</string>

@@ -53,7 +53,7 @@ import java.util.Locale
 @Composable
 fun TipSplitScreen(onNavigate: (Any) -> Unit) {
     var bill by remember { mutableStateOf("1000") }
-    var tipPercent by remember { mutableStateOf("10") }
+    var tipAmount by remember { mutableStateOf("100") }
     var people by remember { mutableIntStateOf(2) }
     var roundUp by remember { mutableStateOf(false) }
 
@@ -61,7 +61,7 @@ fun TipSplitScreen(onNavigate: (Any) -> Unit) {
         runCatching {
             TipSplitCalculator.compute(
                 bill = bill.toDouble(),
-                tipPercent = tipPercent.toDouble(),
+                tipAmount = tipAmount.toDouble(),
                 people = people,
                 roundUpPerPerson = roundUp,
             )
@@ -80,16 +80,9 @@ fun TipSplitScreen(onNavigate: (Any) -> Unit) {
                 onValueChange = { bill = it },
             )
             LifeCalcNumberField(
-                label = stringResource(R.string.tipsplit_tip_percent),
-                value = tipPercent,
-                onValueChange = { tipPercent = it },
-                suffix = "%",
-            )
-            // Tip-percent quick presets. Tapping a chip overwrites the
-            // text field; the field stays editable for custom values.
-            TipPresets(
-                selected = tipPercent,
-                onSelect = { tipPercent = it },
+                label = stringResource(R.string.tipsplit_tip_amount_input),
+                value = tipAmount,
+                onValueChange = { tipAmount = it },
             )
             PeopleStepper(
                 people = people,
@@ -121,34 +114,6 @@ fun TipSplitScreen(onNavigate: (Any) -> Unit) {
                     accent = true,
                 )
             }
-        }
-    }
-}
-
-/** Common tip-percent presets as tappable pill chips. */
-@Composable
-private fun TipPresets(selected: String, onSelect: (String) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        TIP_PRESETS.forEach { preset ->
-            val isSelected = selected == preset
-            Text(
-                text = "$preset%",
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (isSelected) Color.Black else Color.White,
-                textAlign = TextAlign.Center,
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            if (isSelected) LifeCalcAccent else Color.White.copy(alpha = 0.08f),
-                        )
-                        .clickable { onSelect(preset) }
-                        .padding(vertical = 10.dp),
-            )
         }
     }
 }
@@ -223,8 +188,6 @@ private fun RoundUpRow(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
         )
     }
 }
-
-private val TIP_PRESETS = listOf("5", "10", "15", "18", "20")
 
 private fun money(value: Double): String =
     NumberFormatter.money(value, Locale.getDefault())
