@@ -1,11 +1,13 @@
 # Release workflow.
 #
-# Triggered manually or by pushing a tag like `v0.1.0`. Builds a release AAB
-# and APK, attaches them to a GitHub release, and uploads test/lint reports.
+# Triggered manually or by pushing a tag like `v0.1.0`. Regenerates the
+# baseline profile against the just-built app (so every published
+# release carries a fresh AOT profile in its AAB), then builds the
+# release APK + AAB and attaches them to a GitHub release.
 #
-# Signing is intentionally left unsigned in this workflow for now; once Play
-# App Signing is enrolled the release config will pull the keystore from
-# encrypted secrets and produce a signed AAB.
+# Signing is intentionally left unsigned in this workflow for now; once
+# Play App Signing is enrolled the release config will pull the
+# keystore from encrypted secrets and produce a signed AAB.
 
 name: Release
 
@@ -30,13 +32,22 @@ jobs:
   build:
     name: Build release artifacts
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      - name: Enable KVM
+        # Required so the emulator that generates the baseline profile
+        # can use hardware acceleration on the GitHub-hosted runner.
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -48,6 +59,44 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: true
+
+      - name: AVD cache
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-pixel6-api34-release
+
+      - name: Create AVD and prime cache
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: aosp_atd
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: echo "Generated AVD snapshot."
+
+      - name: Generate baseline profile
+        # Refresh app/src/main/baseline-prof.txt against the current
+        # source tree so the AAB built below ships a profile that
+        # actually matches what users will run. Non-blocking: if the
+        # emulator flakes, fall back to whatever profile is committed
+        # rather than failing the entire release.
+        continue-on-error: true
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: aosp_atd
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: ./gradlew :app:generateReleaseBaselineProfile --stacktrace
 
       - name: Assemble release APK
         run: ./gradlew :app:assembleRelease --stacktrace
@@ -67,6 +116,15 @@ jobs:
         with:
           name: calculator-aab
           path: app/build/outputs/bundle/release/*.aab
+          retention-days: 90
+
+      - name: Upload generated baseline profile
+        # Surface the regenerated profile so it can be inspected /
+        # committed back to the repo after a release.
+        uses: actions/upload-artifact@v7
+        with:
+          name: baseline-prof
+          path: app/src/main/baseline-prof.txt
           retention-days: 90
 
       - name: Create GitHub release
