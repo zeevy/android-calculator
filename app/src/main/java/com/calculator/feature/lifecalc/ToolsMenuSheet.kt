@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Functions
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.MonitorWeight
+import androidx.compose.material.icons.filled.Percent
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Restaurant
@@ -54,6 +55,7 @@ import com.calculator.navigation.GstRoute
 import com.calculator.navigation.InvestmentRoute
 import com.calculator.navigation.LoanRoute
 import com.calculator.navigation.OvulationRoute
+import com.calculator.navigation.PercentRoute
 import com.calculator.navigation.TimezoneRoute
 import com.calculator.navigation.TipSplitRoute
 import com.calculator.navigation.UnitConverterRoute
@@ -285,6 +287,14 @@ private fun ToolsGrid(
                     label = stringResource(R.string.tool_investment),
                     selected = currentRoute === InvestmentRoute,
                     onTap = { onNavigate(InvestmentRoute) },
+                ),
+            )
+            add(
+                ToolTile(
+                    icon = Icons.Filled.Percent,
+                    label = stringResource(R.string.tool_percent),
+                    selected = currentRoute === PercentRoute,
+                    onTap = { onNavigate(PercentRoute) },
                 ),
             )
             add(

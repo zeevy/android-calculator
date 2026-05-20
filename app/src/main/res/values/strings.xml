@@ -33,6 +33,7 @@
     <string name="tool_discount">Discount</string>
     <string name="tool_tipsplit">Tip &amp; split</string>
     <string name="tool_investment">Investment</string>
+    <string name="tool_percent">Percentage</string>
     <string name="tool_bmi">BMI</string>
     <string name="tool_age">Age</string>
     <string name="tool_date_diff">Date diff</string>
@@ -215,6 +216,24 @@
     <string name="investment_gains">Estimated gains</string>
     <string name="investment_maturity">Maturity value</string>
     <string name="investment_error_invalid">Enter a positive amount, rate, and tenure.</string>
+
+    <!-- Percentage -->
+    <string name="percent_title">Percentage</string>
+    <string name="percent_section_mode">Mode</string>
+    <string name="percent_section_result">Result</string>
+    <string name="percent_mode_of">X% of Y</string>
+    <string name="percent_mode_what">X of Y is ?%</string>
+    <string name="percent_mode_change">A → B change</string>
+    <string name="percent_label_percent">Percent</string>
+    <string name="percent_label_value">Value</string>
+    <string name="percent_label_part">Part</string>
+    <string name="percent_label_whole">Whole</string>
+    <string name="percent_label_from">From</string>
+    <string name="percent_label_to">To</string>
+    <string name="percent_result_value">Result</string>
+    <string name="percent_result_percent">Percent</string>
+    <string name="percent_result_change">Change</string>
+    <string name="percent_error_invalid">Enter two valid numbers (denominator can\'t be 0).</string>
 
     <!-- BMI extras -->
     <string name="bmi_section_result">Result</string>

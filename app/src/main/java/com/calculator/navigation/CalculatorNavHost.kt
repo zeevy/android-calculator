@@ -17,6 +17,7 @@ import com.calculator.feature.finance.loan.LoanScreen
 import com.calculator.feature.finance.tipsplit.TipSplitScreen
 import com.calculator.feature.health.bmi.BmiScreen
 import com.calculator.feature.health.ovulation.OvulationScreen
+import com.calculator.feature.math.percent.PercentScreen
 
 /**
  * Root navigation host.
@@ -66,6 +67,7 @@ fun CalculatorNavHost(startDestinationHint: String? = null) {
         composable<DiscountRoute> { DiscountScreen(onNavigate = navController::openTool) }
         composable<TipSplitRoute> { TipSplitScreen(onNavigate = navController::openTool) }
         composable<InvestmentRoute> { InvestmentScreen(onNavigate = navController::openTool) }
+        composable<PercentRoute> { PercentScreen(onNavigate = navController::openTool) }
         composable<BmiRoute> { BmiScreen(onNavigate = navController::openTool) }
         composable<AgeRoute> { AgeScreen(onNavigate = navController::openTool) }
         composable<DateDiffRoute> { DateDiffScreen(onNavigate = navController::openTool) }

@@ -39,6 +39,9 @@ data object TipSplitRoute
 data object InvestmentRoute
 
 @Serializable
+data object PercentRoute
+
+@Serializable
 data object BmiRoute
 
 @Serializable
