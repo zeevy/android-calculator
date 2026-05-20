@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Cake
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Favorite
@@ -47,6 +48,7 @@ import com.calculator.R
 import com.calculator.feature.history.HistorySheetContent
 import com.calculator.feature.settings.SettingsSheetContent
 import com.calculator.navigation.AgeRoute
+import com.calculator.navigation.BaseConverterRoute
 import com.calculator.navigation.BasicCalculatorRoute
 import com.calculator.navigation.BmiRoute
 import com.calculator.navigation.DateDiffRoute
@@ -295,6 +297,14 @@ private fun ToolsGrid(
                     label = stringResource(R.string.tool_percent),
                     selected = currentRoute === PercentRoute,
                     onTap = { onNavigate(PercentRoute) },
+                ),
+            )
+            add(
+                ToolTile(
+                    icon = Icons.Filled.Code,
+                    label = stringResource(R.string.tool_basecalc),
+                    selected = currentRoute === BaseConverterRoute,
+                    onTap = { onNavigate(BaseConverterRoute) },
                 ),
             )
             add(

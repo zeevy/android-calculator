@@ -34,6 +34,7 @@
     <string name="tool_tipsplit">Tip &amp; split</string>
     <string name="tool_investment">Investment</string>
     <string name="tool_percent">Percentage</string>
+    <string name="tool_basecalc">Bases</string>
     <string name="tool_bmi">BMI</string>
     <string name="tool_age">Age</string>
     <string name="tool_date_diff">Date diff</string>
@@ -234,6 +235,15 @@
     <string name="percent_result_percent">Percent</string>
     <string name="percent_result_change">Change</string>
     <string name="percent_error_invalid">Enter two valid numbers (denominator can\'t be 0).</string>
+
+    <!-- Number base converter -->
+    <string name="basecalc_title">Number bases</string>
+    <string name="basecalc_section_values">Value</string>
+    <string name="basecalc_dec">Decimal</string>
+    <string name="basecalc_hex">Hexadecimal</string>
+    <string name="basecalc_oct">Octal</string>
+    <string name="basecalc_bin">Binary</string>
+    <string name="basecalc_error_invalid">Value out of range or contains invalid digits.</string>
 
     <!-- BMI extras -->
     <string name="bmi_section_result">Result</string>

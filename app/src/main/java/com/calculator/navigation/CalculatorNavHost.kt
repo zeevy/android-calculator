@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.calculator.feature.basic.ui.BasicCalculatorScreen
+import com.calculator.feature.converter.base.BaseConverterScreen
 import com.calculator.feature.converter.unit.UnitConverterScreen
 import com.calculator.feature.datetime.age.AgeScreen
 import com.calculator.feature.datetime.datediff.DateDiffScreen
@@ -68,6 +69,9 @@ fun CalculatorNavHost(startDestinationHint: String? = null) {
         composable<TipSplitRoute> { TipSplitScreen(onNavigate = navController::openTool) }
         composable<InvestmentRoute> { InvestmentScreen(onNavigate = navController::openTool) }
         composable<PercentRoute> { PercentScreen(onNavigate = navController::openTool) }
+        composable<BaseConverterRoute> {
+            BaseConverterScreen(onNavigate = navController::openTool)
+        }
         composable<BmiRoute> { BmiScreen(onNavigate = navController::openTool) }
         composable<AgeRoute> { AgeScreen(onNavigate = navController::openTool) }
         composable<DateDiffRoute> { DateDiffScreen(onNavigate = navController::openTool) }

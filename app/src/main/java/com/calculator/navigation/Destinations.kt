@@ -42,6 +42,9 @@ data object InvestmentRoute
 data object PercentRoute
 
 @Serializable
+data object BaseConverterRoute
+
+@Serializable
 data object BmiRoute
 
 @Serializable
