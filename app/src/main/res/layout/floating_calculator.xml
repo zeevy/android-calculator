@@ -7,9 +7,11 @@
   TextView / Button rows costs less complexity than wiring a stand-alone
   ComposeView with manual recomposers and lifecycle plumbing.
 
-  Layout: a 280dp-wide pill with a drag/title bar on top, a right-
-  aligned display, and a 5x4 button grid. ID strings drive the click
-  handlers in FloatingCalculatorService.
+  Layout uses horizontal LinearLayouts (one per keypad row). Width,
+  height, weight and margin are set inline on each Button rather than
+  from a style because Android often ignores layout_* attributes set
+  via styles (the child picks them up but the parent's layout pass
+  doesn't), which left the earlier version one-column wide.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/floating_root"
@@ -36,16 +38,16 @@
             android:layout_weight="1"
             android:text="@string/floating_header"
             android:textColor="#FFFFFF"
-            android:textSize="13sp" />
+            android:textSize="14sp" />
 
         <TextView
             android:id="@+id/floating_close"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:gravity="center"
             android:text="✕"
             android:textColor="#FFFFFF"
-            android:textSize="16sp"
+            android:textSize="18sp"
             android:background="?android:attr/selectableItemBackgroundBorderless" />
     </LinearLayout>
 
@@ -53,68 +55,133 @@
     <TextView
         android:id="@+id/floating_display"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="64dp"
         android:gravity="center_vertical|end"
         android:paddingHorizontal="12dp"
         android:paddingVertical="6dp"
         android:text="0"
         android:textColor="#FFFFFF"
-        android:textSize="32sp"
+        android:textSize="36sp"
         android:textStyle="bold"
         android:singleLine="true"
         android:ellipsize="start" />
 
-    <!-- Button grid. GridLayout keeps everything pixel-aligned without
-         nested LinearLayouts; cells use layout_columnWeight to fill. -->
-    <GridLayout
+    <!-- Row 1: C  ⌫  %  ÷ -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:columnCount="4"
-        android:rowCount="5">
-
+        android:orientation="horizontal">
         <Button android:id="@+id/floating_C" android:text="C"
-            style="@style/FloatingKeyModifier"/>
+            android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+            android:layout_margin="3dp" android:background="@drawable/floating_key_modifier"
+            android:textColor="#000000"
+            style="@style/FloatingKeyBase" />
         <Button android:id="@+id/floating_back" android:text="⌫"
-            style="@style/FloatingKeyModifier"/>
+            android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+            android:layout_margin="3dp" android:background="@drawable/floating_key_modifier"
+            android:textColor="#000000"
+            style="@style/FloatingKeyBase" />
         <Button android:id="@+id/floating_pct" android:text="%"
-            style="@style/FloatingKeyModifier"/>
+            android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+            android:layout_margin="3dp" android:background="@drawable/floating_key_modifier"
+            android:textColor="#000000"
+            style="@style/FloatingKeyBase" />
         <Button android:id="@+id/floating_div" android:text="÷"
-            style="@style/FloatingKeyOp"/>
+            android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+            android:layout_margin="3dp" android:background="@drawable/floating_key_op"
+            android:textStyle="bold"
+            style="@style/FloatingKeyBase" />
+    </LinearLayout>
 
+    <!-- Row 2: 7 8 9 × -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
         <Button android:id="@+id/floating_7" android:text="7"
-            style="@style/FloatingKeyDigit"/>
+            android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+            android:layout_margin="3dp" android:background="@drawable/floating_key_digit"
+            style="@style/FloatingKeyBase" />
         <Button android:id="@+id/floating_8" android:text="8"
-            style="@style/FloatingKeyDigit"/>
+            android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+            android:layout_margin="3dp" android:background="@drawable/floating_key_digit"
+            style="@style/FloatingKeyBase" />
         <Button android:id="@+id/floating_9" android:text="9"
-            style="@style/FloatingKeyDigit"/>
+            android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+            android:layout_margin="3dp" android:background="@drawable/floating_key_digit"
+            style="@style/FloatingKeyBase" />
         <Button android:id="@+id/floating_mul" android:text="×"
-            style="@style/FloatingKeyOp"/>
+            android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+            android:layout_margin="3dp" android:background="@drawable/floating_key_op"
+            android:textStyle="bold"
+            style="@style/FloatingKeyBase" />
+    </LinearLayout>
 
+    <!-- Row 3: 4 5 6 - -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
         <Button android:id="@+id/floating_4" android:text="4"
-            style="@style/FloatingKeyDigit"/>
+            android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+            android:layout_margin="3dp" android:background="@drawable/floating_key_digit"
+            style="@style/FloatingKeyBase" />
         <Button android:id="@+id/floating_5" android:text="5"
-            style="@style/FloatingKeyDigit"/>
+            android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+            android:layout_margin="3dp" android:background="@drawable/floating_key_digit"
+            style="@style/FloatingKeyBase" />
         <Button android:id="@+id/floating_6" android:text="6"
-            style="@style/FloatingKeyDigit"/>
+            android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+            android:layout_margin="3dp" android:background="@drawable/floating_key_digit"
+            style="@style/FloatingKeyBase" />
         <Button android:id="@+id/floating_sub" android:text="-"
-            style="@style/FloatingKeyOp"/>
+            android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+            android:layout_margin="3dp" android:background="@drawable/floating_key_op"
+            android:textStyle="bold"
+            style="@style/FloatingKeyBase" />
+    </LinearLayout>
 
+    <!-- Row 4: 1 2 3 + -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
         <Button android:id="@+id/floating_1" android:text="1"
-            style="@style/FloatingKeyDigit"/>
+            android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+            android:layout_margin="3dp" android:background="@drawable/floating_key_digit"
+            style="@style/FloatingKeyBase" />
         <Button android:id="@+id/floating_2" android:text="2"
-            style="@style/FloatingKeyDigit"/>
+            android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+            android:layout_margin="3dp" android:background="@drawable/floating_key_digit"
+            style="@style/FloatingKeyBase" />
         <Button android:id="@+id/floating_3" android:text="3"
-            style="@style/FloatingKeyDigit"/>
+            android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+            android:layout_margin="3dp" android:background="@drawable/floating_key_digit"
+            style="@style/FloatingKeyBase" />
         <Button android:id="@+id/floating_add" android:text="+"
-            style="@style/FloatingKeyOp"/>
+            android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+            android:layout_margin="3dp" android:background="@drawable/floating_key_op"
+            android:textStyle="bold"
+            style="@style/FloatingKeyBase" />
+    </LinearLayout>
 
+    <!-- Row 5: 0 (wide, weight=2) . = -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
         <Button android:id="@+id/floating_0" android:text="0"
-            android:layout_columnSpan="2"
-            android:layout_columnWeight="2"
-            style="@style/FloatingKeyDigit"/>
+            android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="2"
+            android:layout_margin="3dp" android:background="@drawable/floating_key_digit"
+            style="@style/FloatingKeyBase" />
         <Button android:id="@+id/floating_dot" android:text="."
-            style="@style/FloatingKeyDigit"/>
+            android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+            android:layout_margin="3dp" android:background="@drawable/floating_key_digit"
+            style="@style/FloatingKeyBase" />
         <Button android:id="@+id/floating_eq" android:text="="
-            style="@style/FloatingKeyOp"/>
-    </GridLayout>
+            android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1"
+            android:layout_margin="3dp" android:background="@drawable/floating_key_op"
+            android:textStyle="bold"
+            style="@style/FloatingKeyBase" />
+    </LinearLayout>
 </LinearLayout>
