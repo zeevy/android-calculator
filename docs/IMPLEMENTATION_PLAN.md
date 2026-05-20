@@ -1,7 +1,7 @@
 # Implementation Plan
 
 **Status legend:** `[x]` = done · `[~]` = in progress · `[ ]` = not started
-**Last reviewed:** 2026-05-20
+**Last reviewed:** 2026-05-21
 
 This plan breaks the calculator app down into deliverable phases. Each phase has:
 
@@ -83,7 +83,7 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 - [x] Auto-close unbalanced parens on `=` (e.g. `(1+2` evaluates as `(1+2)`)
 - [x] Clear-on-error UX (digit/operator after an error message clears it - test in `Errors > error clears once the user starts typing again`)
 - [x] Process-death restoration via `SavedStateHandle` + `launchMode="singleTask"`
-- [ ] Locale-aware grouping/decimal separator at the UI boundary (engine stays canonical) - **Deferred:** `NumberFormatter` exists with locale support but `BasicCalculatorScreen` still renders results via fixed-decimal display; adoption at the UI boundary is a Phase 8 follow-up
+- [~] Locale-aware grouping/decimal separator at the UI boundary - `NumberFormatter` adopted across Loan/GST/Discount/Currency screens + `UnitConverterViewModel.formatResult` (en-IN sees lakh grouping, de-DE sees swapped separators). `BasicCalculatorScreen` still renders the typed expression verbatim (canonical engine form) and the live result as-typed; full integration is a Phase 8 follow-up.
 - [x] Haptic feedback hook on key press - via `LocalHapticsEnabled` CompositionLocal + `HapticFeedback.performHapticFeedback` in `BasicCalculatorScreen`, gated on `userSettings.haptics`
 
 ### Phase 1 - Unit tests (JUnit5, `app/src/test/`)
@@ -326,8 +326,8 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 - [x] Hilt `DataModule` + `RepositoryModule` providing `Database`, DAOs, Repository, DataStore
 - [x] DataStore `SettingsRepository` (theme, dynamicColor, haptics, sound, precision, crashOptIn) - currency/unit-system defer to Phase 5/6
 - [x] History sheet/screen: scroll list, per-row delete icon, tap-to-reuse, "Clear all" confirm dialog
-- [ ] Swipe-to-delete (deferred; per-row trash icon ships first)
-- [ ] Long-press a history row → copy to clipboard (deferred)
+- [x] Swipe-to-delete — Material3 `SwipeToDismissBox` on each row, threshold at 30% of row width, both directions; trash icon on the red `errorContainer` background at the leading edge of the swipe
+- [x] Long-press a history row → copy `expression = result` to the system clipboard via `LocalClipboardManager`, with a Toast confirmation
 - [x] Wire ViewModel: on a *fresh* `=`, insert into history (repeat-equals replays do not spam)
 
 ### Phase 3 - Unit tests
@@ -426,7 +426,7 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 5 - Exit criteria
 
-- All 11 categories functional offline, recents persist, formatting is locale-aware. - **Met** (offline + persistence): `ConverterTest` covers all 11 categories with round-trip; `RecentUnitPairDaoTest` covers persistence; `UnitConverterViewModelTest` covers recall. Locale-aware formatting at the converter UI boundary uses fixed DecimalFormat - migration to `NumberFormatter` is a Phase 8 follow-up.
+- All 11 categories functional offline, recents persist, formatting is locale-aware. — **Met**: `ConverterTest` covers all 11 categories with round-trip; `RecentUnitPairDaoTest` covers persistence; `UnitConverterViewModelTest` covers recall; the fixed-decimal output path now goes through `NumberFormatter` so en-IN/de-DE users see correctly-grouped results (the scientific-notation branch keeps `DecimalFormat` with locale-aware symbols).
 
 ---
 
@@ -565,7 +565,7 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 - [~] Content descriptions on every key and actionable icon - keypad, hamburger, swap, back, refresh, history-delete, currency pin all have descriptions; audit pass against every screen is a follow-up
 - [~] Minimum touch target `48dp` - keypad buttons use `aspectRatio(1.6f)` which on portrait keeps them well above 48dp; explicit modifier helper still pending
-- [x] Locale-aware `NumberFormatter` utility (en-US, en-IN with lakh grouping, de-DE, plus parse). Adoption at every UI boundary is a follow-up (currently in place at `NumberFormatter.format`/`money`; screens still use locale-fixed DecimalFormat)
+- [x] Locale-aware `NumberFormatter` utility (en-US, en-IN with lakh grouping, de-DE, plus parse) — now adopted by Loan/GST/Discount/Currency screens and the unit-converter formatter; basic-calculator display still mirrors the engine's canonical form (separate follow-up)
 - [x] String resources extracted into `values/strings.xml` (~95 keys covering shell, tools menu, settings, history, life-calculator titles + disclaimers) + `values-hi/strings.xml` Hindi translations
 - [~] RTL-safe layouts - Compose uses logical start/end by default; explicit RTL preview audit pending
 - [ ] Home-screen search bar (deferred - tools menu already gives one-tap access; search is a power-user addition)
@@ -605,7 +605,7 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 - [x] Cold-start, warm-start, frame-timing benchmarks for basic calculator + history - via `baselineprofile/src/main/java/com/calculator/baselineprofile/{BaselineProfileGenerator,StartupBenchmark,FrameTimingBenchmark}.kt`
 - [x] `androidx.startup` initialisers for any eager work - `androidx.startup` is wired in `app/build.gradle.kts`; current eager work is minimal (Hilt handles app init)
 - [x] Baseline profile committed at `app/src/main/baseline-prof.txt`
-- [x] CI step: regenerate profile on `main` - via `.github/workflows/baseline-profile.yml` (cold-start regression gate is the follow-up; current workflow uploads the profile as an artifact)
+- [x] CI step: regenerate profile on `main` and fail PR if cold-start regresses > 10% - via `.github/workflows/baseline-profile.yml` running `:baselineprofile:connectedBenchmarkAndroidTest` after profile generation, then `baselineprofile/scripts/check-startup-regression.sh` compares P50 against committed `baselineprofile/baseline-startup.json` (fail at +10%)
 
 ### Phase 9 - Test cases
 
