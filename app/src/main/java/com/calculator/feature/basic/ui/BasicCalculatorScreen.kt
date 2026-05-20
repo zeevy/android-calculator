@@ -1144,7 +1144,12 @@ private enum class KeyCategory { Digit, Operator, Modifier, Function, Equals }
 private fun keyCategoryOf(key: Key): KeyCategory =
     when (key) {
         Key.Equals -> KeyCategory.Equals
-        Key.Clear, Key.LeftParen, Key.RightParen, Key.Backspace, Key.SignFlip -> KeyCategory.Modifier
+        Key.Clear, Key.LeftParen, Key.RightParen, Key.Backspace -> KeyCategory.Modifier
+        // ± lives alongside ×/÷/+/- visually - it's an arithmetic
+        // action, not a clear/parenthesis modifier - so it takes the
+        // orange operator color even though under the hood it just
+        // mutates the trailing operand.
+        Key.SignFlip -> KeyCategory.Operator
         Key.MemoryClear, Key.MemoryRecall, Key.MemoryAdd, Key.MemorySubtract -> KeyCategory.Function
         Key.Factorial, Key.Squared, Key.Cubed -> KeyCategory.Function
         Key.Empty -> KeyCategory.Digit // unused; Empty is rendered separately
@@ -1170,9 +1175,11 @@ private val OperatorLabels = setOf("+", "-", "×", "÷", "%", "^")
 private const val BUTTON_ASPECT_RATIO = 1.6f
 
 // Wider aspect ratio for scientific-function and memory rows: same
-// width, smaller height, so those rows are visibly less prominent than
-// the digit/operator rows and free up vertical space for the display.
-private const val BUTTON_ASPECT_RATIO_COMPACT = 2.6f
+// width, smaller height, so those rows are visibly less prominent
+// than the digit/operator rows and free up vertical space for the
+// display. 2.2 (vs the old 2.6) bumps the top two rows about 5dp
+// taller so the labels - MC/MR/M+/M-, ÷/%/±/× - aren't cramped.
+private const val BUTTON_ASPECT_RATIO_COMPACT = 2.2f
 
 // iOS palette tokens, used by both the keypad and the tools sheet so
 // the calculator reads as a single visual system. Literal colors rather
