@@ -331,13 +331,6 @@ private fun ToolsSheetContent(
                     },
                 ),
                 ToolTile(
-                    icon = Icons.Filled.History,
-                    label = stringResource(R.string.tool_history),
-                    enabled = true,
-                    selected = false,
-                    onTap = onOpenHistory,
-                ),
-                ToolTile(
                     icon = Icons.Filled.Straighten,
                     label = stringResource(R.string.tool_units),
                     enabled = true,
@@ -399,6 +392,13 @@ private fun ToolsSheetContent(
                     enabled = true,
                     selected = false,
                     onTap = { onOpenLifeCalc(com.calculator.navigation.OvulationRoute) },
+                ),
+                ToolTile(
+                    icon = Icons.Filled.History,
+                    label = stringResource(R.string.tool_history),
+                    enabled = true,
+                    selected = false,
+                    onTap = onOpenHistory,
                 ),
                 ToolTile(
                     icon = Icons.Filled.Settings,
