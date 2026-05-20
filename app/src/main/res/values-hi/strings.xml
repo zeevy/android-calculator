@@ -95,9 +95,7 @@
     <string name="loan_total_paid">कुल भुगतान</string>
 
     <string name="gst_title">जीएसटी</string>
-    <string name="gst_section_direction">दिशा</string>
-    <string name="gst_direction_add">जीएसटी जोड़ें (शुद्ध→सकल)</string>
-    <string name="gst_direction_remove">जीएसटी हटाएँ (सकल→शुद्ध)</string>
+    <string name="gst_section_direction">लेन-देन</string>
     <string name="gst_intra_state">राज्य के अंदर</string>
     <string name="gst_inter_state">राज्य के बाहर</string>
     <string name="gst_amount_net">शुद्ध राशि</string>
@@ -105,8 +103,7 @@
     <string name="gst_rate">दर</string>
 
     <string name="discount_title">छूट</string>
-    <string name="discount_mode_forward">एमआरपी + % छूट</string>
-    <string name="discount_mode_reverse">एमआरपी + अंतिम मूल्य</string>
+    <string name="discount_section_inputs">इनपुट</string>
     <string name="discount_mrp">एमआरपी</string>
     <string name="discount_percent">छूट</string>
     <string name="discount_final">अंतिम मूल्य</string>
@@ -172,11 +169,9 @@
     <string name="gst_label_igst">आईजीएसटी</string>
 
     <!-- Discount extras -->
-    <string name="discount_section_mode">मोड</string>
     <string name="discount_section_result">परिणाम</string>
     <string name="discount_percent_suffix">%</string>
     <string name="discount_error_invalid">मान्य संख्याएँ दर्ज करें (अंतिम 0..एमआरपी के बीच होना चाहिए).</string>
-    <string name="discount_value_percent_format"><xliff:g id="percent" example="20">%1$s</xliff:g> %%</string>
 
     <!-- BMI extras -->
     <string name="bmi_section_units">इकाइयाँ</string>

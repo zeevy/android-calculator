@@ -54,30 +54,49 @@ import java.util.Locale
  */
 @Composable
 fun GstScreen(onUp: () -> Unit) {
-    // Direction and intra/inter are stored as int indices (rather than
-    // booleans) because the segmented control's onSelect handler hands
-    // back the chosen index. Encoding the meaning here keeps the
-    // segmented component generic and reusable across the life-calc
-    // screens.
-    var direction by remember { mutableIntStateOf(0) } // 0=forward, 1=reverse
+    // Bidirectional inputs: both net and gross are editable. Whichever
+    // the user typed into last is the source; the OTHER is recomputed
+    // on every keystroke. Replaces the old forward/reverse mode toggle -
+    // the toggle was a friction step the user had to think about, and
+    // the bidirectional model collapses that decision into the data.
+    var netText by remember { mutableStateOf("1000") }
+    var grossText by remember { mutableStateOf("1180") }
+    // 0 = user is editing the net field, 1 = user is editing the gross
+    // field. Kept as an Int (not a sealed type) because it pairs with a
+    // segmented-control style across the life-calc surface; the encoded
+    // semantics live next to the call site.
+    var lastEdited by remember { mutableIntStateOf(0) }
     var intraStateIdx by remember { mutableIntStateOf(0) } // 0=intra, 1=inter
-    // 18% is the most-used standard slab (services, electronics);
-    // ₹1,000 lands the user on a result that's easy to sanity-check
-    // (18% of 1000 = 180, gross = 1180).
-    var amount by remember { mutableStateOf("1000") }
     var ratePercent by remember { mutableStateOf("18") }
+
+    // Recompute the non-source side from the source side. Done as a
+    // simple derivation rather than inside an effect because the two
+    // text fields are local state - we can just compute fresh each
+    // recomposition based on lastEdited.
+    val rate = ratePercent.toDoubleOrNull()
+    val intra = intraStateIdx == 0
+    val result: com.calculator.core.domain.finance.GstResult? =
+        runCatching {
+            requireNotNull(rate)
+            if (lastEdited == 0) {
+                val net = netText.toDouble()
+                GstCalculator.forward(net, rate, intra)
+            } else {
+                val gross = grossText.toDouble()
+                GstCalculator.reverse(gross, rate, intra)
+            }
+        }.getOrNull()
+    // Mirror the recomputed side into the OTHER text field so its
+    // BasicTextField shows the formatted value (until the user types
+    // into it, at which point lastEdited flips and the roles swap).
+    val derivedNetText = result?.net?.let { plain(it) } ?: netText
+    val derivedGrossText = result?.gross?.let { plain(it) } ?: grossText
+    val netDisplay = if (lastEdited == 0) netText else derivedNetText
+    val grossDisplay = if (lastEdited == 1) grossText else derivedGrossText
 
     LifeCalculatorScaffold(title = stringResource(R.string.gst_title), onUp = onUp) {
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.gst_section_direction))
-            LifeCalcSegmented(
-                options = listOf(
-                    stringResource(R.string.gst_direction_add),
-                    stringResource(R.string.gst_direction_remove),
-                ),
-                selectedIndex = direction,
-                onSelect = { direction = it },
-            )
             LifeCalcSegmented(
                 options = listOf(
                     stringResource(R.string.gst_intra_state),
@@ -87,13 +106,20 @@ fun GstScreen(onUp: () -> Unit) {
                 onSelect = { intraStateIdx = it },
             )
             LifeCalcNumberField(
-                label = if (direction == 0) {
-                    stringResource(R.string.gst_amount_net)
-                } else {
-                    stringResource(R.string.gst_amount_gross)
+                label = stringResource(R.string.gst_amount_net),
+                value = netDisplay,
+                onValueChange = {
+                    netText = it
+                    lastEdited = 0
                 },
-                value = amount,
-                onValueChange = { amount = it },
+            )
+            LifeCalcNumberField(
+                label = stringResource(R.string.gst_amount_gross),
+                value = grossDisplay,
+                onValueChange = {
+                    grossText = it
+                    lastEdited = 1
+                },
             )
             RatePresets(
                 selected = ratePercent,
@@ -106,18 +132,6 @@ fun GstScreen(onUp: () -> Unit) {
                 suffix = stringResource(R.string.gst_rate_suffix),
             )
         }
-
-        val result =
-            runCatching {
-                val rate = ratePercent.toDouble()
-                val intra = intraStateIdx == 0
-                val amt = amount.toDouble()
-                if (direction == 0) {
-                    GstCalculator.forward(amt, rate, intra)
-                } else {
-                    GstCalculator.reverse(amt, rate, intra)
-                }
-            }.getOrNull()
 
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.gst_section_result))
@@ -142,6 +156,22 @@ fun GstScreen(onUp: () -> Unit) {
                 )
             }
         }
+    }
+}
+
+// Lightweight plain-number formatter for the editable fields - we don't
+// want grouping separators in the BasicTextField (they trip the
+// permissive toDouble parse on the next keystroke). The pretty
+// currency-formatted display lives in the result card below.
+private fun plain(value: Double): String {
+    val rounded = kotlin.math.round(value * 100) / 100
+    return if (rounded == rounded.toLong().toDouble()) {
+        rounded.toLong().toString()
+    } else {
+        // %.2f keeps the same number of decimals across locales; the
+        // engine accepts both "." and "," via the permissive parse so
+        // we don't need a locale-aware separator here.
+        String.format(Locale.US, "%.2f", rounded)
     }
 }
 

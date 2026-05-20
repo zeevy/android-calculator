@@ -17,15 +17,20 @@ import com.calculator.feature.lifecalc.LifeCalcCard
 import com.calculator.feature.lifecalc.LifeCalcNumberField
 import com.calculator.feature.lifecalc.LifeCalcOutputRow
 import com.calculator.feature.lifecalc.LifeCalcSectionLabel
-import com.calculator.feature.lifecalc.LifeCalcSegmented
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
 import java.util.Locale
 
 /**
- * Two-way discount calculator.
+ * Discount calculator with three editable fields.
  *
- * **Forward** (mode 0): MRP + percent off → savings + final price.
- * **Reverse** (mode 1): MRP + paid price → savings + effective percent.
+ * MRP is the always-editable reference price. Percent-off and final
+ * price are both editable too: whichever the user typed into last is
+ * the source, and the OTHER one is recomputed from MRP. Savings is a
+ * derived display row.
+ *
+ * This replaces an earlier explicit "Forward / Reverse" mode toggle
+ * the user had to set before typing - dropping that toggle made the
+ * flow one-step shorter without giving up any expressiveness.
  *
  * Defaults render a sane example on entry (MRP 2,000, 20% off → 1,600
  * final) so the user immediately sees how the rows relate.
@@ -34,54 +39,58 @@ import java.util.Locale
  */
 @Composable
 fun DiscountScreen(onUp: () -> Unit) {
-    // Both inputs are kept in state simultaneously rather than being
-    // derived from each other - flipping mode preserves whatever the
-    // user last typed in the other branch instead of overwriting it.
-    var mode by remember { mutableIntStateOf(0) } // 0=forward, 1=reverse
     var mrp by remember { mutableStateOf("2000") }
     var percentOff by remember { mutableStateOf("20") }
-    var finalPrice by remember { mutableStateOf("1500") }
+    var finalPrice by remember { mutableStateOf("1600") }
+    // 0 = user is editing the percent field, 1 = user is editing the
+    // final-price field. MRP edits don't flip this - they just
+    // recompute the non-source side from the new MRP.
+    var lastEdited by remember { mutableIntStateOf(0) }
+
+    val result =
+        runCatching {
+            val mrpValue = mrp.toDouble()
+            if (lastEdited == 0) {
+                DiscountCalculator.forward(mrpValue, percentOff.toDouble())
+            } else {
+                DiscountCalculator.reverse(mrpValue, finalPrice.toDouble())
+            }
+        }.getOrNull()
+
+    // Mirror the recomputed side into its text-field state so the user
+    // sees the formatted value (until they tap into that field, at
+    // which point lastEdited flips and the roles swap).
+    val percentDisplay =
+        if (lastEdited == 0) percentOff else result?.percentOff?.let { plain(it) } ?: percentOff
+    val finalDisplay =
+        if (lastEdited == 1) finalPrice else result?.finalPrice?.let { plain(it) } ?: finalPrice
 
     LifeCalculatorScaffold(title = stringResource(R.string.discount_title), onUp = onUp) {
         LifeCalcCard {
-            LifeCalcSectionLabel(stringResource(R.string.discount_section_mode))
-            LifeCalcSegmented(
-                options = listOf(
-                    stringResource(R.string.discount_mode_forward),
-                    stringResource(R.string.discount_mode_reverse),
-                ),
-                selectedIndex = mode,
-                onSelect = { mode = it },
-            )
+            LifeCalcSectionLabel(stringResource(R.string.discount_section_inputs))
             LifeCalcNumberField(
                 label = stringResource(R.string.discount_mrp),
                 value = mrp,
                 onValueChange = { mrp = it },
             )
-            if (mode == 0) {
-                LifeCalcNumberField(
-                    label = stringResource(R.string.discount_percent),
-                    value = percentOff,
-                    onValueChange = { percentOff = it },
-                    suffix = stringResource(R.string.discount_percent_suffix),
-                )
-            } else {
-                LifeCalcNumberField(
-                    label = stringResource(R.string.discount_final),
-                    value = finalPrice,
-                    onValueChange = { finalPrice = it },
-                )
-            }
+            LifeCalcNumberField(
+                label = stringResource(R.string.discount_percent),
+                value = percentDisplay,
+                onValueChange = {
+                    percentOff = it
+                    lastEdited = 0
+                },
+                suffix = stringResource(R.string.discount_percent_suffix),
+            )
+            LifeCalcNumberField(
+                label = stringResource(R.string.discount_final),
+                value = finalDisplay,
+                onValueChange = {
+                    finalPrice = it
+                    lastEdited = 1
+                },
+            )
         }
-
-        val result =
-            runCatching {
-                if (mode == 0) {
-                    DiscountCalculator.forward(mrp.toDouble(), percentOff.toDouble())
-                } else {
-                    DiscountCalculator.reverse(mrp.toDouble(), finalPrice.toDouble())
-                }
-            }.getOrNull()
 
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.discount_section_result))
@@ -95,21 +104,23 @@ fun DiscountScreen(onUp: () -> Unit) {
                 LifeCalcOutputRow(
                     label = stringResource(R.string.discount_savings),
                     value = money(result.savings),
-                )
-                LifeCalcOutputRow(
-                    label = stringResource(R.string.discount_final),
-                    value = money(result.finalPrice),
                     accent = true,
-                )
-                LifeCalcOutputRow(
-                    label = stringResource(R.string.discount_percent),
-                    value = stringResource(
-                        R.string.discount_value_percent_format,
-                        percent(result.percentOff),
-                    ),
                 )
             }
         }
+    }
+}
+
+// Plain-number formatter for the editable fields - no grouping
+// separators (which would break the permissive toDouble parse on the
+// next keystroke). Rounds to 2dp for prices / percents; whole values
+// render without a trailing ".0".
+private fun plain(value: Double): String {
+    val rounded = kotlin.math.round(value * 100) / 100
+    return if (rounded == rounded.toLong().toDouble()) {
+        rounded.toLong().toString()
+    } else {
+        String.format(Locale.US, "%.2f", rounded)
     }
 }
 
@@ -117,14 +128,3 @@ fun DiscountScreen(onUp: () -> Unit) {
 // aware grouping (en-IN lakh, de-DE swapped separators, etc.).
 private fun money(value: Double): String =
     NumberFormatter.money(value, Locale.getDefault())
-
-// Percent shows up to two decimals only when the trailing fractional
-// part is non-zero ("20" not "20.00", but "12.34" stays). Min-fraction
-// 0 lets [NumberFormatter] omit the decimal point on whole percents.
-private fun percent(value: Double): String =
-    NumberFormatter.format(
-        value = value,
-        locale = Locale.getDefault(),
-        minFractionDigits = 0,
-        maxFractionDigits = 2,
-    )

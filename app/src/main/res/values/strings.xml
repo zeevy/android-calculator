@@ -95,9 +95,7 @@
     <string name="loan_total_paid">Total paid</string>
 
     <string name="gst_title">GST</string>
-    <string name="gst_section_direction">Direction</string>
-    <string name="gst_direction_add">Add GST (net→gross)</string>
-    <string name="gst_direction_remove">Remove GST (gross→net)</string>
+    <string name="gst_section_direction">Transaction</string>
     <string name="gst_intra_state">Intra-state</string>
     <string name="gst_inter_state">Inter-state</string>
     <string name="gst_amount_net">Net amount</string>
@@ -105,8 +103,7 @@
     <string name="gst_rate">Rate</string>
 
     <string name="discount_title">Discount</string>
-    <string name="discount_mode_forward">MRP + % off</string>
-    <string name="discount_mode_reverse">MRP + final price</string>
+    <string name="discount_section_inputs">Inputs</string>
     <string name="discount_mrp">MRP</string>
     <string name="discount_percent">Discount</string>
     <string name="discount_final">Final price</string>
@@ -172,11 +169,9 @@
     <string name="gst_label_igst">IGST</string>
 
     <!-- Discount extras -->
-    <string name="discount_section_mode">Mode</string>
     <string name="discount_section_result">Result</string>
     <string name="discount_percent_suffix">%</string>
     <string name="discount_error_invalid">Enter valid numbers (final must be in 0..MRP).</string>
-    <string name="discount_value_percent_format"><xliff:g id="percent" example="20">%1$s</xliff:g> %%</string>
 
     <!-- BMI extras -->
     <string name="bmi_section_units">Units</string>
