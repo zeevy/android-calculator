@@ -32,6 +32,14 @@ interface SettingsRepository {
     suspend fun setPrecision(precision: Int)
 
     suspend fun setCrashOptIn(enabled: Boolean)
+
+    suspend fun setLastUnitCategory(category: String)
+
+    suspend fun setGstIntraState(intra: Boolean)
+
+    suspend fun setGstRate(rate: String)
+
+    suspend fun setBmiImperial(imperial: Boolean)
 }
 
 @Singleton
@@ -52,6 +60,10 @@ class DataStoreSettingsRepository
                     sound = prefs[Keys.Sound] ?: true,
                     precision = prefs[Keys.Precision] ?: DEFAULT_PRECISION,
                     crashOptIn = prefs[Keys.CrashOptIn] ?: false,
+                    lastUnitCategory = prefs[Keys.LastUnitCategory],
+                    gstIntraState = prefs[Keys.GstIntraState] ?: true,
+                    gstRate = prefs[Keys.GstRate] ?: "18",
+                    bmiImperial = prefs[Keys.BmiImperial] ?: false,
                 )
             }
 
@@ -79,6 +91,22 @@ class DataStoreSettingsRepository
             dataStore.edit { it[Keys.CrashOptIn] = enabled }
         }
 
+        override suspend fun setLastUnitCategory(category: String) {
+            dataStore.edit { it[Keys.LastUnitCategory] = category }
+        }
+
+        override suspend fun setGstIntraState(intra: Boolean) {
+            dataStore.edit { it[Keys.GstIntraState] = intra }
+        }
+
+        override suspend fun setGstRate(rate: String) {
+            dataStore.edit { it[Keys.GstRate] = rate }
+        }
+
+        override suspend fun setBmiImperial(imperial: Boolean) {
+            dataStore.edit { it[Keys.BmiImperial] = imperial }
+        }
+
         // Centralised keys so renames stay in one place.
         private object Keys {
             val Theme = stringPreferencesKey("theme")
@@ -87,6 +115,11 @@ class DataStoreSettingsRepository
             val Sound = booleanPreferencesKey("sound")
             val Precision = intPreferencesKey("precision")
             val CrashOptIn = booleanPreferencesKey("crashOptIn")
+            // Per-tool last-selection memory.
+            val LastUnitCategory = stringPreferencesKey("lastUnitCategory")
+            val GstIntraState = booleanPreferencesKey("gstIntraState")
+            val GstRate = stringPreferencesKey("gstRate")
+            val BmiImperial = booleanPreferencesKey("bmiImperial")
         }
 
         companion object {

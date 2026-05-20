@@ -244,5 +244,15 @@ class UnitConverterViewModelTest {
         }
 
         override suspend fun setCrashOptIn(enabled: Boolean) = Unit
+
+        override suspend fun setLastUnitCategory(category: String) {
+            snapshot.value = snapshot.value.copy(lastUnitCategory = category)
+        }
+
+        override suspend fun setGstIntraState(intra: Boolean) = Unit
+
+        override suspend fun setGstRate(rate: String) = Unit
+
+        override suspend fun setBmiImperial(imperial: Boolean) = Unit
     }
 }

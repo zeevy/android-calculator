@@ -108,5 +108,21 @@ class SettingsViewModelTest {
         override suspend fun setCrashOptIn(enabled: Boolean) {
             snapshot.value = snapshot.value.copy(crashOptIn = enabled)
         }
+
+        override suspend fun setLastUnitCategory(category: String) {
+            snapshot.value = snapshot.value.copy(lastUnitCategory = category)
+        }
+
+        override suspend fun setGstIntraState(intra: Boolean) {
+            snapshot.value = snapshot.value.copy(gstIntraState = intra)
+        }
+
+        override suspend fun setGstRate(rate: String) {
+            snapshot.value = snapshot.value.copy(gstRate = rate)
+        }
+
+        override suspend fun setBmiImperial(imperial: Boolean) {
+            snapshot.value = snapshot.value.copy(bmiImperial = imperial)
+        }
     }
 }

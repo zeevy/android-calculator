@@ -13,6 +13,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
@@ -55,9 +56,18 @@ class UnitConverterViewModel
         }
 
         init {
-            // Bootstrap with the default category (Length) and apply the
-            // saved recent pair if any.
-            viewModelScope.launch { selectCategory(UnitCategory.Length) }
+            // Bootstrap with whichever category the user last picked.
+            // Falls back to Length when there's no saved preference
+            // (first launch, fresh install, or a category that was
+            // removed since last use).
+            viewModelScope.launch {
+                val savedCategoryName = settings.settings.firstOrNull()?.lastUnitCategory
+                val startCategory =
+                    savedCategoryName
+                        ?.let { name -> runCatching { UnitCategory.valueOf(name) }.getOrNull() }
+                        ?: UnitCategory.Length
+                selectCategory(startCategory)
+            }
         }
 
         /**
@@ -77,6 +87,10 @@ class UnitConverterViewModel
          */
         fun selectCategory(category: UnitCategory) {
             viewModelScope.launch {
+                // Persist the choice so the next time the user opens
+                // the converter they land on this category. Fire-and-
+                // forget; failure to write a preference is non-fatal.
+                settings.setLastUnitCategory(category.name)
                 val units = ConversionTable.unitsFor(category)
                 val saved = repository.recent(category)
                 // `firstOrNull` (not single()) because the saved symbol

@@ -18,6 +18,21 @@ data class UserSettings(
     val sound: Boolean = true,
     val precision: Int = 12,
     val crashOptIn: Boolean = false,
+    /**
+     * Per-tool "remember last selection" preferences.
+     *
+     * Persisted alongside the rest of the user settings so the next
+     * time a tool opens the user lands on what they had picked before,
+     * not the hard-coded default. The unit converter already persists
+     * its (from, to) pair per category in a separate Room table; this
+     * adds the missing category memory plus toggle defaults for the
+     * other tools that have a meaningful "which mode were you in"
+     * question.
+     */
+    val lastUnitCategory: String? = null,
+    val gstIntraState: Boolean = true,
+    val gstRate: String = "18",
+    val bmiImperial: Boolean = false,
 ) {
     enum class ThemeOption { System, Light, Dark }
 }

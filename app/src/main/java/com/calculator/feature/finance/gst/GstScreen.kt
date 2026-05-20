@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.R
 import com.calculator.core.common.format.NumberFormatter
 import com.calculator.core.domain.finance.GstCalculator
@@ -59,6 +60,15 @@ fun GstScreen(onUp: () -> Unit) {
     // on every keystroke. Replaces the old forward/reverse mode toggle -
     // the toggle was a friction step the user had to think about, and
     // the bidirectional model collapses that decision into the data.
+    // Read persisted preferences (intra/inter, rate) so the user lands
+    // on whatever they last picked instead of the hard-coded default.
+    // collectAsState is fine here - GstScreen is small and the
+    // initial-recomposition default of "18% / intra" matches the
+    // first-launch fallback anyway, so no visible flash.
+    val settingsViewModel: com.calculator.feature.settings.SettingsViewModel =
+        androidx.hilt.navigation.compose.hiltViewModel()
+    val userSettings by settingsViewModel.settings.collectAsStateWithLifecycle()
+
     var netText by remember { mutableStateOf("1000") }
     var grossText by remember { mutableStateOf("1180") }
     // 0 = user is editing the net field, 1 = user is editing the gross
@@ -66,8 +76,13 @@ fun GstScreen(onUp: () -> Unit) {
     // segmented-control style across the life-calc surface; the encoded
     // semantics live next to the call site.
     var lastEdited by remember { mutableIntStateOf(0) }
-    var intraStateIdx by remember { mutableIntStateOf(0) } // 0=intra, 1=inter
-    var ratePercent by remember { mutableStateOf("18") }
+    // Seed intra/inter and rate from saved preferences; update both
+    // local state and persisted settings on every change so the screen
+    // remembers across launches.
+    var intraStateIdx by remember(userSettings.gstIntraState) {
+        mutableIntStateOf(if (userSettings.gstIntraState) 0 else 1)
+    }
+    var ratePercent by remember(userSettings.gstRate) { mutableStateOf(userSettings.gstRate) }
 
     // Recompute the non-source side from the source side. Done as a
     // simple derivation rather than inside an effect because the two
@@ -103,7 +118,10 @@ fun GstScreen(onUp: () -> Unit) {
                     stringResource(R.string.gst_inter_state),
                 ),
                 selectedIndex = intraStateIdx,
-                onSelect = { intraStateIdx = it },
+                onSelect = {
+                    intraStateIdx = it
+                    settingsViewModel.setGstIntraState(it == 0)
+                },
             )
             LifeCalcNumberField(
                 label = stringResource(R.string.gst_amount_net),
@@ -123,12 +141,18 @@ fun GstScreen(onUp: () -> Unit) {
             )
             RatePresets(
                 selected = ratePercent,
-                onSelect = { ratePercent = it },
+                onSelect = {
+                    ratePercent = it
+                    settingsViewModel.setGstRate(it)
+                },
             )
             LifeCalcNumberField(
                 label = stringResource(R.string.gst_rate),
                 value = ratePercent,
-                onValueChange = { ratePercent = it },
+                onValueChange = {
+                    ratePercent = it
+                    settingsViewModel.setGstRate(it)
+                },
                 suffix = stringResource(R.string.gst_rate_suffix),
             )
         }

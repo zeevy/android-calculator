@@ -4,6 +4,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,7 +33,14 @@ import com.calculator.feature.lifecalc.LifeCalculatorScaffold
  */
 @Composable
 fun BmiScreen(onUp: () -> Unit) {
-    var unitIdx by remember { mutableIntStateOf(0) } // 0=Metric, 1=Imperial
+    // Read persisted metric/imperial preference so the user lands on
+    // whichever system they used last instead of the default (metric).
+    val settingsViewModel: com.calculator.feature.settings.SettingsViewModel =
+        androidx.hilt.navigation.compose.hiltViewModel()
+    val userSettings by settingsViewModel.settings.collectAsStateWithLifecycle()
+    var unitIdx by remember(userSettings.bmiImperial) {
+        mutableIntStateOf(if (userSettings.bmiImperial) 1 else 0)
+    }
     // Both unit systems' fields are kept in state simultaneously so
     // toggling units preserves what was last typed in the other system
     // - common pattern for height/weight where the user might want to
@@ -54,7 +62,10 @@ fun BmiScreen(onUp: () -> Unit) {
                     stringResource(R.string.bmi_units_imperial),
                 ),
                 selectedIndex = unitIdx,
-                onSelect = { unitIdx = it },
+                onSelect = {
+                    unitIdx = it
+                    settingsViewModel.setBmiImperial(it == 1)
+                },
             )
             if (unitIdx == 0) {
                 LifeCalcNumberField(
