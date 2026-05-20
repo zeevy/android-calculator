@@ -132,7 +132,12 @@ internal fun BasicCalculatorScreenContent(
     onOpenLifeCalc: (Any) -> Unit = {},
 ) {
     var openSheet by remember { mutableStateOf<MenuSheet?>(null) }
-    val sheetState = rememberModalBottomSheetState()
+    // skipPartiallyExpanded: the sheet jumps straight to its fully-expanded
+    // anchor on open instead of stopping at the half-screen detent. All
+    // three sheets we host (Tools grid, History list, Settings panel) are
+    // functional menus rather than gallery thumbnails - the half-state
+    // just hides content and forces the user to swipe up to see it.
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     val tones = rememberKeyToneGenerator()
     // Settings drives sound and haptics toggles. Falling back to defaults
