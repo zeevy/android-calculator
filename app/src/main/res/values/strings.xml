@@ -38,6 +38,7 @@
     <string name="tool_percent">Percentage</string>
     <string name="tool_basecalc">Bases</string>
     <string name="tool_tape">Tape</string>
+    <string name="tool_floating">Float</string>
     <string name="tool_bmi">BMI</string>
     <string name="tool_age">Age</string>
     <string name="tool_date_diff">Date diff</string>
@@ -252,6 +253,13 @@
     <string name="tape_title">Tape</string>
     <string name="tape_empty">No calculations yet. Run a few on the basic calculator and they\'ll show up here.</string>
     <string name="tape_clear">Clear tape</string>
+
+    <!-- Floating calculator overlay -->
+    <string name="floating_header">Calculator</string>
+    <string name="floating_channel_name">Floating calculator</string>
+    <string name="floating_notif_title">Floating calculator</string>
+    <string name="floating_notif_body">Tap to open the full calculator. Use the X on the floating window to close.</string>
+    <string name="floating_notif_stop">Stop</string>
 
     <!-- BMI extras -->
     <string name="bmi_section_result">Result</string>

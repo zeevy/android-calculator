@@ -140,7 +140,12 @@ These come from the user's global preferences and apply to every commit, file, a
 
 - **GST calculator is India-specific.** Hide or expose by locale, never hardcode it as universally available.
 - **Loan/EMI calculator: use neutral language.** Google Play's personal-loans policy bans wording that implies the app is a lender. Strings must read as a calculator, not a lending tool.
-- **No network calls.** The app is fully offline. The currency converter (the only previous network caller) was removed; the manifest declares zero permissions. Don't add Retrofit / OkHttp / INTERNET back without an explicit conversation about the trade-off - the "no permissions" story is part of the app's positioning.
+- **No network calls.** The app is fully offline. The currency converter (the only previous network caller) was removed; don't add Retrofit / OkHttp / INTERNET back without an explicit conversation about the trade-off - the offline story is still part of the app's positioning.
+- **Permissions declared** (the manifest is no longer zero-permissions; the floating-calculator feature pulls these in):
+  - `SYSTEM_ALERT_WINDOW` - draw the floating overlay over other apps. User-granted via system settings.
+  - `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_SPECIAL_USE` - host the overlay in a foreground service so it survives leaving the app (SPECIAL_USE is the catch-all type required on API 34+).
+  - `POST_NOTIFICATIONS` - the foreground service's ongoing notification on API 33+.
+  No INTERNET, ACCESS_NETWORK_STATE, location, or contacts. Don't add permissions for new features without raising the trade-off with the user first.
 - **Locale decimal separator.** Parse and render numbers per-locale (`,` in many EU locales, `.` in US/IN). The math engine accepts both via a locale-aware formatter at the UI boundary - the engine itself works on canonical `.`-separated strings.
 - **Crash reporting is opt-in.** Default off, disclosed in settings. Do not wire up Crashlytics or Firebase without an explicit user toggle.
 - **No analytics in v1.** Do not add Firebase Analytics, no third-party SDKs that phone home.

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modifier keys (C, backspace, %): light grey with black text. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#FFA5A5A5" />
+    <corners android:radius="12dp" />
+</shape>

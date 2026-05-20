@@ -3,11 +3,18 @@
   Calculator AndroidManifest.
 
   Notes:
-    - No permissions are declared. The app works fully offline: the
-      INTERNET permission was removed when the currency converter
-      feature was deleted (it was the only network caller).
-    - There are no runtime-permission requests; the app's surface area
-      doesn't need them.
+    - The app is still fully offline (no INTERNET permission).
+    - Floating-calculator feature uses three permissions:
+        * SYSTEM_ALERT_WINDOW    - draw the floating window over apps.
+        * FOREGROUND_SERVICE     - host the overlay in a fg service so
+                                   it survives once the user leaves the app.
+        * FOREGROUND_SERVICE_SPECIAL_USE - required for fg services on
+                                   API 34+; SPECIAL_USE is the catch-all
+                                   for "ongoing UI the user opted into".
+        * POST_NOTIFICATIONS     - lets the fg service show its required
+                                   ongoing notification on API 33+.
+      Users opt in via the Float tile in the menu; SYSTEM_ALERT_WINDOW
+      is granted through the system Settings flow we open on demand.
     - Auto Backup is enabled (backupAgent rules in backup_rules.xml) so user
       preferences and history survive a reinstall.
     - The activity declares a Material 3 SplashScreen theme; the theme then
@@ -15,6 +22,11 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".CalculatorApplication"
@@ -70,6 +82,18 @@
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
+        </service>
+
+        <!-- Floating calculator overlay (hosted by a foreground service so
+             it survives leaving the app). SPECIAL_USE is the foreground
+             service type required on API 34+ for ongoing UI surfaces. -->
+        <service
+            android:name=".feature.floating.FloatingCalculatorService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="floating_calculator" />
         </service>
 
     </application>

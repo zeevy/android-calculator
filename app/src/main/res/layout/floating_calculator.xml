@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Compact floating calculator overlay.
+
+  XML view (not Compose) because Compose's runtime expects an Activity /
+  Lifecycle owner and the overlay is hosted by a Service. A handful of
+  TextView / Button rows costs less complexity than wiring a stand-alone
+  ComposeView with manual recomposers and lifecycle plumbing.
+
+  Layout: a 280dp-wide pill with a drag/title bar on top, a right-
+  aligned display, and a 5x4 button grid. ID strings drive the click
+  handlers in FloatingCalculatorService.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/floating_root"
+    android:layout_width="280dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/floating_bg"
+    android:padding="8dp"
+    android:elevation="8dp">
+
+    <!-- Header: title (also the drag handle) + close button. -->
+    <LinearLayout
+        android:id="@+id/floating_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="6dp"
+        android:paddingVertical="2dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/floating_header"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/floating_close"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:text="✕"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:background="?android:attr/selectableItemBackgroundBorderless" />
+    </LinearLayout>
+
+    <!-- Display. Single line, right-aligned, large numeric font. -->
+    <TextView
+        android:id="@+id/floating_display"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:gravity="center_vertical|end"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="6dp"
+        android:text="0"
+        android:textColor="#FFFFFF"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:singleLine="true"
+        android:ellipsize="start" />
+
+    <!-- Button grid. GridLayout keeps everything pixel-aligned without
+         nested LinearLayouts; cells use layout_columnWeight to fill. -->
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:columnCount="4"
+        android:rowCount="5">
+
+        <Button android:id="@+id/floating_C" android:text="C"
+            style="@style/FloatingKeyModifier"/>
+        <Button android:id="@+id/floating_back" android:text="⌫"
+            style="@style/FloatingKeyModifier"/>
+        <Button android:id="@+id/floating_pct" android:text="%"
+            style="@style/FloatingKeyModifier"/>
+        <Button android:id="@+id/floating_div" android:text="÷"
+            style="@style/FloatingKeyOp"/>
+
+        <Button android:id="@+id/floating_7" android:text="7"
+            style="@style/FloatingKeyDigit"/>
+        <Button android:id="@+id/floating_8" android:text="8"
+            style="@style/FloatingKeyDigit"/>
+        <Button android:id="@+id/floating_9" android:text="9"
+            style="@style/FloatingKeyDigit"/>
+        <Button android:id="@+id/floating_mul" android:text="×"
+            style="@style/FloatingKeyOp"/>
+
+        <Button android:id="@+id/floating_4" android:text="4"
+            style="@style/FloatingKeyDigit"/>
+        <Button android:id="@+id/floating_5" android:text="5"
+            style="@style/FloatingKeyDigit"/>
+        <Button android:id="@+id/floating_6" android:text="6"
+            style="@style/FloatingKeyDigit"/>
+        <Button android:id="@+id/floating_sub" android:text="-"
+            style="@style/FloatingKeyOp"/>
+
+        <Button android:id="@+id/floating_1" android:text="1"
+            style="@style/FloatingKeyDigit"/>
+        <Button android:id="@+id/floating_2" android:text="2"
+            style="@style/FloatingKeyDigit"/>
+        <Button android:id="@+id/floating_3" android:text="3"
+            style="@style/FloatingKeyDigit"/>
+        <Button android:id="@+id/floating_add" android:text="+"
+            style="@style/FloatingKeyOp"/>
+
+        <Button android:id="@+id/floating_0" android:text="0"
+            android:layout_columnSpan="2"
+            android:layout_columnWeight="2"
+            style="@style/FloatingKeyDigit"/>
+        <Button android:id="@+id/floating_dot" android:text="."
+            style="@style/FloatingKeyDigit"/>
+        <Button android:id="@+id/floating_eq" android:text="="
+            style="@style/FloatingKeyOp"/>
+    </GridLayout>
+</LinearLayout>
