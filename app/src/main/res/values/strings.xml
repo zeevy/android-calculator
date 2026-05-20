@@ -32,6 +32,7 @@
     <string name="tool_gst">GST</string>
     <string name="tool_discount">Discount</string>
     <string name="tool_tipsplit">Tip &amp; split</string>
+    <string name="tool_investment">Investment</string>
     <string name="tool_bmi">BMI</string>
     <string name="tool_age">Age</string>
     <string name="tool_date_diff">Date diff</string>
@@ -198,6 +199,22 @@
     <string name="tipsplit_total">Total</string>
     <string name="tipsplit_per_person">Per person</string>
     <string name="tipsplit_error_invalid">Enter a valid bill and tip %.</string>
+
+    <!-- Investment (SIP / compound interest) -->
+    <string name="investment_title">Investment</string>
+    <string name="investment_section_mode">Mode</string>
+    <string name="investment_section_result">Result</string>
+    <string name="investment_mode_sip">SIP</string>
+    <string name="investment_mode_lumpsum">Lump sum</string>
+    <string name="investment_monthly">Monthly amount</string>
+    <string name="investment_principal">Principal</string>
+    <string name="investment_rate">Annual rate</string>
+    <string name="investment_years">Tenure</string>
+    <string name="investment_years_suffix">yrs</string>
+    <string name="investment_invested">Total invested</string>
+    <string name="investment_gains">Estimated gains</string>
+    <string name="investment_maturity">Maturity value</string>
+    <string name="investment_error_invalid">Enter a positive amount, rate, and tenure.</string>
 
     <!-- BMI extras -->
     <string name="bmi_section_result">Result</string>

@@ -36,6 +36,9 @@ data object DiscountRoute
 data object TipSplitRoute
 
 @Serializable
+data object InvestmentRoute
+
+@Serializable
 data object BmiRoute
 
 @Serializable
