@@ -1,6 +1,7 @@
 package com.calculator.feature.basic.ui
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.calculator.core.designsystem.theme.CalculatorTheme
@@ -82,13 +83,16 @@ class BasicCalculatorKeypadTest {
     }
 
     @Test
-    fun factorialKey_emitsAppendBangEvent() {
+    fun factorialKey_isNotPresentInBasicMode() {
         val events = mutableListOf<BasicCalculatorEvent>()
         composeRule.setContent {
             CalculatorTheme { Keypad(scientific = false, onEvent = events::add) }
         }
-        composeRule.onNodeWithText("x!").performClick()
-        assertEquals(listOf<BasicCalculatorEvent>(BasicCalculatorEvent.Append("!")), events)
+        // x! was removed from the basic-mode keypad alongside the tall
+        // + redesign - factorial is still available in scientific mode
+        // via the Factorial key in the scientific surface, but the
+        // basic keypad no longer carries a dedicated tile.
+        assertEquals(0, composeRule.onAllNodesWithText("x!").fetchSemanticsNodes().size)
     }
 
     @Test

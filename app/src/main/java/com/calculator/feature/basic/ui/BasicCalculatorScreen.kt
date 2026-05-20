@@ -17,7 +17,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
@@ -787,23 +790,29 @@ internal fun Keypad(
             keys = listOf(Key.MemoryClear, Key.MemoryRecall, Key.MemoryAdd, Key.MemorySubtract),
             compact = true,
         )
-    // Basic-mode modifier row: sign-flip + factorial + percent + divide.
-    // Parens are dropped from basic mode (they live in the scientific
-    // section in advanced mode); ± and x! take their slots.
-    val signFlipRow =
-        KeypadRowSpec(
-            keys = listOf(Key.SignFlip, Key.Factorial, Key.Symbol("%"), Key.Symbol("÷")),
-            compact = true,
-        )
-    val basicRows =
+    // Basic-mode layout (rows numbered from the BOTTOM per user
+    // direction):
+    //   top  : MC MR M+ M-   (memory)
+    //   row 5: ÷  %  ±  ×
+    //   row 4: 7  8  9  -
+    //   row 3: 4  5  6  [+ tall starts here, spans rows 2-3]
+    //   row 2: 1  2  3  [+ continues]
+    //   row 1: ⌫  0  .  =    (bottom)
+    //
+    // The tall + button lives in column 4 of rows 2 and 3, between -
+    // (row 4 col 4) and = (row 1 col 4). The middle rows around it
+    // (rows 2 and 3) are rendered together by [TallPlusBlock]; the
+    // rows above and below it use the regular KeypadRow path.
+    val aboveTallPlusRows =
         listOf(
-            memoryRow,
-            signFlipRow,
-            KeypadRowSpec(listOf(Key.Symbol("7"), Key.Symbol("8"), Key.Symbol("9"), Key.Symbol("×"))),
-            KeypadRowSpec(listOf(Key.Symbol("4"), Key.Symbol("5"), Key.Symbol("6"), Key.Symbol("-"))),
-            KeypadRowSpec(listOf(Key.Symbol("1"), Key.Symbol("2"), Key.Symbol("3"), Key.Symbol("+"))),
-            KeypadRowSpec(listOf(Key.Backspace, Key.Symbol("0"), Key.Symbol("."), Key.Equals)),
+            KeypadRowSpec(
+                listOf(Key.Symbol("÷"), Key.Symbol("%"), Key.SignFlip, Key.Symbol("×")),
+                compact = true,
+            ),
+            KeypadRowSpec(listOf(Key.Symbol("7"), Key.Symbol("8"), Key.Symbol("9"), Key.Symbol("-"))),
         )
+    val belowTallPlusRow =
+        KeypadRowSpec(listOf(Key.Backspace, Key.Symbol("0"), Key.Symbol("."), Key.Equals))
     // Four scientific rows, all compact. Parens slot into row 3
     // (replacing π/e there); π and e move to row 4 alongside x² and x³
     // shortcuts so every cell in advanced mode does something useful -
@@ -828,11 +837,114 @@ internal fun Keypad(
             ),
         )
 
-    KeypadGrid(
-        rows = if (scientific) scientificRows + basicRows else basicRows,
+    // Render order (top -> bottom):
+    //   1. Scientific rows (advanced mode only).
+    //   2. Memory row.
+    //   3. aboveTallPlusRows: `÷ % ± ×`, then `7 8 9 -`.
+    //   4. TallPlusBlock: `4 5 6` / `1 2 3` on the left, tall + on
+    //      the right covering both digit rows.
+    //   5. belowTallPlusRow: `⌫ 0 . =`.
+    Column(
         modifier = modifier,
-        onEvent = onEvent,
-    )
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (scientific) {
+            scientificRows.forEach { spec ->
+                KeypadRow(
+                    row = spec.keys,
+                    aspectRatio =
+                        if (spec.compact) BUTTON_ASPECT_RATIO_COMPACT else BUTTON_ASPECT_RATIO,
+                    compact = spec.compact,
+                    modifier = Modifier.fillMaxWidth(),
+                    onEvent = onEvent,
+                )
+            }
+        }
+        KeypadRow(
+            row = memoryRow.keys,
+            aspectRatio = BUTTON_ASPECT_RATIO_COMPACT,
+            compact = true,
+            modifier = Modifier.fillMaxWidth(),
+            onEvent = onEvent,
+        )
+        aboveTallPlusRows.forEach { spec ->
+            KeypadRow(
+                row = spec.keys,
+                aspectRatio =
+                    if (spec.compact) BUTTON_ASPECT_RATIO_COMPACT else BUTTON_ASPECT_RATIO,
+                compact = spec.compact,
+                modifier = Modifier.fillMaxWidth(),
+                onEvent = onEvent,
+            )
+        }
+        TallPlusBlock(onEvent = onEvent)
+        KeypadRow(
+            row = belowTallPlusRow.keys,
+            aspectRatio = BUTTON_ASPECT_RATIO,
+            compact = false,
+            modifier = Modifier.fillMaxWidth(),
+            onEvent = onEvent,
+        )
+    }
+}
+
+/**
+ * Two-row block in the middle of the basic keypad. The left three
+ * columns carry the `4 5 6` and `1 2 3` digit rows; the right column
+ * is a single double-height `+` button covering both rows, sitting
+ * directly above the `=` key (which lives in the regular bottom row
+ * just below this block).
+ *
+ * Implementation note: the surrounding KeypadRow calls use weight=1
+ * across 4 cells per Row. This block uses a horizontal Row with the
+ * left subtree at weight 3 (three keys plus their internal gaps) and
+ * the right cell at weight 1. The aspect-ratio match between inner
+ * and outer cells is approximate to within ~2dp (invisible), and
+ * everything stays on the same 8dp baseline grid.
+ */
+@Composable
+private fun TallPlusBlock(onEvent: (BasicCalculatorEvent) -> Unit) {
+    Row(
+        // height(IntrinsicSize.Min) pins the Row's height to the left
+        // Column's wrap-content height (= 2 rows + 1 gap). Without
+        // this, fillMaxHeight on the + button would expand it to take
+        // whatever vertical space the parent Column has left, which is
+        // usually a lot more than the 2-row equivalent we want.
+        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        // Left: 3 cols x 2 rows of digit keys (4 5 6 / 1 2 3).
+        Column(
+            modifier = Modifier.weight(3f),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            KeypadRow(
+                row = listOf(Key.Symbol("4"), Key.Symbol("5"), Key.Symbol("6")),
+                aspectRatio = BUTTON_ASPECT_RATIO,
+                compact = false,
+                modifier = Modifier.fillMaxWidth(),
+                onEvent = onEvent,
+            )
+            KeypadRow(
+                row = listOf(Key.Symbol("1"), Key.Symbol("2"), Key.Symbol("3")),
+                aspectRatio = BUTTON_ASPECT_RATIO,
+                compact = false,
+                modifier = Modifier.fillMaxWidth(),
+                onEvent = onEvent,
+            )
+        }
+        // Right: single tall + button. fillMaxHeight matches the left
+        // column's total height (2 rows + 1 gap).
+        KeyButton(
+            key = Key.Symbol("+"),
+            onEvent = onEvent,
+            compact = false,
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+        )
+    }
 }
 
 /** A keypad row + per-row layout hints. [compact] uses a wider aspect ratio so the row is shorter. */
