@@ -69,6 +69,17 @@ android {
     }
 }
 
+// Pin Kotlin's JVM target to match `compileOptions` above. Without this,
+// Kotlin defaults to a newer JVM target than Java (21 vs 17 on AGP 8.x+)
+// and the JVM-target consistency check fails the build.
+kotlin {
+    jvmToolchain(
+        libs.versions.java.toolchain
+            .get()
+            .toInt(),
+    )
+}
+
 baselineProfile {
     // Treat the managed virtual device above as the default target so
     // a contributor can run `./gradlew :app:generateBaselineProfile`
