@@ -39,7 +39,9 @@ interface SettingsRepository {
 
     suspend fun setGstRate(rate: String)
 
-    suspend fun setBmiImperial(imperial: Boolean)
+    suspend fun setBmiHeightImperial(imperial: Boolean)
+
+    suspend fun setBmiWeightImperial(imperial: Boolean)
 }
 
 @Singleton
@@ -63,7 +65,8 @@ class DataStoreSettingsRepository
                     lastUnitCategory = prefs[Keys.LastUnitCategory],
                     gstIntraState = prefs[Keys.GstIntraState] ?: true,
                     gstRate = prefs[Keys.GstRate] ?: "18",
-                    bmiImperial = prefs[Keys.BmiImperial] ?: false,
+                    bmiHeightImperial = prefs[Keys.BmiHeightImperial] ?: false,
+                    bmiWeightImperial = prefs[Keys.BmiWeightImperial] ?: false,
                 )
             }
 
@@ -103,8 +106,12 @@ class DataStoreSettingsRepository
             dataStore.edit { it[Keys.GstRate] = rate }
         }
 
-        override suspend fun setBmiImperial(imperial: Boolean) {
-            dataStore.edit { it[Keys.BmiImperial] = imperial }
+        override suspend fun setBmiHeightImperial(imperial: Boolean) {
+            dataStore.edit { it[Keys.BmiHeightImperial] = imperial }
+        }
+
+        override suspend fun setBmiWeightImperial(imperial: Boolean) {
+            dataStore.edit { it[Keys.BmiWeightImperial] = imperial }
         }
 
         // Centralised keys so renames stay in one place.
@@ -119,7 +126,8 @@ class DataStoreSettingsRepository
             val LastUnitCategory = stringPreferencesKey("lastUnitCategory")
             val GstIntraState = booleanPreferencesKey("gstIntraState")
             val GstRate = stringPreferencesKey("gstRate")
-            val BmiImperial = booleanPreferencesKey("bmiImperial")
+            val BmiHeightImperial = booleanPreferencesKey("bmiHeightImperial")
+            val BmiWeightImperial = booleanPreferencesKey("bmiWeightImperial")
         }
 
         companion object {

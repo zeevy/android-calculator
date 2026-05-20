@@ -64,7 +64,11 @@ class SettingsViewModel
             viewModelScope.launch { repository.setGstRate(rate) }
         }
 
-        fun setBmiImperial(imperial: Boolean) {
-            viewModelScope.launch { repository.setBmiImperial(imperial) }
+        fun setBmiHeightImperial(imperial: Boolean) {
+            viewModelScope.launch { repository.setBmiHeightImperial(imperial) }
+        }
+
+        fun setBmiWeightImperial(imperial: Boolean) {
+            viewModelScope.launch { repository.setBmiWeightImperial(imperial) }
         }
     }

@@ -121,8 +121,12 @@ class SettingsViewModelTest {
             snapshot.value = snapshot.value.copy(gstRate = rate)
         }
 
-        override suspend fun setBmiImperial(imperial: Boolean) {
-            snapshot.value = snapshot.value.copy(bmiImperial = imperial)
+        override suspend fun setBmiHeightImperial(imperial: Boolean) {
+            snapshot.value = snapshot.value.copy(bmiHeightImperial = imperial)
+        }
+
+        override suspend fun setBmiWeightImperial(imperial: Boolean) {
+            snapshot.value = snapshot.value.copy(bmiWeightImperial = imperial)
         }
     }
 }

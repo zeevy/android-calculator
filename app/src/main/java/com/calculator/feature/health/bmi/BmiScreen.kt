@@ -33,52 +33,51 @@ import com.calculator.feature.lifecalc.LifeCalculatorScaffold
  */
 @Composable
 fun BmiScreen(onUp: () -> Unit) {
-    // Read persisted metric/imperial preference so the user lands on
-    // whichever system they used last instead of the default (metric).
+    // Read persisted unit preferences so the user lands on whichever
+    // unit they used last for each axis. Height and weight have
+    // independent toggles - mixing them (feet/inches for height, kg
+    // for weight) is common and used to be impossible when both were
+    // forced by a single metric/imperial system toggle. That coupling
+    // caused a real bug: entering 6'1" 93 kg with the system on
+    // Imperial silently interpreted the 93 as pounds and reported
+    // "Underweight" (BMI 12 instead of 27).
     val settingsViewModel: com.calculator.feature.settings.SettingsViewModel =
         androidx.hilt.navigation.compose.hiltViewModel()
     val userSettings by settingsViewModel.settings.collectAsStateWithLifecycle()
-    var unitIdx by remember(userSettings.bmiImperial) {
-        mutableIntStateOf(if (userSettings.bmiImperial) 1 else 0)
+    var heightUnitIdx by remember(userSettings.bmiHeightImperial) {
+        mutableIntStateOf(if (userSettings.bmiHeightImperial) 1 else 0)
+    }
+    var weightUnitIdx by remember(userSettings.bmiWeightImperial) {
+        mutableIntStateOf(if (userSettings.bmiWeightImperial) 1 else 0)
     }
     // Both unit systems' fields are kept in state simultaneously so
-    // toggling units preserves what was last typed in the other system
-    // - common pattern for height/weight where the user might want to
-    // compare "what's 170 cm in feet/inches?".
-    // Metric inputs
+    // toggling units preserves what was last typed in the other unit.
     var heightCm by remember { mutableStateOf("170") }
     var weightKg by remember { mutableStateOf("70") }
-    // Imperial inputs
     var heightFt by remember { mutableStateOf("5") }
     var heightIn by remember { mutableStateOf("10") }
     var weightLb by remember { mutableStateOf("170") }
 
     LifeCalculatorScaffold(title = stringResource(R.string.bmi_title), onUp = onUp) {
         LifeCalcCard {
-            LifeCalcSectionLabel(stringResource(R.string.bmi_section_units))
+            LifeCalcSectionLabel(stringResource(R.string.bmi_section_height))
             LifeCalcSegmented(
                 options = listOf(
-                    stringResource(R.string.bmi_units_metric),
-                    stringResource(R.string.bmi_units_imperial),
+                    stringResource(R.string.bmi_unit_cm),
+                    stringResource(R.string.bmi_unit_ft_in),
                 ),
-                selectedIndex = unitIdx,
+                selectedIndex = heightUnitIdx,
                 onSelect = {
-                    unitIdx = it
-                    settingsViewModel.setBmiImperial(it == 1)
+                    heightUnitIdx = it
+                    settingsViewModel.setBmiHeightImperial(it == 1)
                 },
             )
-            if (unitIdx == 0) {
+            if (heightUnitIdx == 0) {
                 LifeCalcNumberField(
                     label = stringResource(R.string.bmi_height),
                     value = heightCm,
                     onValueChange = { heightCm = it },
                     suffix = stringResource(R.string.bmi_unit_cm),
-                )
-                LifeCalcNumberField(
-                    label = stringResource(R.string.bmi_weight),
-                    value = weightKg,
-                    onValueChange = { weightKg = it },
-                    suffix = stringResource(R.string.bmi_unit_kg),
                 )
             } else {
                 LifeCalcNumberField(
@@ -93,6 +92,29 @@ fun BmiScreen(onUp: () -> Unit) {
                     onValueChange = { heightIn = it },
                     suffix = stringResource(R.string.bmi_unit_in),
                 )
+            }
+        }
+        LifeCalcCard {
+            LifeCalcSectionLabel(stringResource(R.string.bmi_section_weight))
+            LifeCalcSegmented(
+                options = listOf(
+                    stringResource(R.string.bmi_unit_kg),
+                    stringResource(R.string.bmi_unit_lb),
+                ),
+                selectedIndex = weightUnitIdx,
+                onSelect = {
+                    weightUnitIdx = it
+                    settingsViewModel.setBmiWeightImperial(it == 1)
+                },
+            )
+            if (weightUnitIdx == 0) {
+                LifeCalcNumberField(
+                    label = stringResource(R.string.bmi_weight),
+                    value = weightKg,
+                    onValueChange = { weightKg = it },
+                    suffix = stringResource(R.string.bmi_unit_kg),
+                )
+            } else {
                 LifeCalcNumberField(
                     label = stringResource(R.string.bmi_weight),
                     value = weightLb,
@@ -102,17 +124,25 @@ fun BmiScreen(onUp: () -> Unit) {
             }
         }
 
+        // Resolve into the canonical metric inputs (cm + kg) the
+        // BmiCalculator expects, then delegate. Mixing ft/in height
+        // with kg weight just funnels both into the same engine call.
         val result =
             runCatching {
-                if (unitIdx == 0) {
-                    BmiCalculator.metric(heightCm.toDouble(), weightKg.toDouble())
-                } else {
-                    BmiCalculator.imperial(
-                        heightFeet = heightFt.toInt(),
-                        heightInches = heightIn.toDouble(),
-                        weightLb = weightLb.toDouble(),
-                    )
-                }
+                val heightCmResolved =
+                    if (heightUnitIdx == 0) {
+                        heightCm.toDouble()
+                    } else {
+                        val totalInches = heightFt.toInt() * 12 + heightIn.toDouble()
+                        totalInches * 2.54
+                    }
+                val weightKgResolved =
+                    if (weightUnitIdx == 0) {
+                        weightKg.toDouble()
+                    } else {
+                        weightLb.toDouble() * 0.45359237
+                    }
+                BmiCalculator.metric(heightCmResolved, weightKgResolved)
             }.getOrNull()
 
         LifeCalcCard {

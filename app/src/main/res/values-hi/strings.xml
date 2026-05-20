@@ -110,8 +110,9 @@
     <string name="discount_savings">बचत</string>
 
     <string name="bmi_title">बीएमआई</string>
-    <string name="bmi_units_metric">मीट्रिक (सेमी/किग्रा)</string>
-    <string name="bmi_units_imperial">इम्पीरियल (फ़ुट·इंच/पाउंड)</string>
+    <string name="bmi_section_height">ऊँचाई</string>
+    <string name="bmi_section_weight">वज़न</string>
+    <string name="bmi_unit_ft_in">फ़ुट·इंच</string>
     <string name="bmi_height">ऊँचाई</string>
     <string name="bmi_height_feet">ऊँचाई (फ़ुट)</string>
     <string name="bmi_height_inches">ऊँचाई (इंच)</string>
@@ -174,7 +175,6 @@
     <string name="discount_error_invalid">मान्य संख्याएँ दर्ज करें (अंतिम 0..एमआरपी के बीच होना चाहिए).</string>
 
     <!-- BMI extras -->
-    <string name="bmi_section_units">इकाइयाँ</string>
     <string name="bmi_section_result">परिणाम</string>
     <string name="bmi_unit_cm">सेमी</string>
     <string name="bmi_unit_kg">किग्रा</string>

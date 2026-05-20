@@ -253,6 +253,8 @@ class UnitConverterViewModelTest {
 
         override suspend fun setGstRate(rate: String) = Unit
 
-        override suspend fun setBmiImperial(imperial: Boolean) = Unit
+        override suspend fun setBmiHeightImperial(imperial: Boolean) = Unit
+
+        override suspend fun setBmiWeightImperial(imperial: Boolean) = Unit
     }
 }

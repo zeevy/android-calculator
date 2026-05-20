@@ -32,7 +32,15 @@ data class UserSettings(
     val lastUnitCategory: String? = null,
     val gstIntraState: Boolean = true,
     val gstRate: String = "18",
-    val bmiImperial: Boolean = false,
+    /**
+     * BMI height/weight unit memory is split across two flags so the
+     * user can mix systems - feet/inches for height with kilograms for
+     * weight is a very common preference and a single combined toggle
+     * was actively misleading users (see the 6'1"/93kg -> Underweight
+     * bug that triggered this split).
+     */
+    val bmiHeightImperial: Boolean = false,
+    val bmiWeightImperial: Boolean = false,
 ) {
     enum class ThemeOption { System, Light, Dark }
 }

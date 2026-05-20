@@ -110,8 +110,9 @@
     <string name="discount_savings">Savings</string>
 
     <string name="bmi_title">BMI</string>
-    <string name="bmi_units_metric">Metric (cm/kg)</string>
-    <string name="bmi_units_imperial">Imperial (ft·in/lb)</string>
+    <string name="bmi_section_height">Height</string>
+    <string name="bmi_section_weight">Weight</string>
+    <string name="bmi_unit_ft_in">ft·in</string>
     <string name="bmi_height">Height</string>
     <string name="bmi_height_feet">Height (feet)</string>
     <string name="bmi_height_inches">Height (inches)</string>
@@ -174,7 +175,6 @@
     <string name="discount_error_invalid">Enter valid numbers (final must be in 0..MRP).</string>
 
     <!-- BMI extras -->
-    <string name="bmi_section_units">Units</string>
     <string name="bmi_section_result">Result</string>
     <string name="bmi_unit_cm">cm</string>
     <string name="bmi_unit_kg">kg</string>
