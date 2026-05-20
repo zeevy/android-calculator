@@ -96,6 +96,18 @@
                 android:value="floating_calculator" />
         </service>
 
+        <!-- Headless trampoline for the "Floating calculator" launcher
+             shortcut. Translucent theme + immediate finish() means no
+             splash flash before the overlay (or system permission page)
+             appears. -->
+        <activity
+            android:name=".feature.floating.FloatingShortcutActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:noHistory="true" />
+
     </application>
 
 </manifest>

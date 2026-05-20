@@ -172,6 +172,8 @@
     <string name="shortcut_new_calc_long">New calculation</string>
     <string name="shortcut_units_short">Units</string>
     <string name="shortcut_units_long">Unit converter</string>
+    <string name="shortcut_floating_short">Float</string>
+    <string name="shortcut_floating_long">Floating calculator</string>
 
     <!-- History extras -->
     <string name="history_copied_toast">Copied to clipboard</string>
