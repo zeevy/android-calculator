@@ -54,10 +54,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Static launcher shortcuts shown on long-press of the app icon. -->
-            <meta-data
-                android:name="android.app.shortcuts"
-                android:resource="@xml/shortcuts" />
+            <!-- Launcher long-press shortcuts are published dynamically by
+                 RecentToolsRegistry (see CalculatorApplication.onCreate);
+                 no static shortcuts.xml because hardcoded targetPackage
+                 doesn't match the debug build's `.debug` suffix. -->
         </activity>
 
         <!-- Phase 10: Glance home-screen widget. -->

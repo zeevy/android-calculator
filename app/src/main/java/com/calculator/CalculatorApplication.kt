@@ -1,6 +1,7 @@
 package com.calculator
 
 import android.app.Application
+import com.calculator.feature.shortcuts.RecentToolsRegistry
 import dagger.hilt.android.HiltAndroidApp
 
 /**
@@ -16,4 +17,13 @@ import dagger.hilt.android.HiltAndroidApp
  * via the `androidx.startup` library, avoiding a slow cold start.
  */
 @HiltAndroidApp
-class CalculatorApplication : Application()
+class CalculatorApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        // Republish launcher shortcuts on cold start so Float (and any
+        // saved recents) are present before the user has navigated this
+        // session. setDynamicShortcuts is cheap (a single binder call to
+        // the system shortcut service) and idempotent.
+        RecentToolsRegistry.refresh(this)
+    }
+}
