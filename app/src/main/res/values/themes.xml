@@ -34,10 +34,10 @@
          in-app keypad so the overlay reads as the same calculator. -->
     <style name="FloatingKeyBase" parent="android:Widget.Material.Button">
         <item name="android:layout_width">0dp</item>
-        <item name="android:layout_height">40dp</item>
+        <item name="android:layout_height">52dp</item>
         <item name="android:layout_columnWeight">1</item>
-        <item name="android:layout_margin">2dp</item>
-        <item name="android:textSize">16sp</item>
+        <item name="android:layout_margin">3dp</item>
+        <item name="android:textSize">20sp</item>
         <item name="android:textColor">#FFFFFF</item>
         <item name="android:textAllCaps">false</item>
         <item name="android:stateListAnimator">@null</item>

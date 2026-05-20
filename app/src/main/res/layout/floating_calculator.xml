@@ -13,11 +13,11 @@
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/floating_root"
-    android:layout_width="280dp"
+    android:layout_width="320dp"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:background="@drawable/floating_bg"
-    android:padding="8dp"
+    android:padding="12dp"
     android:elevation="8dp">
 
     <!-- Header: title (also the drag handle) + close button. -->
