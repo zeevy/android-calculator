@@ -15,6 +15,8 @@ bin/
 gen/
 out/
 release/
+# but the variant source dir (e.g. baseline profile output) is real source
+!app/src/release/
 
 # Gradle files
 .gradle/
