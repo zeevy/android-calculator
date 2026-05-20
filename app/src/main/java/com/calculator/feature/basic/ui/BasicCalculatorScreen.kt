@@ -1276,8 +1276,15 @@ private fun keyCategoryOf(key: Key): KeyCategory =
             if (key.label in OperatorLabels) KeyCategory.Operator else KeyCategory.Digit
     }
 
-/** Labels of arithmetic-operator keys that get the operator color treatment. */
-private val OperatorLabels = setOf("+", "-", "×", "÷", "%", "^", "π", "e")
+/**
+ * Labels of arithmetic-operator keys that get the operator (orange) color.
+ *
+ * Note: π and e are *constants*, not operators - tapping one inserts a
+ * literal value, the same conceptual action as tapping `7`. They sit in
+ * the digit color bucket so the orange in advanced mode is contained to
+ * column 4 (which lines up with the basic-mode operator column ×/-/+).
+ */
+private val OperatorLabels = setOf("+", "-", "×", "÷", "%", "^")
 
 // Width-to-height ratio for every keypad button. 1.6 gives a clean
 // "horizontal rectangle" silhouette - wider than tall by ~60%, the
