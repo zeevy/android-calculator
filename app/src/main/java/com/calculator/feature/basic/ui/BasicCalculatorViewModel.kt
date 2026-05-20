@@ -101,6 +101,7 @@ class BasicCalculatorViewModel
                 scientific = savedStateHandle.get<Boolean>(KEY_SCIENTIFIC) ?: false,
                 angleMode = angleMode,
                 memory = memory,
+                lastCommittedExpression = savedStateHandle.get<String>(KEY_LAST_COMMITTED),
             )
         }
 
@@ -111,6 +112,7 @@ class BasicCalculatorViewModel
             savedStateHandle[KEY_SCIENTIFIC] = state.scientific
             savedStateHandle[KEY_ANGLE_MODE] = state.angleMode.name
             savedStateHandle[KEY_MEMORY] = state.memory.toPlainString()
+            savedStateHandle[KEY_LAST_COMMITTED] = state.lastCommittedExpression
         }
 
         /** Dispatch a user event - typically called from the UI on key press. */
@@ -140,6 +142,13 @@ class BasicCalculatorViewModel
                         errorMessage = null,
                         // Any non-`=` input breaks the repeat-equals chain.
                         pendingRepeat = null,
+                        // The user is moving on - either starting a fresh
+                        // expression (digit/decimal after =) or chaining a
+                        // new computation on top of the previous result
+                        // (operator after =). Either way, drop the
+                        // "what produced the result" line; the new
+                        // expression is what matters now.
+                        lastCommittedExpression = null,
                     ).also(::persist)
             }
 
@@ -197,6 +206,10 @@ class BasicCalculatorViewModel
                         liveResult = preview(next, current.angleMode),
                         errorMessage = null,
                         pendingRepeat = null,
+                        // Backspace edits the expression; the previously-
+                        // committed "history" line no longer corresponds to
+                        // what's on screen, so drop it.
+                        lastCommittedExpression = null,
                     ).also(::persist)
             }
 
@@ -239,6 +252,10 @@ class BasicCalculatorViewModel
                                 liveResult = null,
                                 errorMessage = null,
                                 pendingRepeat = repeatToken,
+                                // Preserve the typed expression so the display's top
+                                // line keeps showing what was committed even after the
+                                // bottom line collapses to the canonical result.
+                                lastCommittedExpression = toEvaluate,
                             ).also(::persist)
                     }
 
@@ -248,6 +265,10 @@ class BasicCalculatorViewModel
                                 liveResult = null,
                                 errorMessage = errorToMessage(result),
                                 pendingRepeat = null,
+                                // Failed equations don't get an history line - the
+                                // expression that's still on screen IS the input,
+                                // and the bottom row will surface the error.
+                                lastCommittedExpression = null,
                             ).also(::persist)
                 }
             }
@@ -316,6 +337,9 @@ class BasicCalculatorViewModel
                         liveResult = preview(next, current.angleMode),
                         errorMessage = null,
                         pendingRepeat = null,
+                        // MR rewrites the expression; the old history line no
+                        // longer matches what's on screen.
+                        lastCommittedExpression = null,
                     ).also(::persist)
             }
 
@@ -349,6 +373,10 @@ class BasicCalculatorViewModel
                         liveResult = preview(flipped, current.angleMode),
                         errorMessage = null,
                         pendingRepeat = null,
+                        // SignFlip rewrites the expression in place; the
+                        // previous history line no longer corresponds to
+                        // what's on screen.
+                        lastCommittedExpression = null,
                     ).also(::persist)
             }
 
@@ -530,6 +558,7 @@ class BasicCalculatorViewModel
             const val KEY_SCIENTIFIC = "calculator.scientific"
             const val KEY_ANGLE_MODE = "calculator.angleMode"
             const val KEY_MEMORY = "calculator.memory"
+            const val KEY_LAST_COMMITTED = "calculator.lastCommittedExpression"
 
             /** Characters the keypad treats as binary arithmetic operators. */
             val ArithmeticOperators = setOf('+', '-', '×', '÷', '*', '/', '^')

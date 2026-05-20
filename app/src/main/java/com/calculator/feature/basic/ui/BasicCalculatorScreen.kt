@@ -486,6 +486,7 @@ private fun DisplaySection(
             expression = state.expression,
             preview = state.liveResult,
             error = state.errorMessage,
+            lastCommittedExpression = state.lastCommittedExpression,
             modifier =
                 Modifier
                     .fillMaxSize()
@@ -546,88 +547,102 @@ private fun DisplaySection(
 }
 
 /**
- * Result display: a typographic hierarchy where the entered expression
- * sits muted up top and the live result (or just the expression when
- * there's nothing to preview) reads in large bold type below.
+ * Result display: always two lines.
  *
- * The dominant element is always the bottom line - that's what the user
- * is actually looking at - and it's right-aligned so digits line up with
- * how they were typed.
+ *  - **Top line** (smaller, muted): the *input* - either the just-
+ *    committed expression after `=`, or the expression being typed
+ *    when there's a live preview to show below. Empty otherwise (but
+ *    the layout slot is still allocated so the bottom line never
+ *    shifts mid-typing).
+ *  - **Bottom line** (large bold): the *result* - either the live
+ *    preview while typing, the canonical result after `=`, the error
+ *    message (red), or `0` as a default when the calculator is empty.
+ *
+ * Both lines are always rendered so the display never "switches"
+ * between one-line and two-line layouts as the user types.
+ *
+ * State → (top, bottom) mapping:
+ *
+ *     | Calculator state              | Top line       | Bottom line       |
+ *     |-------------------------------|----------------|-------------------|
+ *     | Empty / just digits ("5")     | (blank)        | expression / "0"  |
+ *     | Mid-expression ("5+3")        | expression     | liveResult        |
+ *     | Post-equals ("5+3=8")         | committed expr | expression (8)    |
+ *     | After-= chain ("8+2")         | expression     | liveResult        |
+ *     | Error                         | expression     | error (red)       |
  */
 @Composable
 private fun Display(
     expression: String,
     preview: String?,
     error: String?,
+    lastCommittedExpression: String?,
     modifier: Modifier = Modifier,
 ) {
+    // What the top (input) line should display. The committed-expression
+    // takes priority because it's what the user just pressed `=` on; the
+    // current expression takes over the moment they start typing again.
+    // We only fall back to the expression for the top line when there's
+    // a live preview below (i.e. we have a separate "result" to show
+    // beneath the input) - this keeps the top line from echoing a lone
+    // "5" in both rows before any operator is typed.
+    val topText: String =
+        when {
+            lastCommittedExpression != null -> lastCommittedExpression
+            error != null -> expression.ifBlank { "" }
+            preview != null -> expression
+            else -> ""
+        }
+    val bottomText: String =
+        error
+            ?: preview
+            ?: expression.ifBlank { "0" }
+    val bottomColor =
+        if (error != null) {
+            MaterialTheme.colorScheme.error
+        } else {
+            MaterialTheme.colorScheme.onSurface
+        }
+    val bottomFontWeight =
+        if (error != null) FontWeight.SemiBold else FontWeight.Bold
+    val bottomBaseStyle =
+        if (error != null) {
+            MaterialTheme.typography.displaySmall
+        } else {
+            MaterialTheme.typography.displayLarge
+        }
+
     Box(
         modifier = modifier.clipToBounds(),
         contentAlignment = Alignment.BottomEnd,
     ) {
         Column(horizontalAlignment = Alignment.End, modifier = Modifier.fillMaxWidth()) {
-            // Top line: the expression in muted text. Only shown when
-            // there's a result/preview underneath, so an empty calculator
-            // doesn't render two stacked "0"s. Also auto-shrinks so a
-            // long expression doesn't truncate before the user can see
-            // what they typed.
-            if (preview != null || error != null) {
-                AutoSizeText(
-                    text = expression.ifBlank { "0" },
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxFontSize = MaterialTheme.typography.headlineSmall.fontSize,
-                    minFontSize = DISPLAY_EXPRESSION_MIN_SIZE,
-                    maxLines = DISPLAY_EXPRESSION_MAX_LINES,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.size(4.dp))
-            }
-            when {
-                error != null ->
-                    AutoSizeText(
-                        text = error,
-                        style =
-                            MaterialTheme.typography.displaySmall.copy(
-                                fontWeight = FontWeight.SemiBold,
-                            ),
-                        color = MaterialTheme.colorScheme.error,
-                        maxFontSize = MaterialTheme.typography.displaySmall.fontSize,
-                        minFontSize = DISPLAY_RESULT_MIN_SIZE,
-                        maxLines = DISPLAY_RESULT_MAX_LINES,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                preview != null ->
-                    AutoSizeText(
-                        text = preview,
-                        style =
-                            MaterialTheme.typography.displayLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                            ),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxFontSize = MaterialTheme.typography.displayLarge.fontSize,
-                        minFontSize = DISPLAY_RESULT_MIN_SIZE,
-                        maxLines = DISPLAY_RESULT_MAX_LINES,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                else ->
-                    // No preview yet - the expression itself is the
-                    // dominant element. Auto-shrinks AND wraps so a
-                    // long expression can grow vertically before any
-                    // font shrink kicks in.
-                    AutoSizeText(
-                        text = expression.ifBlank { "0" },
-                        style =
-                            MaterialTheme.typography.displayLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                            ),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxFontSize = MaterialTheme.typography.displayLarge.fontSize,
-                        minFontSize = DISPLAY_RESULT_MIN_SIZE,
-                        maxLines = DISPLAY_RESULT_MAX_LINES,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-            }
+            // Top line always rendered (even when blank) so the bottom
+            // line doesn't bounce between vertical positions as the user
+            // moves between "fresh digit" and "expression with preview"
+            // states.
+            AutoSizeText(
+                text = topText,
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxFontSize = MaterialTheme.typography.headlineSmall.fontSize,
+                minFontSize = DISPLAY_EXPRESSION_MIN_SIZE,
+                maxLines = DISPLAY_EXPRESSION_MAX_LINES,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.size(4.dp))
+            // Bottom line: the dominant element. Style flips to the
+            // error palette + slightly smaller ramp when an error is
+            // showing so the user sees the message comfortably.
+            AutoSizeText(
+                text = bottomText,
+                style = bottomBaseStyle.copy(fontWeight = bottomFontWeight),
+                color = bottomColor,
+                maxFontSize = bottomBaseStyle.fontSize,
+                minFontSize = DISPLAY_RESULT_MIN_SIZE,
+                maxLines = DISPLAY_RESULT_MAX_LINES,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

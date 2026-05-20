@@ -37,6 +37,19 @@ data class BasicCalculatorUiState(
     val angleMode: AngleMode = AngleMode.Radian,
     /** Stored value behind the M+ / M- / MR / MC keys. */
     val memory: BigDecimal = BigDecimal.ZERO,
+    /**
+     * Expression that was last committed via `=`, preserved so the
+     * display's top line can continue to show it after the bottom
+     * line collapses to the canonical result.
+     *
+     * - Set to the auto-completed expression on every successful `=`.
+     * - Cleared the moment the user starts a fresh expression (any
+     *   digit or `.` after `=` resets to `null`).
+     * - Continues to update when the user chains an operator after `=`
+     *   (the new committed expression replaces the old one on the
+     *   next `=`).
+     */
+    val lastCommittedExpression: String? = null,
 )
 
 /**
