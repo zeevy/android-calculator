@@ -38,7 +38,6 @@
     <string name="tool_percent">Percentage</string>
     <string name="tool_basecalc">Bases</string>
     <string name="tool_tape">Tape</string>
-    <string name="tool_smartpaste">Smart paste</string>
     <string name="tool_bmi">BMI</string>
     <string name="tool_age">Age</string>
     <string name="tool_date_diff">Date diff</string>
@@ -253,20 +252,6 @@
     <string name="tape_title">Tape</string>
     <string name="tape_empty">No calculations yet. Run a few on the basic calculator and they\'ll show up here.</string>
     <string name="tape_clear">Clear tape</string>
-
-    <!-- Smart paste -->
-    <string name="smartpaste_title">Smart paste</string>
-    <string name="smartpaste_section_input">Paste any text</string>
-    <string name="smartpaste_section_numbers">Numbers found</string>
-    <string name="smartpaste_section_summary">Summary</string>
-    <string name="smartpaste_action_paste">Paste</string>
-    <string name="smartpaste_action_clear">Clear</string>
-    <string name="smartpaste_no_numbers">No numbers detected.</string>
-    <string name="smartpaste_count">Count</string>
-    <string name="smartpaste_sum">Sum</string>
-    <string name="smartpaste_mean">Mean</string>
-    <string name="smartpaste_min">Min</string>
-    <string name="smartpaste_max">Max</string>
 
     <!-- BMI extras -->
     <string name="bmi_section_result">Result</string>

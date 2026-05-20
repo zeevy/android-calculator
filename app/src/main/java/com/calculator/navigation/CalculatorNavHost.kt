@@ -19,7 +19,6 @@ import com.calculator.feature.finance.tipsplit.TipSplitScreen
 import com.calculator.feature.health.bmi.BmiScreen
 import com.calculator.feature.health.ovulation.OvulationScreen
 import com.calculator.feature.math.percent.PercentScreen
-import com.calculator.feature.smartpaste.SmartPasteScreen
 import com.calculator.feature.tape.TapeScreen
 
 /**
@@ -75,7 +74,6 @@ fun CalculatorNavHost(startDestinationHint: String? = null) {
             BaseConverterScreen(onNavigate = navController::openTool)
         }
         composable<TapeRoute> { TapeScreen(onNavigate = navController::openTool) }
-        composable<SmartPasteRoute> { SmartPasteScreen(onNavigate = navController::openTool) }
         composable<BmiRoute> { BmiScreen(onNavigate = navController::openTool) }
         composable<AgeRoute> { AgeScreen(onNavigate = navController::openTool) }
         composable<DateDiffRoute> { DateDiffScreen(onNavigate = navController::openTool) }
