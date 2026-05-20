@@ -1,13 +1,22 @@
 # Release workflow.
 #
-# Triggered manually or by pushing a tag like `v0.1.0`. Regenerates the
-# baseline profile against the just-built app (so every published
-# release carries a fresh AOT profile in its AAB), then builds the
-# release APK + AAB and attaches them to a GitHub release.
+# Triggered manually or by pushing a tag like `v0.1.0`. Split into three
+# connected jobs so the Actions UI renders the pipeline as a DAG:
 #
-# Signing is intentionally left unsigned in this workflow for now; once
-# Play App Signing is enrolled the release config will pull the
-# keystore from encrypted secrets and produce a signed AAB.
+#   baseline-profile  ──>  build-artifacts  ──>  publish-release
+#
+# 1. `baseline-profile` regenerates the AOT profile on an emulator and
+#    uploads it as an artifact. Non-blocking: if the emulator flakes the
+#    job exits cleanly and the next job falls back to the committed
+#    profile.
+# 2. `build-artifacts` downloads the regenerated profile (if present),
+#    assembles the release APK + AAB, and uploads them.
+# 3. `publish-release` downloads the APK + AAB and attaches them to a
+#    GitHub release. Only runs for tag pushes.
+#
+# Signing is intentionally left unsigned for now; once Play App Signing
+# is enrolled the release config will pull the keystore from encrypted
+# secrets and produce a signed AAB.
 
 name: Release
 
@@ -29,10 +38,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
-    name: Build release artifacts
+  baseline-profile:
+    name: Generate baseline profile
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
+    # Non-blocking: a flaky emulator must not fail the entire release.
+    # `build-artifacts` always runs and falls back to the committed
+    # profile if this job did not produce one.
+    continue-on-error: true
 
     steps:
       - name: Checkout
@@ -41,8 +54,8 @@ jobs:
           fetch-depth: 0
 
       - name: Enable KVM
-        # Required so the emulator that generates the baseline profile
-        # can use hardware acceleration on the GitHub-hosted runner.
+        # Required so the emulator can use hardware acceleration on the
+        # GitHub-hosted runner.
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
             | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -82,16 +95,10 @@ jobs:
           script: echo "Generated AVD snapshot."
 
       - name: Generate baseline profile
-        # Refresh the baseline profile against the current source tree
-        # so the AAB built below ships a profile that actually matches
-        # what users will run. The androidx.baselineprofile plugin
-        # writes the result to
+        # The androidx.baselineprofile plugin writes the result to
         #   app/src/release/generated/baselineProfiles/baseline-prof.txt
-        # and `mergeReleaseBaselineProfile` consumes it from there.
-        #
-        # Non-blocking: if the emulator flakes, fall back to whatever
-        # profile is committed rather than failing the entire release.
-        continue-on-error: true
+        # which `mergeReleaseBaselineProfile` consumes from the next
+        # job after we restore it via download-artifact.
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -101,6 +108,50 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: ./gradlew :app:generateReleaseBaselineProfile --stacktrace
+
+      - name: Upload generated baseline profile
+        uses: actions/upload-artifact@v7
+        with:
+          name: baseline-prof
+          path: app/src/release/generated/baselineProfiles/baseline-prof.txt
+          retention-days: 90
+          if-no-files-found: warn
+
+  build-artifacts:
+    name: Build release artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: baseline-profile
+    # Always run, even if baseline-profile flaked. The build will then
+    # fall back to the profile committed in source control.
+    if: ${{ always() }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+
+      - name: Restore generated baseline profile
+        # `continue-on-error` so a missing artifact (when the upstream
+        # job flaked) does not break the build; Gradle will use the
+        # committed profile instead.
+        continue-on-error: true
+        uses: actions/download-artifact@v5
+        with:
+          name: baseline-prof
+          path: app/src/release/generated/baselineProfiles/
 
       - name: Assemble release APK
         run: ./gradlew :app:assembleRelease --stacktrace
@@ -122,23 +173,30 @@ jobs:
           path: app/build/outputs/bundle/release/*.aab
           retention-days: 90
 
-      - name: Upload generated baseline profile
-        # Surface the regenerated profile so it can be inspected and
-        # committed back to the repo after a release. Plugin writes to
-        # the variant-specific generated/ directory; that file is the
-        # one the next build will pick up automatically if committed.
-        uses: actions/upload-artifact@v7
+  publish-release:
+    name: Publish GitHub release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build-artifacts
+    if: ${{ startsWith(github.ref, 'refs/tags/') && needs.build-artifacts.result == 'success' }}
+
+    steps:
+      - name: Download APK
+        uses: actions/download-artifact@v5
         with:
-          name: baseline-prof
-          path: app/src/release/generated/baselineProfiles/baseline-prof.txt
-          retention-days: 90
-          if-no-files-found: warn
+          name: calculator-apk
+          path: artifacts/apk
+
+      - name: Download AAB
+        uses: actions/download-artifact@v5
+        with:
+          name: calculator-aab
+          path: artifacts/aab
 
       - name: Create GitHub release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true
           files: |
-            app/build/outputs/apk/release/*.apk
-            app/build/outputs/bundle/release/*.aab
+            artifacts/apk/*.apk
+            artifacts/aab/*.aab

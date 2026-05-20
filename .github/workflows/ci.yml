@@ -1,10 +1,17 @@
 # Continuous integration for the Calculator project.
 #
-# Runs on every push and pull request against the main branch:
-#   1. Restore Gradle caches.
-#   2. Run static analysis (ktlint + detekt + Android Lint).
-#   3. Run unit tests (JUnit5).
-#   4. Assemble the debug APK to catch compilation regressions.
+# Runs on every push and pull request against the main branch. The work
+# is split into independent jobs so the GitHub Actions UI renders each
+# step as its own block in the run graph:
+#
+#   ktlint  ─┐
+#   detekt  ─┤
+#   lint    ─┼──> ci-success
+#   tests   ─┤
+#   assemble ┘
+#
+# Each gate runs in parallel on its own runner. `ci-success` is a tiny
+# aggregator that branch protection can require as a single check.
 #
 # Instrumented tests are run on emulator runners and are intentionally
 # kept out of the default workflow (slow, flaky on shared infra). They
@@ -24,52 +31,146 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
-  build:
-    name: Build & verify
+  ktlint:
+    name: ktlint
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-
+    timeout-minutes: 15
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
+      - uses: actions/checkout@v6
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
-
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
-
-      - name: ktlint
+      - name: Run ktlint
         run: ./gradlew ktlintCheck --stacktrace
-
-      - name: detekt
-        run: ./gradlew detekt --stacktrace
-
-      - name: Android Lint
-        run: ./gradlew :app:lintDebug --stacktrace
-
-      - name: Unit tests
-        run: ./gradlew test --stacktrace
-
-      - name: Assemble debug
-        run: ./gradlew :app:assembleDebug --stacktrace
-
-      - name: Upload test reports
+      - name: Upload ktlint report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v7
         with:
-          name: test-reports
-          path: |
-            app/build/reports/tests/
-            app/build/reports/lint-results-*.html
-            app/build/reports/detekt/
-            app/build/reports/ktlint/
+          name: ktlint-report
+          path: app/build/reports/ktlint/
           retention-days: 7
+
+  detekt:
+    name: detekt
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+      - name: Run detekt
+        run: ./gradlew detekt --stacktrace
+      - name: Upload detekt report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: detekt-report
+          path: app/build/reports/detekt/
+          retention-days: 7
+
+  lint:
+    name: Android Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+      - name: Run Android Lint
+        run: ./gradlew :app:lintDebug --stacktrace
+      - name: Upload lint report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-lint-report
+          path: app/build/reports/lint-results-*.html
+          retention-days: 7
+
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+      - name: Run unit tests
+        run: ./gradlew test --stacktrace
+      - name: Upload test report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit-test-report
+          path: app/build/reports/tests/
+          retention-days: 7
+
+  assemble-debug:
+    name: Assemble debug
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+      - name: Assemble debug APK
+        run: ./gradlew :app:assembleDebug --stacktrace
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: calculator-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 14
+
+  ci-success:
+    # Single required check for branch protection. Fails fast if any
+    # upstream gate failed or was skipped.
+    name: CI success
+    runs-on: ubuntu-latest
+    needs: [ktlint, detekt, lint, unit-tests, assemble-debug]
+    if: ${{ always() }}
+    steps:
+      - name: Verify all upstream jobs succeeded
+        run: |
+          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+            echo "One or more CI jobs failed or were cancelled."
+            exit 1
+          fi
+          echo "All CI jobs passed."
