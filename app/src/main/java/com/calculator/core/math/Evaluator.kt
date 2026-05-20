@@ -232,8 +232,15 @@ class Evaluator(
                 // Division is the one operator where bounded precision is
                 // mandatory: BigDecimal.divide with a non-terminating
                 // quotient (e.g. 1 / 3) throws ArithmeticException unless a
-                // MathContext is supplied. Division by zero is allowed to
-                // surface as ArithmeticException and is caught upstream.
+                // MathContext is supplied.
+                //
+                // Explicit zero-divisor check: BigDecimal throws
+                // "Division by zero" for `x/0 where x != 0` and
+                // "Division undefined" for `0/0`. The upstream catch only
+                // recognised the first message, so `0÷0` was misclassified
+                // as Syntax. Catching it here uniformly avoids relying on
+                // exception-message string matching at all.
+                if (right.signum() == 0) throw ArithmeticException("Division by zero")
                 left.divide(right, mathContext)
             }
             Operator.Power -> powerOf(left, right)

@@ -67,10 +67,26 @@ class Tokenizer {
                     val nextIdx = index + 1
                     val nextChar = expression.getOrNull(nextIdx)
                     if (nextChar != null && (nextChar.isDigit() || nextChar == '.')) {
-                        // Common case: fold the sign into the following numeric literal.
                         val (literal, consumed) = readNumber(expression, nextIdx)
-                        tokens += Token.Number(BigDecimal("-$literal"))
-                        index += consumed + 1
+                        // Look at the character immediately after the
+                        // numeric literal. If it's a postfix operator that
+                        // binds tighter than unary minus (`!` factorial,
+                        // `^` power), do NOT fold the sign into the literal
+                        // - mathematical convention is `-5!` = `-(5!)` =
+                        // `-120` and `-2^2` = `-(2^2)` = `-4`. Rewrite to
+                        // `-1 × <literal> <postfix>` so factorial / power
+                        // apply to the positive operand and the negation
+                        // is applied last.
+                        val tail = expression.getOrNull(nextIdx + consumed)
+                        if (tail == '!' || tail == '^') {
+                            tokens += Token.Number(BigDecimal.ONE.negate())
+                            tokens += Token.Op(Operator.Multiply)
+                            index++
+                        } else {
+                            // Common case: fold the sign into the literal.
+                            tokens += Token.Number(BigDecimal("-$literal"))
+                            index += consumed + 1
+                        }
                     } else {
                         // Unary minus before `(` or another `-`: rewrite as
                         // `-1 ×` so the existing binary-operator pipeline
