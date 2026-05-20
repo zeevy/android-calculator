@@ -269,11 +269,19 @@ class Evaluator(
             }
         if (out.isNaN()) throw DomainException("${func.keyword}($arg) is undefined")
         if (out.isInfinite()) throw DomainException("${func.keyword}($arg) is infinite")
-        // Trim the last two digits of Double noise: `sin(π)` returns
-        // 1.2246e-16, `sin(30°)` returns 0.49999999999999994, etc. Rounding
-        // to 14 significant figures collapses those to 0 and 0.5 without
-        // sacrificing user-meaningful precision.
-        return BigDecimal(out).round(transcendentalContext)
+        // Two-pass noise scrub for Double-backed transcendentals:
+        //   1. Snap near-zero values to true zero. Significant-figure
+        //      rounding can't collapse e.g. sin(π) ≈ 1.22e-16 -> 0,
+        //      because 1.22e-16 already has only 3 sig figs and stays
+        //      put. We catch the magnitude explicitly.
+        //   2. Round to [transcendentalContext] precision (14 sig figs)
+        //      to fix the trailing-9s case: sin(30°) returns
+        //      0.49999999999999994, which rounds up to a clean 0.5.
+        // The threshold (1e-12) is well above any noise the JDK math
+        // library produces for typical inputs but well below any
+        // legitimate result a phone calculator would compute.
+        val cleaned = if (kotlin.math.abs(out) < TRANSCENDENTAL_ZERO_EPSILON) 0.0 else out
+        return BigDecimal(cleaned).round(transcendentalContext)
     }
 
     private fun toRadians(value: Double): Double =
@@ -316,6 +324,14 @@ class Evaluator(
 
     companion object {
         private val FACTORIAL_CAP = BigInteger.valueOf(1000)
+
+        // Below-this magnitudes coming out of a transcendental are
+        // interpreted as Double-precision floating-point noise and
+        // snapped to zero. Picked four orders of magnitude inside
+        // Double's epsilon (~2.2e-16) so genuine inputs at e.g.
+        // sin(1e-10) ≈ 1e-10 still round-trip cleanly, while sin(π)'s
+        // ~1.22e-16 noise collapses to 0.
+        private const val TRANSCENDENTAL_ZERO_EPSILON = 1e-12
     }
 }
 
