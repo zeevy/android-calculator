@@ -35,6 +35,7 @@
     <string name="tool_investment">Investment</string>
     <string name="tool_percent">Percentage</string>
     <string name="tool_basecalc">Bases</string>
+    <string name="tool_tape">Tape</string>
     <string name="tool_bmi">BMI</string>
     <string name="tool_age">Age</string>
     <string name="tool_date_diff">Date diff</string>
@@ -244,6 +245,11 @@
     <string name="basecalc_oct">Octal</string>
     <string name="basecalc_bin">Binary</string>
     <string name="basecalc_error_invalid">Value out of range or contains invalid digits.</string>
+
+    <!-- Tape -->
+    <string name="tape_title">Tape</string>
+    <string name="tape_empty">No calculations yet. Run a few on the basic calculator and they\'ll show up here.</string>
+    <string name="tape_clear">Clear tape</string>
 
     <!-- BMI extras -->
     <string name="bmi_section_result">Result</string>

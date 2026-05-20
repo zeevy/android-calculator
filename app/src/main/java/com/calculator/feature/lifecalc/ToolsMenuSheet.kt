@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.MonitorWeight
 import androidx.compose.material.icons.filled.Percent
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Restaurant
@@ -58,6 +59,7 @@ import com.calculator.navigation.InvestmentRoute
 import com.calculator.navigation.LoanRoute
 import com.calculator.navigation.OvulationRoute
 import com.calculator.navigation.PercentRoute
+import com.calculator.navigation.TapeRoute
 import com.calculator.navigation.TimezoneRoute
 import com.calculator.navigation.TipSplitRoute
 import com.calculator.navigation.UnitConverterRoute
@@ -345,6 +347,14 @@ private fun ToolsGrid(
                     label = stringResource(R.string.tool_ovulation),
                     selected = currentRoute === OvulationRoute,
                     onTap = { onNavigate(OvulationRoute) },
+                ),
+            )
+            add(
+                ToolTile(
+                    icon = Icons.AutoMirrored.Filled.Notes,
+                    label = stringResource(R.string.tool_tape),
+                    selected = currentRoute === TapeRoute,
+                    onTap = { onNavigate(TapeRoute) },
                 ),
             )
             add(

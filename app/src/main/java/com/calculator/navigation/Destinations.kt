@@ -45,6 +45,9 @@ data object PercentRoute
 data object BaseConverterRoute
 
 @Serializable
+data object TapeRoute
+
+@Serializable
 data object BmiRoute
 
 @Serializable

@@ -297,6 +297,10 @@ class BasicCalculatorViewModel
             }
 
         private fun recordHistory(expression: String, result: String, scientific: Boolean) {
+            // Always push to the in-memory tape - it's process-wide and
+            // cheap. The persistent history below is best-effort and may
+            // be skipped when no repository is wired (tests / previews).
+            com.calculator.feature.tape.TapeHolder.add(expression, result)
             val repo = historyRepository ?: return
             viewModelScope.launch {
                 runCatching {
