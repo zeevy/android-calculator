@@ -196,7 +196,7 @@ fun ToolsMenuOverlay(
  * the sheet via the surrounding overlay).
  */
 @Composable
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "LongMethod")
 private fun ToolsGrid(
     currentRoute: Any,
     isOnBasicCalc: Boolean,

@@ -130,7 +130,7 @@ fun TimezoneScreen(
     }
 
     // Picker sub-dialogs.
-    when (val picker = state.pickerOpen) {
+    when (state.pickerOpen) {
         TimezoneUiState.Picker.FromZone ->
             ZonePickerSheet(
                 selected = state.fromZone,

@@ -149,7 +149,7 @@ private fun PeopleStepper(people: Int, onChange: (Int) -> Unit) {
 
 @Composable
 private fun StepperButton(symbol: String, enabled: Boolean, onClick: () -> Unit) {
-    val alpha = if (enabled) 1f else 0.3f
+    val alpha = if (enabled) 1f else DISABLED_ALPHA
     Text(
         text = symbol,
         style = MaterialTheme.typography.titleLarge,
@@ -191,3 +191,6 @@ private fun RoundUpRow(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
 
 private fun money(value: Double): String =
     NumberFormatter.money(value, Locale.getDefault())
+
+// Visual dim for the disabled stepper button (can't go below 1 person).
+private const val DISABLED_ALPHA = 0.3f

@@ -153,7 +153,7 @@ private fun TapeRow(entry: TapeEntry, onTap: () -> Unit) {
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFF1C1C1E))
+                .background(TapeRowBackground)
                 .clickable(onClick = onTap)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
@@ -174,3 +174,7 @@ private fun TapeRow(entry: TapeEntry, onTap: () -> Unit) {
         )
     }
 }
+
+// Card background for each tape row. Same near-black as the tools
+// sheet so the rows read as part of the same visual system.
+private val TapeRowBackground = Color(0xFF1C1C1E)

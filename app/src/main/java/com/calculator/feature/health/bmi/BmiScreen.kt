@@ -139,14 +139,14 @@ fun BmiScreen(onNavigate: (Any) -> Unit) {
                     if (heightUnitIdx == 0) {
                         heightCm.toDouble()
                     } else {
-                        val totalInches = heightFt.toInt() * 12 + heightIn.toDouble()
-                        totalInches * 2.54
+                        val totalInches = heightFt.toInt() * INCHES_PER_FOOT + heightIn.toDouble()
+                        totalInches * CM_PER_INCH
                     }
                 val weightKgResolved =
                     if (weightUnitIdx == 0) {
                         weightKg.toDouble()
                     } else {
-                        weightLb.toDouble() * 0.45359237
+                        weightLb.toDouble() * KG_PER_POUND
                     }
                 BmiCalculator.metric(heightCmResolved, weightKgResolved)
             }.getOrNull()
@@ -173,3 +173,8 @@ fun BmiScreen(onNavigate: (Any) -> Unit) {
         }
     }
 }
+
+// Unit-conversion constants. Exact decimal values per NIST.
+private const val INCHES_PER_FOOT = 12
+private const val CM_PER_INCH = 2.54
+private const val KG_PER_POUND = 0.45359237

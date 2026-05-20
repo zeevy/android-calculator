@@ -74,41 +74,41 @@ fun PercentScreen(onNavigate: (Any) -> Unit) {
             )
             // Input labels change with mode; the value strings stay so
             // the user can flip between modes and keep their numbers.
-            val (labelA, suffixA, labelB, suffixB) =
+            val labels =
                 when (mode) {
                     0 ->
-                        Quad(
-                            stringResource(R.string.percent_label_percent),
-                            "%",
-                            stringResource(R.string.percent_label_value),
-                            null,
+                        FieldLabels(
+                            labelA = stringResource(R.string.percent_label_percent),
+                            suffixA = "%",
+                            labelB = stringResource(R.string.percent_label_value),
+                            suffixB = null,
                         )
                     1 ->
-                        Quad(
-                            stringResource(R.string.percent_label_part),
-                            null,
-                            stringResource(R.string.percent_label_whole),
-                            null,
+                        FieldLabels(
+                            labelA = stringResource(R.string.percent_label_part),
+                            suffixA = null,
+                            labelB = stringResource(R.string.percent_label_whole),
+                            suffixB = null,
                         )
                     else ->
-                        Quad(
-                            stringResource(R.string.percent_label_from),
-                            null,
-                            stringResource(R.string.percent_label_to),
-                            null,
+                        FieldLabels(
+                            labelA = stringResource(R.string.percent_label_from),
+                            suffixA = null,
+                            labelB = stringResource(R.string.percent_label_to),
+                            suffixB = null,
                         )
                 }
             LifeCalcNumberField(
-                label = labelA,
+                label = labels.labelA,
                 value = a,
                 onValueChange = { a = it },
-                suffix = suffixA,
+                suffix = labels.suffixA,
             )
             LifeCalcNumberField(
-                label = labelB,
+                label = labels.labelB,
                 value = b,
                 onValueChange = { b = it },
-                suffix = suffixB,
+                suffix = labels.suffixB,
             )
         }
 
@@ -139,8 +139,8 @@ fun PercentScreen(onNavigate: (Any) -> Unit) {
     }
 }
 
-/** Tiny 4-tuple used to bundle field label/suffix for both inputs. */
-private data class Quad(
+/** Field labels for both inputs in the current percentage mode. */
+private data class FieldLabels(
     val labelA: String,
     val suffixA: String?,
     val labelB: String,

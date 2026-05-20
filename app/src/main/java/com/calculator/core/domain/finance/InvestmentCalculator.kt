@@ -35,8 +35,8 @@ object InvestmentCalculator {
         require(annualRatePercent >= 0) { "annualRatePercent must be >= 0" }
         require(years > 0) { "years must be > 0" }
 
-        val months = years * 12.0
-        val monthlyRate = annualRatePercent / 100.0 / 12.0
+        val months = years * MONTHS_PER_YEAR
+        val monthlyRate = annualRatePercent / PERCENT_BASE / MONTHS_PER_YEAR
         val maturity =
             if (monthlyRate == 0.0) {
                 monthlyAmount * months
@@ -60,7 +60,7 @@ object InvestmentCalculator {
         require(years > 0) { "years must be > 0" }
         require(timesPerYear >= 1) { "timesPerYear must be >= 1" }
 
-        val rate = annualRatePercent / 100.0
+        val rate = annualRatePercent / PERCENT_BASE
         val maturity = principal * (1.0 + rate / timesPerYear).pow(timesPerYear * years)
         return InvestmentResult(
             maturity = maturity,
@@ -75,3 +75,6 @@ data class InvestmentResult(
     val invested: Double,
     val gains: Double,
 )
+
+private const val MONTHS_PER_YEAR = 12.0
+private const val PERCENT_BASE = 100.0

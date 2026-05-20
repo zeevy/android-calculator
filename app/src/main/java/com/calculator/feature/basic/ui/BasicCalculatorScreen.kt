@@ -335,6 +335,7 @@ private fun DisplaySection(
 // `internal` (not `private`) so the headless Robolectric Compose UI
 // tests can host this composable directly with synthetic state and
 // assert the rendered text. It's still hidden from other modules.
+@Suppress("LongParameterList")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun Display(
@@ -737,29 +738,6 @@ private fun TallPlusBlock(onEvent: (BasicCalculatorEvent) -> Unit) {
 
 /** A keypad row + per-row layout hints. [compact] uses a wider aspect ratio so the row is shorter. */
 private data class KeypadRowSpec(val keys: List<Key>, val compact: Boolean = false)
-
-@Composable
-private fun KeypadGrid(
-    rows: List<KeypadRowSpec>,
-    modifier: Modifier,
-    onEvent: (BasicCalculatorEvent) -> Unit,
-) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        rows.forEach { spec ->
-            KeypadRow(
-                row = spec.keys,
-                aspectRatio =
-                    if (spec.compact) BUTTON_ASPECT_RATIO_COMPACT else BUTTON_ASPECT_RATIO,
-                compact = spec.compact,
-                modifier = Modifier.fillMaxWidth(),
-                onEvent = onEvent,
-            )
-        }
-    }
-}
 
 @Composable
 private fun KeypadRow(
