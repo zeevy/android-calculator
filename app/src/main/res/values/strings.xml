@@ -38,7 +38,6 @@
     <string name="tool_percent">Percentage</string>
     <string name="tool_basecalc">Bases</string>
     <string name="tool_tape">Tape</string>
-    <string name="tool_floating">Float</string>
     <string name="tool_bmi">BMI</string>
     <string name="tool_age">Age</string>
     <string name="tool_date_diff">Date diff</string>
@@ -62,6 +61,9 @@
     <string name="settings_section_precision">Math precision</string>
     <string name="settings_precision_label">Significant figures</string>
     <string name="settings_section_privacy">Privacy</string>
+    <string name="settings_section_floating">Floating calculator</string>
+    <string name="settings_floating_launch">Open over other apps</string>
+    <string name="settings_floating_desc">Launches a draggable mini calculator that stays on screen while you use other apps. First tap opens system settings to grant the overlay permission.</string>
     <string name="settings_crash">Crash reporting</string>
     <string name="settings_crash_desc">Anonymous crash reports. Off by default. Nothing leaves the device until you opt in.</string>
     <string name="settings_section_about">About</string>

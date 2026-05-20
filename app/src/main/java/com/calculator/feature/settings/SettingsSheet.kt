@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -32,6 +33,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.calculator.R
 import com.calculator.core.data.settings.DataStoreSettingsRepository
 import com.calculator.core.data.settings.UserSettings
+import com.calculator.feature.floating.FloatingCalculatorService
 
 /**
  * Settings sheet shown when the user taps the Settings tile in the tools
@@ -51,6 +53,7 @@ fun SettingsSheetContent(
 ) {
     val settings by viewModel.settings.collectAsState()
     val accent = SettingsAccent
+    val context = LocalContext.current
 
     Column(
         modifier =
@@ -107,6 +110,15 @@ fun SettingsSheetContent(
             precision = settings.precision,
             onChange = viewModel::setPrecision,
             accent = accent,
+        )
+
+        // Floating calculator.
+        Spacer(Modifier.size(16.dp))
+        SectionLabel(stringResource(R.string.settings_section_floating))
+        ActionRow(
+            label = stringResource(R.string.settings_floating_launch),
+            description = stringResource(R.string.settings_floating_desc),
+            onClick = { FloatingCalculatorService.startOrRequestPermission(context) },
         )
 
         // Privacy.
@@ -214,6 +226,49 @@ private fun ToggleRow(
                     uncheckedTrackColor = UncheckedTrackColor,
                     uncheckedBorderColor = Color.Transparent,
                 ),
+        )
+    }
+}
+
+/**
+ * Tappable row that fires an action (no persistent toggle). Same chrome
+ * as [ToggleRow] minus the trailing switch so the two read as the same
+ * family of cells in the settings sheet.
+ */
+@Composable
+private fun ActionRow(
+    label: String,
+    description: String?,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(RowBackground)
+                .clickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                color = Color.White,
+            )
+            if (description != null) {
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.55f),
+                )
+            }
+        }
+        Text(
+            text = "›",
+            style = MaterialTheme.typography.titleLarge,
+            color = Color.White.copy(alpha = 0.4f),
         )
     }
 }

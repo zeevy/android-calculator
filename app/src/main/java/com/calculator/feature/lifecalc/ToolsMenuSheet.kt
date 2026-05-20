@@ -14,7 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Favorite
@@ -44,11 +43,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.calculator.R
-import com.calculator.feature.floating.FloatingCalculatorService
 import com.calculator.feature.history.HistorySheetContent
 import com.calculator.feature.settings.SettingsSheetContent
 import com.calculator.navigation.AgeRoute
@@ -209,7 +206,6 @@ private fun ToolsGrid(
     onOpenSettings: () -> Unit,
     onNavigate: (Any) -> Unit,
 ) {
-    val context = LocalContext.current
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         val tiles = buildList {
             // Home (basic calculator). Selected when we're on basic-calc
@@ -359,20 +355,6 @@ private fun ToolsGrid(
                     label = stringResource(R.string.tool_tape),
                     selected = currentRoute === TapeRoute,
                     onTap = { onNavigate(TapeRoute) },
-                ),
-            )
-            add(
-                ToolTile(
-                    icon = Icons.Filled.PictureInPictureAlt,
-                    label = stringResource(R.string.tool_floating),
-                    selected = false,
-                    onTap = {
-                        // Either launches the overlay or kicks the user
-                        // into system settings to grant the draw-over-
-                        // other-apps permission. Either way we close the
-                        // sheet so the user sees the result immediately.
-                        FloatingCalculatorService.startOrRequestPermission(context)
-                    },
                 ),
             )
             add(
