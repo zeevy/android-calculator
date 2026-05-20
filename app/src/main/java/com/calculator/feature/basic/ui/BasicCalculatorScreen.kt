@@ -580,20 +580,17 @@ internal fun Keypad(
     // key clears the whole expression - same gesture as a physical
     // calculator's "Clear" press-and-hold on the C/CE key.
     //
-    // Memory keys live in basicRows so they show in both modes. They
-    // are flagged compact, along with the scientific function rows, so
-    // those rows render shorter than the digit/operator rows - giving
-    // the display more vertical room in advanced mode without changing
-    // the basic layout's proportions much.
-    val memoryRow =
-        KeypadRowSpec(
-            keys = listOf(Key.MemoryClear, Key.MemoryRecall, Key.MemoryAdd, Key.MemorySubtract),
-            compact = true,
-        )
+    // Memory keys and operators are interleaved across the top two
+    // compact rows. The original layout grouped all memory keys
+    // together; splitting them out gives the most-used operators
+    // (÷ and %) the prominent top-right slots where the eye lands
+    // first, and keeps M+/M- adjacent so the user can still treat
+    // them as a pair.
+    //
     // Basic-mode layout (rows numbered from the BOTTOM per user
     // direction):
-    //   top  : MC MR M+ M-   (memory)
-    //   row 5: ÷  %  ±  ×
+    //   top  : MC MR ÷  %
+    //   row 5: M+ M- ±  ×
     //   row 4: 7  8  9  -
     //   row 3: 4  5  6  [+ tall starts here, spans rows 2-3]
     //   row 2: 1  2  3  [+ continues]
@@ -603,10 +600,15 @@ internal fun Keypad(
     // (row 4 col 4) and = (row 1 col 4). The middle rows around it
     // (rows 2 and 3) are rendered together by [TallPlusBlock]; the
     // rows above and below it use the regular KeypadRow path.
+    val memoryRow =
+        KeypadRowSpec(
+            keys = listOf(Key.MemoryClear, Key.MemoryRecall, Key.Symbol("÷"), Key.Symbol("%")),
+            compact = true,
+        )
     val aboveTallPlusRows =
         listOf(
             KeypadRowSpec(
-                listOf(Key.Symbol("÷"), Key.Symbol("%"), Key.SignFlip, Key.Symbol("×")),
+                listOf(Key.MemoryAdd, Key.MemorySubtract, Key.SignFlip, Key.Symbol("×")),
                 compact = true,
             ),
             KeypadRowSpec(listOf(Key.Symbol("7"), Key.Symbol("8"), Key.Symbol("9"), Key.Symbol("-"))),
