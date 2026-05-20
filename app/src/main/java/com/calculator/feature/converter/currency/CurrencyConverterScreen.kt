@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.calculator.R
 import com.calculator.core.common.format.NumberFormatter
 import java.time.Instant
 import java.time.ZoneId
@@ -83,12 +85,12 @@ fun CurrencyConverterScreen(
             IconButton(onClick = onUp) {
                 Icon(
                     imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.action_back),
                     tint = Color.White,
                 )
             }
             Text(
-                text = "Currency",
+                text = stringResource(R.string.currency_title),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                 color = Color.White,
                 modifier = Modifier.weight(1f).padding(start = 8.dp),
@@ -106,7 +108,7 @@ fun CurrencyConverterScreen(
                 } else {
                     Icon(
                         imageVector = Icons.Filled.Refresh,
-                        contentDescription = "Refresh rates",
+                        contentDescription = stringResource(R.string.currency_refresh),
                         tint = Color.White,
                     )
                 }
@@ -195,13 +197,16 @@ private fun HeaderInfoLine(state: CurrencyConverterUiState) {
             )
         state.fetchedAtUtc != null ->
             Text(
-                text = "Updated ${formatRelative(state.fetchedAtUtc)}",
+                text = stringResource(
+                    R.string.currency_updated_format,
+                    formatRelative(state.fetchedAtUtc),
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.55f),
             )
         else ->
             Text(
-                text = "No data yet.",
+                text = stringResource(R.string.currency_no_data),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.55f),
             )
@@ -257,7 +262,11 @@ private fun CurrencyRow(
             Icon(
                 imageVector =
                     if (pinned) Icons.Filled.Star else Icons.Outlined.StarBorder,
-                contentDescription = if (pinned) "Unpin" else "Pin",
+                contentDescription = if (pinned) {
+                    stringResource(R.string.currency_unpin)
+                } else {
+                    stringResource(R.string.currency_pin)
+                },
                 tint = if (pinned) CurrencyAccent else Color.White.copy(alpha = 0.55f),
             )
         }
@@ -287,7 +296,7 @@ private fun EmptyState(isRefreshing: Boolean) {
             CircularProgressIndicator(color = CurrencyAccent)
         } else {
             Text(
-                text = "No cached rates. Tap refresh to fetch.",
+                text = stringResource(R.string.currency_no_cache),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.White.copy(alpha = 0.55f),
             )
@@ -363,14 +372,24 @@ private fun formatMoney(value: Double): String =
  * approaching staleness; surfacing the absolute date nudges the user
  * to refresh.
  */
+@Composable
 private fun formatRelative(epochMillis: Long): String {
     val instant = Instant.ofEpochMilli(epochMillis)
     val now = Instant.now()
     val seconds = (now.toEpochMilli() - epochMillis) / MILLIS_PER_SECOND
     return when {
-        seconds < SECONDS_PER_MINUTE -> "just now"
-        seconds < SECONDS_PER_HOUR -> "${seconds / SECONDS_PER_MINUTE}m ago"
-        seconds < SECONDS_PER_DAY -> "${seconds / SECONDS_PER_HOUR}h ago"
+        seconds < SECONDS_PER_MINUTE ->
+            stringResource(R.string.currency_updated_just_now)
+        seconds < SECONDS_PER_HOUR ->
+            stringResource(
+                R.string.currency_updated_minutes_format,
+                (seconds / SECONDS_PER_MINUTE).toInt(),
+            )
+        seconds < SECONDS_PER_DAY ->
+            stringResource(
+                R.string.currency_updated_hours_format,
+                (seconds / SECONDS_PER_HOUR).toInt(),
+            )
         else ->
             DateTimeFormatter
                 .ofPattern("d MMM yyyy")

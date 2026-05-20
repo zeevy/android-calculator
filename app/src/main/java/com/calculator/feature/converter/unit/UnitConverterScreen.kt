@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -44,6 +45,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.calculator.R
 import com.calculator.core.domain.converter.ConverterUnit
 import com.calculator.core.domain.converter.UnitCategory
 
@@ -81,12 +83,12 @@ fun UnitConverterScreen(
             IconButton(onClick = onUp) {
                 Icon(
                     imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.action_back),
                     tint = Color.White,
                 )
             }
             Text(
-                text = "Unit Converter",
+                text = stringResource(R.string.units_title),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                 color = Color.White,
                 modifier = Modifier.padding(start = 8.dp),
@@ -120,7 +122,7 @@ fun UnitConverterScreen(
             ) {
                 Icon(
                     imageVector = Icons.Filled.SwapVert,
-                    contentDescription = "Swap",
+                    contentDescription = stringResource(R.string.units_swap),
                     tint = Color.White,
                 )
             }
@@ -203,7 +205,7 @@ private fun FromCard(
 ) {
     UnitCard {
         Column(modifier = Modifier.padding(16.dp)) {
-            UnitChooser(unit = unit, onClick = onPickUnit, label = "From")
+            UnitChooser(unit = unit, onClick = onPickUnit, label = stringResource(R.string.units_from))
             Spacer(Modifier.size(12.dp))
             BasicTextField(
                 value = value,
@@ -253,7 +255,7 @@ private fun ToCard(
 ) {
     UnitCard {
         Column(modifier = Modifier.padding(16.dp)) {
-            UnitChooser(unit = unit, onClick = onPickUnit, label = "To")
+            UnitChooser(unit = unit, onClick = onPickUnit, label = stringResource(R.string.units_to))
             Spacer(Modifier.size(12.dp))
             Text(
                 text = value.ifEmpty { "0" },

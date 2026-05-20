@@ -164,4 +164,78 @@
     <string name="shortcut_units_long">इकाई कनवर्टर</string>
     <string name="shortcut_currency_short">मुद्रा</string>
     <string name="shortcut_currency_long">मुद्रा कनवर्टर</string>
+
+    <!-- History extras -->
+    <string name="history_copied_toast">क्लिपबोर्ड पर कॉपी किया गया</string>
+
+    <!-- Currency converter extras -->
+    <string name="currency_refresh">दरें ताज़ा करें</string>
+    <string name="currency_updated_format"><xliff:g id="when" example="just now">%1$s</xliff:g> अपडेट किया गया</string>
+    <string name="currency_updated_minutes_format"><xliff:g id="minutes" example="5">%1$d</xliff:g> मिनट पहले</string>
+    <string name="currency_updated_hours_format"><xliff:g id="hours" example="3">%1$d</xliff:g> घंटे पहले</string>
+
+    <!-- Loan extras -->
+    <string name="loan_rate_suffix">%</string>
+    <string name="loan_error_empty">ईएमआई देखने के लिए ऋण राशि, दर और अवधि दर्ज करें.</string>
+
+    <!-- GST extras -->
+    <string name="gst_section_result">परिणाम</string>
+    <string name="gst_rate_suffix">%</string>
+    <string name="gst_error_invalid">वैध राशि और दर दर्ज करें.</string>
+    <string name="gst_label_net">शुद्ध</string>
+    <string name="gst_label_gross">सकल</string>
+    <string name="gst_label_cgst">सीजीएसटी</string>
+    <string name="gst_label_sgst">एसजीएसटी</string>
+    <string name="gst_label_igst">आईजीएसटी</string>
+
+    <!-- Discount extras -->
+    <string name="discount_section_mode">मोड</string>
+    <string name="discount_section_result">परिणाम</string>
+    <string name="discount_percent_suffix">%</string>
+    <string name="discount_error_invalid">मान्य संख्याएँ दर्ज करें (अंतिम 0..एमआरपी के बीच होना चाहिए).</string>
+    <string name="discount_value_percent_format"><xliff:g id="percent" example="20">%1$s</xliff:g> %%</string>
+
+    <!-- BMI extras -->
+    <string name="bmi_section_units">इकाइयाँ</string>
+    <string name="bmi_section_result">परिणाम</string>
+    <string name="bmi_unit_cm">सेमी</string>
+    <string name="bmi_unit_kg">किग्रा</string>
+    <string name="bmi_unit_ft">फ़ुट</string>
+    <string name="bmi_unit_in">इंच</string>
+    <string name="bmi_unit_lb">पाउंड</string>
+    <string name="bmi_error_empty">अपनी ऊँचाई और वज़न दर्ज करें.</string>
+    <string name="bmi_label_bmi">बीएमआई</string>
+
+    <!-- Age extras -->
+    <string name="age_section_dob">जन्म तिथि</string>
+    <string name="age_section_result">परिणाम</string>
+    <string name="age_label_age">आयु</string>
+    <string name="age_value_format"><xliff:g id="years" example="34">%1$d</xliff:g>व <xliff:g id="months" example="5">%2$d</xliff:g>म <xliff:g id="days" example="12">%3$d</xliff:g>द</string>
+    <string name="age_days_format"><xliff:g id="days" example="42">%1$d</xliff:g>द</string>
+    <string name="age_error_past_date">अतीत में एक तिथि चुनें.</string>
+    <string name="age_tap_to_change">बदलने के लिए टैप करें</string>
+
+    <!-- DateDiff extras -->
+    <string name="datediff_section_mode">मोड</string>
+    <string name="datediff_section_start_date">आरंभ तिथि</string>
+    <string name="datediff_section_result">परिणाम</string>
+    <string name="datediff_label_difference">अंतर</string>
+    <string name="datediff_label_total_days">कुल दिन</string>
+    <string name="datediff_label_weeks">सप्ताह</string>
+    <string name="datediff_label_resulting_date">परिणामी तिथि</string>
+    <string name="datediff_value_diff_format"><xliff:g id="years" example="1">%1$d</xliff:g>व <xliff:g id="months" example="2">%2$d</xliff:g>म <xliff:g id="days" example="3">%3$d</xliff:g>द</string>
+    <string name="datediff_value_weeks_format"><xliff:g id="weeks" example="6">%1$d</xliff:g>स <xliff:g id="days" example="4">%2$d</xliff:g>द</string>
+    <string name="datediff_error_invalid_offset">दिनों की पूर्ण संख्या दर्ज करें.</string>
+
+    <!-- Ovulation extras -->
+    <string name="ovulation_section_estimates">अनुमान</string>
+    <string name="ovulation_error_invalid">एलएमपी तिथि और 21 से 35 दिनों के बीच चक्र अवधि चुनें.</string>
+    <string name="ovulation_cycle_days_format"><xliff:g id="days" example="28">%1$d</xliff:g> दिन</string>
+    <string name="ovulation_fertile_window_format"><xliff:g id="start" example="Mon">%1$s</xliff:g> – <xliff:g id="end" example="Sat">%2$s</xliff:g></string>
+
+    <!-- Settings extras -->
+    <string name="settings_precision_description">सटीकता और गति के बीच समझौता - 6 अंक पर 1/3 का परिणाम 0.333333 दिखता है; 16 पर 0.3333333333333333 दिखता है. इंजन डिफ़ॉल्ट 12 है.</string>
+    <string name="settings_about_version_value">1.0.0-dev</string>
+    <string name="settings_about_license_value">Apache 2.0</string>
+    <string name="settings_about_github_value">zeevy/android-calculator</string>
 </resources>

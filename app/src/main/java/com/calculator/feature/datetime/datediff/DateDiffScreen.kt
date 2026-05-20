@@ -14,6 +14,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import com.calculator.R
 import com.calculator.core.domain.datetime.DateDiffCalculator
 import com.calculator.feature.datetime.age.DateRow
 import com.calculator.feature.lifecalc.LifeCalcCard
@@ -55,44 +57,59 @@ fun DateDiffScreen(onUp: () -> Unit) {
     var offsetDays by remember { mutableStateOf("90") }
     var openPicker by remember { mutableStateOf<Picker?>(null) }
 
-    LifeCalculatorScaffold(title = "Date difference", onUp = onUp) {
+    LifeCalculatorScaffold(title = stringResource(R.string.datediff_title), onUp = onUp) {
         LifeCalcCard {
-            LifeCalcSectionLabel("Mode")
+            LifeCalcSectionLabel(stringResource(R.string.datediff_section_mode))
             LifeCalcSegmented(
-                options = listOf("Two dates", "Date + offset"),
+                options = listOf(
+                    stringResource(R.string.datediff_mode_two),
+                    stringResource(R.string.datediff_mode_offset),
+                ),
                 selectedIndex = mode,
                 onSelect = { mode = it },
             )
             if (mode == 0) {
-                LifeCalcSectionLabel("From")
+                LifeCalcSectionLabel(stringResource(R.string.datediff_from))
                 DateRow(date = dateA, onClick = { openPicker = Picker.A })
-                LifeCalcSectionLabel("To")
+                LifeCalcSectionLabel(stringResource(R.string.datediff_to_label))
                 DateRow(date = dateB, onClick = { openPicker = Picker.B })
             } else {
-                LifeCalcSectionLabel("Start date")
+                LifeCalcSectionLabel(stringResource(R.string.datediff_section_start_date))
                 DateRow(date = dateA, onClick = { openPicker = Picker.A })
                 LifeCalcNumberField(
-                    label = "Offset",
+                    label = stringResource(R.string.datediff_offset),
                     value = offsetDays,
                     onValueChange = { offsetDays = it },
-                    suffix = "days",
+                    suffix = stringResource(R.string.datediff_offset_unit),
                 )
             }
         }
 
         LifeCalcCard {
-            LifeCalcSectionLabel("Result")
+            LifeCalcSectionLabel(stringResource(R.string.datediff_section_result))
             if (mode == 0) {
                 val diff = DateDiffCalculator.difference(dateA, dateB)
                 LifeCalcOutputRow(
-                    "Difference",
-                    "${diff.years}y ${diff.months}m ${diff.days}d",
+                    label = stringResource(R.string.datediff_label_difference),
+                    value = stringResource(
+                        R.string.datediff_value_diff_format,
+                        diff.years,
+                        diff.months,
+                        diff.days,
+                    ),
                     accent = true,
                 )
-                LifeCalcOutputRow("Total days", "${diff.totalDays}")
                 LifeCalcOutputRow(
-                    "Weeks",
-                    "${diff.totalWeeks}w ${diff.weekRemainderDays}d",
+                    label = stringResource(R.string.datediff_label_total_days),
+                    value = "${diff.totalDays}",
+                )
+                LifeCalcOutputRow(
+                    label = stringResource(R.string.datediff_label_weeks),
+                    value = stringResource(
+                        R.string.datediff_value_weeks_format,
+                        diff.totalWeeks,
+                        diff.weekRemainderDays,
+                    ),
                 )
             } else {
                 val result =
@@ -101,14 +118,14 @@ fun DateDiffScreen(onUp: () -> Unit) {
                     }.getOrNull()
                 if (result == null) {
                     Text(
-                        text = "Enter a whole number of days.",
+                        text = stringResource(R.string.datediff_error_invalid_offset),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White.copy(alpha = 0.55f),
                     )
                 } else {
                     LifeCalcOutputRow(
-                        "Resulting date",
-                        result.format(DateTimeFormatter.ofPattern("EEEE, d MMM yyyy")),
+                        label = stringResource(R.string.datediff_label_resulting_date),
+                        value = result.format(DateTimeFormatter.ofPattern("EEEE, d MMM yyyy")),
                         accent = true,
                     )
                 }
@@ -137,10 +154,12 @@ fun DateDiffScreen(onUp: () -> Unit) {
                         }
                         openPicker = null
                     },
-                ) { Text("OK") }
+                ) { Text(stringResource(R.string.action_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { openPicker = null }) { Text("Cancel") }
+                TextButton(onClick = { openPicker = null }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
             },
         ) { DatePicker(state = state) }
     }

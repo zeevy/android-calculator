@@ -25,9 +25,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.calculator.R
 import com.calculator.core.data.settings.DataStoreSettingsRepository
 import com.calculator.core.data.settings.UserSettings
 
@@ -57,14 +59,14 @@ fun SettingsSheetContent(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         Text(
-            text = "Settings",
+            text = stringResource(R.string.settings_title),
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
             color = Color.White,
             modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 16.dp),
         )
 
         // Theme picker - segmented "System / Light / Dark".
-        SectionLabel("Appearance")
+        SectionLabel(stringResource(R.string.settings_section_appearance))
         SegmentedThemePicker(
             selected = settings.theme,
             onSelect = viewModel::setTheme,
@@ -72,8 +74,8 @@ fun SettingsSheetContent(
         )
         Spacer(Modifier.size(8.dp))
         ToggleRow(
-            label = "Dynamic color",
-            description = "Use the wallpaper's colors (Android 12+).",
+            label = stringResource(R.string.settings_dynamic_color),
+            description = stringResource(R.string.settings_dynamic_color_desc),
             checked = settings.dynamicColor,
             onCheckedChange = viewModel::setDynamicColor,
             accent = accent,
@@ -81,18 +83,18 @@ fun SettingsSheetContent(
 
         // Feedback.
         Spacer(Modifier.size(16.dp))
-        SectionLabel("Feedback")
+        SectionLabel(stringResource(R.string.settings_section_feedback))
         ToggleRow(
-            label = "Haptics",
-            description = "Vibrate on key press.",
+            label = stringResource(R.string.settings_haptics),
+            description = stringResource(R.string.settings_haptics_desc),
             checked = settings.haptics,
             onCheckedChange = viewModel::setHaptics,
             accent = accent,
         )
         Spacer(Modifier.size(4.dp))
         ToggleRow(
-            label = "Sound",
-            description = "Play DTMF tones on key press.",
+            label = stringResource(R.string.settings_sound),
+            description = stringResource(R.string.settings_sound_desc),
             checked = settings.sound,
             onCheckedChange = viewModel::setSound,
             accent = accent,
@@ -100,7 +102,7 @@ fun SettingsSheetContent(
 
         // Precision slider.
         Spacer(Modifier.size(16.dp))
-        SectionLabel("Math precision")
+        SectionLabel(stringResource(R.string.settings_section_precision))
         PrecisionRow(
             precision = settings.precision,
             onChange = viewModel::setPrecision,
@@ -109,11 +111,10 @@ fun SettingsSheetContent(
 
         // Privacy.
         Spacer(Modifier.size(16.dp))
-        SectionLabel("Privacy")
+        SectionLabel(stringResource(R.string.settings_section_privacy))
         ToggleRow(
-            label = "Crash reporting",
-            description = "Anonymous crash reports. Off by default. " +
-                "Nothing leaves the device until you opt in.",
+            label = stringResource(R.string.settings_crash),
+            description = stringResource(R.string.settings_crash_desc),
             checked = settings.crashOptIn,
             onCheckedChange = viewModel::setCrashOptIn,
             accent = accent,
@@ -121,10 +122,19 @@ fun SettingsSheetContent(
 
         // About.
         Spacer(Modifier.size(16.dp))
-        SectionLabel("About")
-        AboutRow(label = "Version", value = "1.0.0-dev")
-        AboutRow(label = "License", value = "Apache 2.0")
-        AboutRow(label = "GitHub", value = "zeevy/android-calculator")
+        SectionLabel(stringResource(R.string.settings_section_about))
+        AboutRow(
+            label = stringResource(R.string.settings_about_version),
+            value = stringResource(R.string.settings_about_version_value),
+        )
+        AboutRow(
+            label = stringResource(R.string.settings_about_license),
+            value = stringResource(R.string.settings_about_license_value),
+        )
+        AboutRow(
+            label = stringResource(R.string.settings_about_github),
+            value = stringResource(R.string.settings_about_github_value),
+        )
 
         Spacer(Modifier.size(24.dp))
     }
@@ -226,7 +236,7 @@ private fun SegmentedThemePicker(
         UserSettings.ThemeOption.entries.forEach { option ->
             val isSelected = option == selected
             Text(
-                text = option.label(),
+                text = stringResource(option.labelRes()),
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (isSelected) Color.Black else Color.White,
                 modifier =
@@ -271,7 +281,7 @@ private fun PrecisionRow(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "Significant figures",
+                text = stringResource(R.string.settings_precision_label),
                 style = MaterialTheme.typography.bodyLarge,
                 color = Color.White,
                 modifier = Modifier.weight(1f),
@@ -300,10 +310,7 @@ private fun PrecisionRow(
                 ),
         )
         Text(
-            text =
-                "Trades precision for speed - at 6 digits a result like " +
-                    "1/3 reads as 0.333333; at 16 it reads " +
-                    "0.3333333333333333. Engine default is 12.",
+            text = stringResource(R.string.settings_precision_description),
             style = MaterialTheme.typography.bodySmall,
             color = Color.White.copy(alpha = 0.55f),
         )
@@ -338,11 +345,11 @@ private fun AboutRow(label: String, value: String) {
     }
 }
 
-private fun UserSettings.ThemeOption.label(): String =
+private fun UserSettings.ThemeOption.labelRes(): Int =
     when (this) {
-        UserSettings.ThemeOption.System -> "System"
-        UserSettings.ThemeOption.Light -> "Light"
-        UserSettings.ThemeOption.Dark -> "Dark"
+        UserSettings.ThemeOption.System -> R.string.settings_theme_system
+        UserSettings.ThemeOption.Light -> R.string.settings_theme_light
+        UserSettings.ThemeOption.Dark -> R.string.settings_theme_dark
     }
 
 // Background tint for settings rows. Slightly lighter than the

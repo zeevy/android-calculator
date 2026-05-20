@@ -18,7 +18,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.calculator.R
 import com.calculator.core.domain.health.OvulationCalculator
 import com.calculator.feature.datetime.age.DateRow
 import com.calculator.feature.lifecalc.LifeCalcAccent
@@ -59,14 +61,14 @@ fun OvulationScreen(onUp: () -> Unit) {
     var cycleDays by remember { mutableIntStateOf(OvulationCalculator.DEFAULT_CYCLE_DAYS) }
     var pickerOpen by remember { mutableStateOf(false) }
 
-    LifeCalculatorScaffold(title = "Ovulation", onUp = onUp) {
+    LifeCalculatorScaffold(title = stringResource(R.string.ovulation_title), onUp = onUp) {
         LifeCalcCard {
-            LifeCalcSectionLabel("Last menstrual period")
+            LifeCalcSectionLabel(stringResource(R.string.ovulation_lmp))
             DateRow(date = lmp, onClick = { pickerOpen = true })
 
-            LifeCalcSectionLabel("Average cycle length")
+            LifeCalcSectionLabel(stringResource(R.string.ovulation_cycle))
             Text(
-                text = "$cycleDays days",
+                text = stringResource(R.string.ovulation_cycle_days_format, cycleDays),
                 style = MaterialTheme.typography.titleLarge,
                 color = LifeCalcAccent,
             )
@@ -92,26 +94,40 @@ fun OvulationScreen(onUp: () -> Unit) {
 
         val result = runCatching { OvulationCalculator.compute(lmp, cycleDays) }.getOrNull()
         LifeCalcCard {
-            LifeCalcSectionLabel("Estimates")
+            LifeCalcSectionLabel(stringResource(R.string.ovulation_section_estimates))
             if (result == null) {
                 Text(
-                    text = "Pick an LMP date and a cycle length between 21 and 35 days.",
+                    text = stringResource(R.string.ovulation_error_invalid),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.55f),
                 )
             } else {
-                LifeCalcOutputRow("Ovulation", format(result.ovulation), accent = true)
                 LifeCalcOutputRow(
-                    "Fertile window",
-                    "${format(result.fertileStart)} – ${format(result.fertileEnd)}",
+                    label = stringResource(R.string.ovulation_ovulation_date),
+                    value = format(result.ovulation),
+                    accent = true,
                 )
-                LifeCalcOutputRow("Next period", format(result.nextPeriod))
-                LifeCalcOutputRow("Estimated due date", format(result.estimatedDueDate))
+                LifeCalcOutputRow(
+                    label = stringResource(R.string.ovulation_fertile_window),
+                    value = stringResource(
+                        R.string.ovulation_fertile_window_format,
+                        format(result.fertileStart),
+                        format(result.fertileEnd),
+                    ),
+                )
+                LifeCalcOutputRow(
+                    label = stringResource(R.string.ovulation_next_period),
+                    value = format(result.nextPeriod),
+                )
+                LifeCalcOutputRow(
+                    label = stringResource(R.string.ovulation_due_date),
+                    value = format(result.estimatedDueDate),
+                )
             }
         }
 
         Text(
-            text = "Estimator only. Cycles vary; this is not medical advice and not a contraception tool.",
+            text = stringResource(R.string.ovulation_disclaimer),
             style = MaterialTheme.typography.bodySmall,
             color = Color.White.copy(alpha = 0.45f),
             modifier = Modifier.padding(horizontal = 4.dp),
@@ -140,10 +156,12 @@ fun OvulationScreen(onUp: () -> Unit) {
                         }
                         pickerOpen = false
                     },
-                ) { Text("OK") }
+                ) { Text(stringResource(R.string.action_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { pickerOpen = false }) { Text("Cancel") }
+                TextButton(onClick = { pickerOpen = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
             },
         ) { DatePicker(state = state) }
     }

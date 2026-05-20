@@ -42,11 +42,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.calculator.R
 import com.calculator.core.data.history.HistoryEntry
 import java.text.DateFormat
 import java.util.Date
@@ -81,13 +83,13 @@ fun HistorySheetContent(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "History",
+                text = stringResource(R.string.history_title),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
             )
             if (entries.isNotEmpty()) {
                 TextButton(onClick = { confirmClearAll = true }) {
-                    Text("Clear all")
+                    Text(stringResource(R.string.history_clear_all))
                 }
             }
         }
@@ -119,18 +121,20 @@ fun HistorySheetContent(
     if (confirmClearAll) {
         AlertDialog(
             onDismissRequest = { confirmClearAll = false },
-            title = { Text("Clear all history?") },
-            text = { Text("This removes every saved calculation. It can't be undone.") },
+            title = { Text(stringResource(R.string.history_clear_all_title)) },
+            text = { Text(stringResource(R.string.history_clear_all_body)) },
             confirmButton = {
                 TextButton(
                     onClick = {
                         viewModel.clearAll()
                         confirmClearAll = false
                     },
-                ) { Text("Clear") }
+                ) { Text(stringResource(R.string.history_clear_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmClearAll = false }) { Text("Cancel") }
+                TextButton(onClick = { confirmClearAll = false }) {
+                    Text(stringResource(R.string.history_clear_cancel))
+                }
             },
         )
     }
@@ -247,11 +251,12 @@ private fun HistoryRow(
 ) {
     val clipboard = LocalClipboardManager.current
     val context = LocalContext.current
+    val copiedToastText = stringResource(R.string.history_copied_toast)
     val copyOnLongPress = {
         // Copying "expression = result" so the clipboard payload reads
         // as a complete equation when pasted into a note or chat.
         clipboard.setText(AnnotatedString("${entry.expression} = ${entry.result}"))
-        Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, copiedToastText, Toast.LENGTH_SHORT).show()
     }
     Row(
         modifier =
@@ -289,7 +294,7 @@ private fun HistoryRow(
         IconButton(onClick = onDelete) {
             Icon(
                 imageVector = Icons.Filled.DeleteOutline,
-                contentDescription = "Delete entry",
+                contentDescription = stringResource(R.string.history_delete),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -306,7 +311,7 @@ private fun EmptyHistory() {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = "No history yet. Calculations show up here when you press =.",
+            text = stringResource(R.string.history_empty),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

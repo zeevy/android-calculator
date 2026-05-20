@@ -11,7 +11,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.calculator.R
 import com.calculator.core.common.format.NumberFormatter
 import com.calculator.core.domain.finance.EmiCalculator
 import com.calculator.feature.lifecalc.LifeCalcCard
@@ -49,12 +51,26 @@ fun LoanScreen(onUp: () -> Unit) {
     var rate by remember { mutableStateOf("10") }
     var months by remember { mutableStateOf("12") }
 
-    LifeCalculatorScaffold(title = "Loan estimator", onUp = onUp) {
+    LifeCalculatorScaffold(title = stringResource(R.string.loan_title), onUp = onUp) {
         LifeCalcCard {
-            LifeCalcSectionLabel("Inputs")
-            LifeCalcNumberField("Loan amount", principal, { principal = it })
-            LifeCalcNumberField("Annual interest rate", rate, { rate = it }, suffix = "%")
-            LifeCalcNumberField("Tenure", months, { months = it }, suffix = "months")
+            LifeCalcSectionLabel(stringResource(R.string.loan_section_inputs))
+            LifeCalcNumberField(
+                label = stringResource(R.string.loan_loan_amount),
+                value = principal,
+                onValueChange = { principal = it },
+            )
+            LifeCalcNumberField(
+                label = stringResource(R.string.loan_annual_rate),
+                value = rate,
+                onValueChange = { rate = it },
+                suffix = stringResource(R.string.loan_rate_suffix),
+            )
+            LifeCalcNumberField(
+                label = stringResource(R.string.loan_tenure),
+                value = months,
+                onValueChange = { months = it },
+                suffix = stringResource(R.string.loan_tenure_unit),
+            )
         }
 
         // Re-evaluate on every recomposition. The math is microseconds
@@ -75,23 +91,33 @@ fun LoanScreen(onUp: () -> Unit) {
 
         if (result != null) {
             LifeCalcCard {
-                LifeCalcSectionLabel("Result")
-                LifeCalcOutputRow("Monthly EMI", money(result.emi), accent = true)
-                LifeCalcOutputRow("Total interest", money(result.totalInterest))
-                LifeCalcOutputRow("Total paid", money(result.totalPayment))
+                LifeCalcSectionLabel(stringResource(R.string.loan_section_result))
+                LifeCalcOutputRow(
+                    label = stringResource(R.string.loan_monthly_emi),
+                    value = money(result.emi),
+                    accent = true,
+                )
+                LifeCalcOutputRow(
+                    label = stringResource(R.string.loan_total_interest),
+                    value = money(result.totalInterest),
+                )
+                LifeCalcOutputRow(
+                    label = stringResource(R.string.loan_total_paid),
+                    value = money(result.totalPayment),
+                )
             }
             Spacer(Modifier.size(4.dp))
             Text(
-                text = "Estimator only - not a lending tool or quote.",
+                text = stringResource(R.string.loan_disclaimer),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.45f),
                 modifier = Modifier.padding(),
             )
         } else {
             LifeCalcCard {
-                LifeCalcSectionLabel("Result")
+                LifeCalcSectionLabel(stringResource(R.string.loan_section_result))
                 Text(
-                    text = "Enter a loan amount, rate, and tenure to see your EMI.",
+                    text = stringResource(R.string.loan_error_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.55f),
                 )

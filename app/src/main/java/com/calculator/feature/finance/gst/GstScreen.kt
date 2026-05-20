@@ -18,8 +18,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.calculator.R
 import com.calculator.core.common.format.NumberFormatter
 import com.calculator.core.domain.finance.GstCalculator
 import com.calculator.feature.lifecalc.LifeCalcAccent
@@ -65,21 +67,31 @@ fun GstScreen(onUp: () -> Unit) {
     var amount by remember { mutableStateOf("1000") }
     var ratePercent by remember { mutableStateOf("18") }
 
-    LifeCalculatorScaffold(title = "GST", onUp = onUp) {
+    LifeCalculatorScaffold(title = stringResource(R.string.gst_title), onUp = onUp) {
         LifeCalcCard {
-            LifeCalcSectionLabel("Direction")
+            LifeCalcSectionLabel(stringResource(R.string.gst_section_direction))
             LifeCalcSegmented(
-                options = listOf("Add GST (net→gross)", "Remove GST (gross→net)"),
+                options = listOf(
+                    stringResource(R.string.gst_direction_add),
+                    stringResource(R.string.gst_direction_remove),
+                ),
                 selectedIndex = direction,
                 onSelect = { direction = it },
             )
             LifeCalcSegmented(
-                options = listOf("Intra-state", "Inter-state"),
+                options = listOf(
+                    stringResource(R.string.gst_intra_state),
+                    stringResource(R.string.gst_inter_state),
+                ),
                 selectedIndex = intraStateIdx,
                 onSelect = { intraStateIdx = it },
             )
             LifeCalcNumberField(
-                label = if (direction == 0) "Net amount" else "Gross amount",
+                label = if (direction == 0) {
+                    stringResource(R.string.gst_amount_net)
+                } else {
+                    stringResource(R.string.gst_amount_gross)
+                },
                 value = amount,
                 onValueChange = { amount = it },
             )
@@ -88,10 +100,10 @@ fun GstScreen(onUp: () -> Unit) {
                 onSelect = { ratePercent = it },
             )
             LifeCalcNumberField(
-                label = "Rate",
+                label = stringResource(R.string.gst_rate),
                 value = ratePercent,
                 onValueChange = { ratePercent = it },
-                suffix = "%",
+                suffix = stringResource(R.string.gst_rate_suffix),
             )
         }
 
@@ -108,22 +120,26 @@ fun GstScreen(onUp: () -> Unit) {
             }.getOrNull()
 
         LifeCalcCard {
-            LifeCalcSectionLabel("Result")
+            LifeCalcSectionLabel(stringResource(R.string.gst_section_result))
             if (result == null) {
                 Text(
-                    text = "Enter a valid amount and rate.",
+                    text = stringResource(R.string.gst_error_invalid),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.55f),
                 )
             } else {
-                LifeCalcOutputRow("Net", money(result.net))
+                LifeCalcOutputRow(stringResource(R.string.gst_label_net), money(result.net))
                 if (intraStateIdx == 0) {
-                    LifeCalcOutputRow("CGST", money(result.cgst))
-                    LifeCalcOutputRow("SGST", money(result.sgst))
+                    LifeCalcOutputRow(stringResource(R.string.gst_label_cgst), money(result.cgst))
+                    LifeCalcOutputRow(stringResource(R.string.gst_label_sgst), money(result.sgst))
                 } else {
-                    LifeCalcOutputRow("IGST", money(result.igst))
+                    LifeCalcOutputRow(stringResource(R.string.gst_label_igst), money(result.igst))
                 }
-                LifeCalcOutputRow("Gross", money(result.gross), accent = true)
+                LifeCalcOutputRow(
+                    label = stringResource(R.string.gst_label_gross),
+                    value = money(result.gross),
+                    accent = true,
+                )
             }
         }
     }

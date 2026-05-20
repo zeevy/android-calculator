@@ -69,6 +69,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -81,6 +82,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.calculator.R
 import com.calculator.core.designsystem.theme.CalculatorTheme
 import com.calculator.core.math.AngleMode
 import com.calculator.feature.history.HistorySheetContent
@@ -297,7 +299,7 @@ private fun ToolsSheetContent(
             listOf(
                 ToolTile(
                     icon = Icons.Filled.Calculate,
-                    label = "Basic",
+                    label = stringResource(R.string.tool_basic),
                     enabled = true,
                     selected = !state.scientific,
                     onTap = {
@@ -307,7 +309,7 @@ private fun ToolsSheetContent(
                 ),
                 ToolTile(
                     icon = Icons.Filled.Functions,
-                    label = "Advanced",
+                    label = stringResource(R.string.tool_advanced),
                     enabled = true,
                     selected = state.scientific,
                     onTap = {
@@ -317,77 +319,77 @@ private fun ToolsSheetContent(
                 ),
                 ToolTile(
                     icon = Icons.Filled.History,
-                    label = "History",
+                    label = stringResource(R.string.tool_history),
                     enabled = true,
                     selected = false,
                     onTap = onOpenHistory,
                 ),
                 ToolTile(
                     icon = Icons.Filled.Straighten,
-                    label = "Units",
+                    label = stringResource(R.string.tool_units),
                     enabled = true,
                     selected = false,
                     onTap = onOpenUnitConverter,
                 ),
                 ToolTile(
                     icon = Icons.Filled.CurrencyExchange,
-                    label = "Currency",
+                    label = stringResource(R.string.tool_currency),
                     enabled = true,
                     selected = false,
                     onTap = onOpenCurrencyConverter,
                 ),
                 ToolTile(
                     icon = Icons.Filled.AccountBalance,
-                    label = "Loan",
+                    label = stringResource(R.string.tool_loan),
                     enabled = true,
                     selected = false,
                     onTap = { onOpenLifeCalc(com.calculator.navigation.LoanRoute) },
                 ),
                 ToolTile(
                     icon = Icons.Filled.Receipt,
-                    label = "GST",
+                    label = stringResource(R.string.tool_gst),
                     enabled = true,
                     selected = false,
                     onTap = { onOpenLifeCalc(com.calculator.navigation.GstRoute) },
                 ),
                 ToolTile(
                     icon = Icons.Filled.LocalOffer,
-                    label = "Discount",
+                    label = stringResource(R.string.tool_discount),
                     enabled = true,
                     selected = false,
                     onTap = { onOpenLifeCalc(com.calculator.navigation.DiscountRoute) },
                 ),
                 ToolTile(
                     icon = Icons.Filled.MonitorWeight,
-                    label = "BMI",
+                    label = stringResource(R.string.tool_bmi),
                     enabled = true,
                     selected = false,
                     onTap = { onOpenLifeCalc(com.calculator.navigation.BmiRoute) },
                 ),
                 ToolTile(
                     icon = Icons.Filled.Cake,
-                    label = "Age",
+                    label = stringResource(R.string.tool_age),
                     enabled = true,
                     selected = false,
                     onTap = { onOpenLifeCalc(com.calculator.navigation.AgeRoute) },
                 ),
                 ToolTile(
                     icon = Icons.Filled.DateRange,
-                    label = "Date diff",
+                    label = stringResource(R.string.tool_date_diff),
                     enabled = true,
                     selected = false,
                     onTap = { onOpenLifeCalc(com.calculator.navigation.DateDiffRoute) },
                 ),
                 ToolTile(
                     icon = Icons.Filled.Favorite,
-                    label = "Ovulation",
+                    label = stringResource(R.string.tool_ovulation),
                     enabled = true,
                     selected = false,
                     onTap = { onOpenLifeCalc(com.calculator.navigation.OvulationRoute) },
                 ),
                 ToolTile(
                     icon = Icons.Filled.Settings,
-                    label = "Settings",
+                    label = stringResource(R.string.tool_settings),
                     enabled = true,
                     selected = false,
                     onTap = onOpenSettings,
@@ -536,7 +538,7 @@ private fun DisplaySection(
         ) {
             Icon(
                 imageVector = Icons.Filled.Menu,
-                contentDescription = "Open menu",
+                contentDescription = stringResource(R.string.basic_open_menu),
                 modifier = Modifier.size(24.dp),
             )
         }

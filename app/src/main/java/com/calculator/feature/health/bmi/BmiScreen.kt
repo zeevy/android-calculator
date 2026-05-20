@@ -9,6 +9,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import com.calculator.R
 import com.calculator.core.domain.health.BmiCalculator
 import com.calculator.feature.lifecalc.LifeCalcCard
 import com.calculator.feature.lifecalc.LifeCalcNumberField
@@ -43,21 +45,49 @@ fun BmiScreen(onUp: () -> Unit) {
     var heightIn by remember { mutableStateOf("10") }
     var weightLb by remember { mutableStateOf("170") }
 
-    LifeCalculatorScaffold(title = "BMI", onUp = onUp) {
+    LifeCalculatorScaffold(title = stringResource(R.string.bmi_title), onUp = onUp) {
         LifeCalcCard {
-            LifeCalcSectionLabel("Units")
+            LifeCalcSectionLabel(stringResource(R.string.bmi_section_units))
             LifeCalcSegmented(
-                options = listOf("Metric (cm/kg)", "Imperial (ft·in/lb)"),
+                options = listOf(
+                    stringResource(R.string.bmi_units_metric),
+                    stringResource(R.string.bmi_units_imperial),
+                ),
                 selectedIndex = unitIdx,
                 onSelect = { unitIdx = it },
             )
             if (unitIdx == 0) {
-                LifeCalcNumberField("Height", heightCm, { heightCm = it }, suffix = "cm")
-                LifeCalcNumberField("Weight", weightKg, { weightKg = it }, suffix = "kg")
+                LifeCalcNumberField(
+                    label = stringResource(R.string.bmi_height),
+                    value = heightCm,
+                    onValueChange = { heightCm = it },
+                    suffix = stringResource(R.string.bmi_unit_cm),
+                )
+                LifeCalcNumberField(
+                    label = stringResource(R.string.bmi_weight),
+                    value = weightKg,
+                    onValueChange = { weightKg = it },
+                    suffix = stringResource(R.string.bmi_unit_kg),
+                )
             } else {
-                LifeCalcNumberField("Height (feet)", heightFt, { heightFt = it }, suffix = "ft")
-                LifeCalcNumberField("Height (inches)", heightIn, { heightIn = it }, suffix = "in")
-                LifeCalcNumberField("Weight", weightLb, { weightLb = it }, suffix = "lb")
+                LifeCalcNumberField(
+                    label = stringResource(R.string.bmi_height_feet),
+                    value = heightFt,
+                    onValueChange = { heightFt = it },
+                    suffix = stringResource(R.string.bmi_unit_ft),
+                )
+                LifeCalcNumberField(
+                    label = stringResource(R.string.bmi_height_inches),
+                    value = heightIn,
+                    onValueChange = { heightIn = it },
+                    suffix = stringResource(R.string.bmi_unit_in),
+                )
+                LifeCalcNumberField(
+                    label = stringResource(R.string.bmi_weight),
+                    value = weightLb,
+                    onValueChange = { weightLb = it },
+                    suffix = stringResource(R.string.bmi_unit_lb),
+                )
             }
         }
 
@@ -75,16 +105,23 @@ fun BmiScreen(onUp: () -> Unit) {
             }.getOrNull()
 
         LifeCalcCard {
-            LifeCalcSectionLabel("Result")
+            LifeCalcSectionLabel(stringResource(R.string.bmi_section_result))
             if (result == null) {
                 Text(
-                    text = "Enter your height and weight.",
+                    text = stringResource(R.string.bmi_error_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.55f),
                 )
             } else {
-                LifeCalcOutputRow("BMI", "%.2f".format(result.bmi), accent = true)
-                LifeCalcOutputRow("Category", result.category.label)
+                LifeCalcOutputRow(
+                    label = stringResource(R.string.bmi_label_bmi),
+                    value = "%.2f".format(result.bmi),
+                    accent = true,
+                )
+                LifeCalcOutputRow(
+                    label = stringResource(R.string.bmi_category),
+                    value = result.category.label,
+                )
             }
         }
     }

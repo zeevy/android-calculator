@@ -23,8 +23,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.calculator.R
 import com.calculator.core.domain.datetime.AgeCalculator
 import com.calculator.feature.lifecalc.LifeCalcAccent
 import com.calculator.feature.lifecalc.LifeCalcCard
@@ -59,36 +61,45 @@ fun AgeScreen(onUp: () -> Unit) {
     // a foreground calculator screen.
     val today = LocalDate.now()
 
-    LifeCalculatorScaffold(title = "Age", onUp = onUp) {
+    LifeCalculatorScaffold(title = stringResource(R.string.age_title), onUp = onUp) {
         LifeCalcCard {
-            LifeCalcSectionLabel("Date of birth")
+            LifeCalcSectionLabel(stringResource(R.string.age_section_dob))
             DateRow(date = dob, onClick = { pickerOpen = true })
         }
 
         val result = runCatching { AgeCalculator.compute(dob, today) }.getOrNull()
         LifeCalcCard {
-            LifeCalcSectionLabel("Result")
+            LifeCalcSectionLabel(stringResource(R.string.age_section_result))
             if (result == null) {
                 Text(
-                    "Pick a date in the past.",
+                    stringResource(R.string.age_error_past_date),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.55f),
                 )
             } else {
                 LifeCalcOutputRow(
-                    label = "Age",
-                    value = "${result.years}y ${result.months}m ${result.days}d",
+                    label = stringResource(R.string.age_label_age),
+                    value = stringResource(
+                        R.string.age_value_format,
+                        result.years,
+                        result.months,
+                        result.days,
+                    ),
                     accent = true,
                 )
                 LifeCalcOutputRow(
-                    "Weekday of birth",
-                    result.weekdayOfBirth.name
+                    label = stringResource(R.string.age_weekday),
+                    value = result.weekdayOfBirth.name
                         .lowercase()
                         .replaceFirstChar { it.titlecase() },
                 )
                 LifeCalcOutputRow(
-                    label = "Days to next birthday",
-                    value = if (result.daysToNextBirthday == 0) "Today!" else "${result.daysToNextBirthday}d",
+                    label = stringResource(R.string.age_to_next),
+                    value = if (result.daysToNextBirthday == 0) {
+                        stringResource(R.string.age_to_next_today)
+                    } else {
+                        stringResource(R.string.age_days_format, result.daysToNextBirthday)
+                    },
                 )
             }
         }
@@ -109,10 +120,12 @@ fun AgeScreen(onUp: () -> Unit) {
                         }
                         pickerOpen = false
                     },
-                ) { Text("OK") }
+                ) { Text(stringResource(R.string.action_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { pickerOpen = false }) { Text("Cancel") }
+                TextButton(onClick = { pickerOpen = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
             },
         ) { DatePicker(state = state) }
     }
@@ -147,7 +160,7 @@ internal fun DateRow(date: LocalDate, onClick: () -> Unit) {
         )
         Spacer(Modifier.size(2.dp))
         Text(
-            text = "Tap to change",
+            text = stringResource(R.string.age_tap_to_change),
             style = MaterialTheme.typography.bodySmall,
             color = Color.White.copy(alpha = 0.5f),
         )

@@ -9,6 +9,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import com.calculator.R
 import com.calculator.core.common.format.NumberFormatter
 import com.calculator.core.domain.finance.DiscountCalculator
 import com.calculator.feature.lifecalc.LifeCalcCard
@@ -40,19 +42,35 @@ fun DiscountScreen(onUp: () -> Unit) {
     var percentOff by remember { mutableStateOf("20") }
     var finalPrice by remember { mutableStateOf("1500") }
 
-    LifeCalculatorScaffold(title = "Discount", onUp = onUp) {
+    LifeCalculatorScaffold(title = stringResource(R.string.discount_title), onUp = onUp) {
         LifeCalcCard {
-            LifeCalcSectionLabel("Mode")
+            LifeCalcSectionLabel(stringResource(R.string.discount_section_mode))
             LifeCalcSegmented(
-                options = listOf("MRP + % off", "MRP + final price"),
+                options = listOf(
+                    stringResource(R.string.discount_mode_forward),
+                    stringResource(R.string.discount_mode_reverse),
+                ),
                 selectedIndex = mode,
                 onSelect = { mode = it },
             )
-            LifeCalcNumberField("MRP", mrp, { mrp = it })
+            LifeCalcNumberField(
+                label = stringResource(R.string.discount_mrp),
+                value = mrp,
+                onValueChange = { mrp = it },
+            )
             if (mode == 0) {
-                LifeCalcNumberField("Discount", percentOff, { percentOff = it }, suffix = "%")
+                LifeCalcNumberField(
+                    label = stringResource(R.string.discount_percent),
+                    value = percentOff,
+                    onValueChange = { percentOff = it },
+                    suffix = stringResource(R.string.discount_percent_suffix),
+                )
             } else {
-                LifeCalcNumberField("Final price", finalPrice, { finalPrice = it })
+                LifeCalcNumberField(
+                    label = stringResource(R.string.discount_final),
+                    value = finalPrice,
+                    onValueChange = { finalPrice = it },
+                )
             }
         }
 
@@ -66,17 +84,30 @@ fun DiscountScreen(onUp: () -> Unit) {
             }.getOrNull()
 
         LifeCalcCard {
-            LifeCalcSectionLabel("Result")
+            LifeCalcSectionLabel(stringResource(R.string.discount_section_result))
             if (result == null) {
                 Text(
-                    text = "Enter valid numbers (final must be in 0..MRP).",
+                    text = stringResource(R.string.discount_error_invalid),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.55f),
                 )
             } else {
-                LifeCalcOutputRow("Savings", money(result.savings))
-                LifeCalcOutputRow("Final price", money(result.finalPrice), accent = true)
-                LifeCalcOutputRow("Discount", "${percent(result.percentOff)} %")
+                LifeCalcOutputRow(
+                    label = stringResource(R.string.discount_savings),
+                    value = money(result.savings),
+                )
+                LifeCalcOutputRow(
+                    label = stringResource(R.string.discount_final),
+                    value = money(result.finalPrice),
+                    accent = true,
+                )
+                LifeCalcOutputRow(
+                    label = stringResource(R.string.discount_percent),
+                    value = stringResource(
+                        R.string.discount_value_percent_format,
+                        percent(result.percentOff),
+                    ),
+                )
             }
         }
     }
