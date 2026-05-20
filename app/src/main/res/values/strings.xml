@@ -21,6 +21,8 @@
     <string name="basic_error_unknown_token">Unsupported character</string>
     <string name="basic_error_domain">Math out of domain</string>
     <string name="basic_open_menu">Open menu</string>
+    <string name="basic_copied">Copied to clipboard</string>
+    <string name="basic_paste_no_number">No number found on clipboard</string>
 
     <!-- Tools menu tile labels -->
     <string name="tool_home">Home</string>

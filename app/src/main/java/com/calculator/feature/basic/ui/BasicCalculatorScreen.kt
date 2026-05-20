@@ -224,6 +224,8 @@ private fun DisplaySection(
     onOpenMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    val context = androidx.compose.ui.platform.LocalContext.current
     Box(modifier = modifier) {
         Display(
             expression = state.expression,
@@ -231,6 +233,25 @@ private fun DisplaySection(
             error = state.errorMessage,
             lastCommittedExpression = state.lastCommittedExpression,
             lastValidPreview = state.lastValidPreview,
+            onCopyResult = { text ->
+                if (text.isNotBlank()) {
+                    clipboard.setText(androidx.compose.ui.text.AnnotatedString(text))
+                    android.widget.Toast
+                        .makeText(context, R.string.basic_copied, android.widget.Toast.LENGTH_SHORT)
+                        .show()
+                }
+            },
+            onPasteRequested = {
+                val pasted = clipboard.getText()?.text.orEmpty()
+                val number = extractLeadingNumber(pasted)
+                if (number != null) {
+                    onEvent(BasicCalculatorEvent.Append(number))
+                } else {
+                    android.widget.Toast
+                        .makeText(context, R.string.basic_paste_no_number, android.widget.Toast.LENGTH_SHORT)
+                        .show()
+                }
+            },
             modifier =
                 Modifier
                     .fillMaxSize()
@@ -314,6 +335,7 @@ private fun DisplaySection(
 // `internal` (not `private`) so the headless Robolectric Compose UI
 // tests can host this composable directly with synthetic state and
 // assert the rendered text. It's still hidden from other modules.
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun Display(
     expression: String,
@@ -322,6 +344,8 @@ internal fun Display(
     lastCommittedExpression: String?,
     lastValidPreview: String?,
     modifier: Modifier = Modifier,
+    onCopyResult: (String) -> Unit = {},
+    onPasteRequested: () -> Unit = {},
 ) {
     // Top (input) line: always the expression, with the committed-
     // expression preferred when it's set (i.e. after `=`). We do NOT
@@ -379,7 +403,19 @@ internal fun Display(
                 maxFontSize = MaterialTheme.typography.headlineSmall.fontSize,
                 minFontSize = DISPLAY_EXPRESSION_MIN_SIZE,
                 maxLines = DISPLAY_EXPRESSION_MAX_LINES,
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        // Long-press the expression line to paste a number
+                        // from the clipboard. A plain tap is a no-op so the
+                        // pasted text doesn't fire on every accidental tap.
+                        .combinedClickable(
+                            onClick = {},
+                            onLongClick = onPasteRequested,
+                            indication = null,
+                            interactionSource =
+                                remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        ),
             )
             Spacer(Modifier.size(4.dp))
             // Bottom line: the dominant element. Style flips to the
@@ -399,7 +435,19 @@ internal fun Display(
                 softWrap = true,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.End,
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        // Long-press the result line to copy it to the
+                        // clipboard. Tap does nothing - the result line
+                        // isn't an action surface, just a value.
+                        .combinedClickable(
+                            onClick = {},
+                            onLongClick = { onCopyResult(bottomText) },
+                            indication = null,
+                            interactionSource =
+                                remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        ),
             )
         }
     }
@@ -1141,6 +1189,23 @@ private const val BUTTON_ASPECT_RATIO_COMPACT = 2.6f
 // the calculator reads as a single visual system. Literal colors rather
 // than theme roles because the iOS feel is recognisable specifically by
 // these hexes; M3 dynamic-color would dilute it.
+/**
+ * Pull the first plausibly-numeric token out of a pasted string.
+ *
+ * Accepts optional leading minus, digit groups (commas / spaces / Indian
+ * grouping), and an optional decimal point. Currency symbols and unit
+ * suffixes are skipped silently so pasting "₹1,234.50" yields "1234.50".
+ * Returns null if nothing numeric is found.
+ */
+internal fun extractLeadingNumber(text: String): String? {
+    val pattern = Regex("""-?\d[\d,\s]*(?:\.\d+)?""")
+    val match = pattern.find(text) ?: return null
+    val cleaned = match.value.replace(",", "").replace(" ", "")
+    // Reject if it's just "-" or empty after cleanup (regex shouldn't
+    // produce this but the explicit guard makes the intent obvious).
+    return cleaned.takeIf { it.toDoubleOrNull() != null }
+}
+
 private val IosKeyDigitContainer = Color(0xFF505050)
 private val IosKeyFunctionContainer = Color(0xFF707070)
 private val IosKeyModifierContainer = Color(0xFFA5A5A5)
