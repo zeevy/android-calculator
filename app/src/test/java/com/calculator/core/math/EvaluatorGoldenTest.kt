@@ -176,6 +176,55 @@ class EvaluatorGoldenTest {
         "'5^1',                     5",
         "'1^100',                   1",
         "'0^5',                     0",
+        // left-associative subtraction / division
+        "'1-2-3',                   -4",
+        "'10-3-2',                  5",
+        "'100÷5÷2',                 10",
+        "'1000÷10÷10÷10',           1",
+        // mixed signs
+        "'-1-1',                    -2",
+        "'-1+1',                    0",
+        "'(-1)+(-1)',               -2",
+        "'(-1)×(-1)',               1",
+        "'(-1)^4',                  1",
+        "'(-1)^5',                  -1",
+        "'(-2)^4',                  16",
+        // squared / cubed parens
+        "'(2+3)^2',                 25",
+        "'(2+3)^3',                 125",
+        "'(1+1)^10',                1024",
+        // operations on result of power
+        "'2^3+1',                   9",
+        "'2^3-1',                   7",
+        "'2^3×2',                   16",
+        // whitespace handled by tokenizer
+        "'1 + 2',                   3",
+        "' 1+2 ',                   3",
+        "'1 +    2',                3",
+        "'2 × 3 + 4',               10",
+        // percent compositions
+        "'100×(1+5%)',              105",
+        "'100×(1-10%)',             90",
+        // chain factorial in larger expression
+        "'10+3!',                   16",
+        "'3!+4!',                   30",
+        "'3!×2',                    12",
+        "'2×3!',                    12",
+        // double-negation
+        "'-(-(5))',                 5",
+        "'-(-(2+3))',               5",
+        // boundary integer factorials
+        "'12!',                     479001600",
+        "'14!',                     87178291200",
+        // signed zero collapses
+        "'-0',                      0",
+        "'-0+5',                    5",
+        "'5×-0',                    0",
+        // power chains
+        "'2^2^2',                   16",
+        "'(2^2)^2',                 16",
+        "'2^(2^2)',                 16",
+        "'2^2^3',                   256",
     )
     fun exactArithmetic(expression: String, expected: String) {
         val value = rad.evaluate(expression).expectSuccess()
@@ -276,6 +325,56 @@ class EvaluatorGoldenTest {
         "'cbrt(-0.125)',            -0.5",
         // arctan of large arg approaches π/2
         "'atan(1000000)',           1.5707953267948",
+        // identity sin²+cos² = 1 at varied angles
+        "'sin(1)^2+cos(1)^2',       1",
+        "'sin(0.7)^2+cos(0.7)^2',   1",
+        "'sin(π÷3)^2+cos(π÷3)^2',   1",
+        "'sin(π÷5)^2+cos(π÷5)^2',   1",
+        // double-angle: cos(2x) = cos²(x) - sin²(x)
+        "'cos(2×0.5)',              0.54030230586813",
+        "'cos(0.5)^2-sin(0.5)^2',   0.54030230586813",
+        // negative exponent
+        "'2^(-3)',                  0.125",
+        "'10^(-2)',                 0.01",
+        "'5^(-1)',                  0.2",
+        // power of small base
+        "'0.5^4',                   0.0625",
+        "'0.1^3',                   0.001",
+        // sqrt identities
+        "'sqrt(2)×sqrt(2)',         2",
+        "'sqrt(3)×sqrt(3)',         3",
+        "'sqrt(2)^2',               2",
+        "'sqrt(16)+sqrt(9)',        7",
+        // log/ln identities
+        "'log(10^5)',               5",
+        "'ln(e^3)',                 3",
+        "'log(10×10)',              2",
+        "'ln(e×e)',                 2",
+        "'log(100)-log(10)',        1",
+        // π and e arithmetic
+        "'π+0',                     3.14159265358979",
+        "'π×1',                     3.14159265358979",
+        "'π×2',                     6.28318530717958",
+        "'π÷2',                     1.57079632679489",
+        "'π-π',                     0",
+        "'π÷π',                     1",
+        "'e×1',                     2.71828182845904",
+        "'e-e',                     0",
+        "'e÷e',                     1",
+        "'e^2',                     7.38905609893065",
+        "'π^2',                     9.86960440108935",
+        // function-of-arithmetic
+        "'sin(1+1)',                0.90929742682568",
+        "'log(10×10)',              2",
+        "'sqrt(2+2)',               2",
+        // deeply nested functions
+        "'sqrt(sqrt(sqrt(256)))',   2",
+        "'cos(cos(cos(0)))',        0.85755321584639",
+        // 0^0 - JDK Math.pow(0,0) returns 1, matching most calculators
+        "'0^0',                     1",
+        // exp / log domain edges that are still valid
+        "'log(0.1)',                -1",
+        "'ln(1÷e)',                 -1",
     )
     fun transcendentalsRadians(expression: String, expected: String) {
         val value = rad.evaluate(expression).expectSuccess()
@@ -324,6 +423,27 @@ class EvaluatorGoldenTest {
         "'acos(-1)',                180",
         "'acos(0.5)',               60",
         "'atan(-1)',                -45",
+        // Pythagorean identity in degrees
+        "'sin(30)^2+cos(30)^2',     1",
+        "'sin(45)^2+cos(45)^2',     1",
+        "'sin(60)^2+cos(60)^2',     1",
+        // function chains
+        "'sin(asin(0.7))',          0.7",
+        "'cos(acos(0.4))',          0.4",
+        "'asin(sin(40))',           40",
+        "'acos(cos(50))',           50",
+        // complement identities sin(x) = cos(90-x)
+        "'sin(20)',                 0.34202014332566",
+        "'cos(70)',                 0.34202014332566",
+        "'sin(75)',                 0.96592582628906",
+        "'cos(15)',                 0.96592582628906",
+        // tan(45-x) for varied x stays finite
+        "'tan(44)',                 0.96568877480707",
+        "'tan(46)',                 1.03553031379057",
+        // larger full-rotation behaviour
+        "'sin(450)',                1",
+        "'cos(450)',                0",
+        "'sin(-180)',               0",
     )
     fun transcendentalsDegrees(expression: String, expected: String) {
         val value = deg.evaluate(expression).expectSuccess()
@@ -402,6 +522,15 @@ class EvaluatorGoldenTest {
         // error - assert it doesn't error here is a positive case, but
         // include the literal 0 ones that are
         "'5÷0÷5',                   DivisionByZero",
+        "'1÷(1-1)',                 DivisionByZero",
+        "'1÷(2-2)',                 DivisionByZero",
+        // negative-base fractional exponent: Math.pow returns NaN
+        "'(-2)^0.5',                Domain",
+        "'(-1)^0.5',                Domain",
+        "'(-4)^0.25',               Domain",
+        // factorial of fractional value
+        "'2.5!',                    Domain",
+        "'0.5!',                    Domain",
         // tan at asymptotes (π/2 + kπ): the engine detects these by
         // checking cos(arg) for near-zero, not by relying on isInfinite,
         // because Math.tan returns a huge finite value (~1.6e16) rather
