@@ -61,6 +61,7 @@ androidx-test-espresso = "3.6.1"
 turbine = "1.2.0"
 mockk = "1.13.13"
 robolectric = "4.14.1"
+kotest = "5.9.1"
 
 [libraries]
 # Compose BOM keeps all Compose artifacts in sync; do not pin individual versions.
@@ -120,6 +121,11 @@ turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 mockk-android = { group = "io.mockk", name = "mockk-android", version.ref = "mockk" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+# Kotest property-based testing. Generates random inputs and asserts
+# the property holds across many samples - finds the kind of edge case
+# a hand-written CSV catalogue can miss.
+kotest-property = { group = "io.kotest", name = "kotest-property", version.ref = "kotest" }
+kotest-runner-junit5 = { group = "io.kotest", name = "kotest-runner-junit5", version.ref = "kotest" }
 
 # detekt formatting rules (loaded by the detekt plugin at runtime)
 detekt-formatting = { group = "io.gitlab.arturbosch.detekt", name = "detekt-formatting", version.ref = "detekt" }

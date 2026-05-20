@@ -197,6 +197,16 @@ dependencies {
     testImplementation(libs.compose.ui.test.junit4)
     testImplementation(libs.compose.bom)
     testImplementation(libs.compose.ui.test.manifest)
+    // Kotest property-based testing. Used by EvaluatorPropertyTest -
+    // generates random inputs and asserts mathematical identities hold
+    // across hundreds of samples, catching the kind of edge case a
+    // hand-written golden catalogue can miss. We deliberately skip the
+    // kotest-runner-junit5 plugin here because our tests use plain
+    // @org.junit.jupiter.api.Test entry points and call checkAll
+    // directly inside the test bodies - that keeps the JUnit 5 Jupiter
+    // engine in charge of discovery and avoids the runner-conflict
+    // failures that come from layering two engines.
+    testImplementation(libs.kotest.property)
 
     // ----- Instrumented tests (JUnit4 + AndroidX Test + Compose) -----
     androidTestImplementation(libs.junit4)
