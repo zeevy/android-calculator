@@ -95,8 +95,17 @@ class FloatingCalculatorService : Service() {
         // TYPE_APPLICATION_OVERLAY is the only legal type on API 26+ for
         // overlays drawn by user apps. Older types (TYPE_SYSTEM_ALERT,
         // TYPE_PHONE) are gated to system apps.
+        //
+        // Width is FIXED (not WRAP_CONTENT) because the keypad uses
+        // weight=1 layouts: with a wrap-content parent the buttons have
+        // no width to distribute and the whole window collapses to the
+        // intrinsic width of the longest text label (about 3 digits
+        // wide). The fixed width here is what gives the columns room
+        // to actually spread.
+        val density = resources.displayMetrics.density
+        val widthPx = (WIDTH_DP * density).toInt()
         val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
+            widthPx,
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             // NOT_FOCUSABLE so the overlay doesn't steal IME / back-press
@@ -105,8 +114,8 @@ class FloatingCalculatorService : Service() {
             PixelFormat.TRANSLUCENT,
         )
         params.gravity = Gravity.TOP or Gravity.START
-        params.x = INITIAL_X_DP
-        params.y = INITIAL_Y_DP
+        params.x = (INITIAL_X_DP * density).toInt()
+        params.y = (INITIAL_Y_DP * density).toInt()
 
         windowManager.addView(view, params)
         overlayView = view
@@ -313,6 +322,7 @@ class FloatingCalculatorService : Service() {
         const val ACTION_STOP = "com.calculator.feature.floating.action.STOP"
         private const val NOTIFICATION_CHANNEL = "floating_calculator"
         private const val NOTIFICATION_ID = 1001
+        private const val WIDTH_DP = 320
         private const val INITIAL_X_DP = 24
         private const val INITIAL_Y_DP = 120
 
