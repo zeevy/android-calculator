@@ -585,8 +585,11 @@ private fun DisplaySection(
  *     | After-= chain ("8+2")         | expression     | liveResult        |
  *     | Error                         | expression     | error (red)       |
  */
+// `internal` (not `private`) so the headless Robolectric Compose UI
+// tests can host this composable directly with synthetic state and
+// assert the rendered text. It's still hidden from other modules.
 @Composable
-private fun Display(
+internal fun Display(
     expression: String,
     preview: String?,
     error: String?,
@@ -779,8 +782,10 @@ private const val DISPLAY_EXPRESSION_MAX_LINES = 2
  * Portrait is enforced by the manifest, so no landscape branch lives
  * here - foldables / multi-window get the same vertical stacking.
  */
+// `internal` so the headless Compose UI test in src/test/ can host
+// the keypad and drive button presses against a fake onEvent capture.
 @Composable
-private fun Keypad(
+internal fun Keypad(
     scientific: Boolean,
     onEvent: (BasicCalculatorEvent) -> Unit,
     modifier: Modifier = Modifier,

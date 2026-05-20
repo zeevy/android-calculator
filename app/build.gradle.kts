@@ -191,6 +191,12 @@ dependencies {
     testImplementation(libs.turbine)
     testImplementation(libs.mockk)
     testImplementation(libs.robolectric)
+    // Compose UI test on the JVM via Robolectric: the same APIs
+    // (createComposeRule, onNodeWithText, performClick, ...) run
+    // headlessly on `./gradlew test`, no emulator or device needed.
+    testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.compose.bom)
+    testImplementation(libs.compose.ui.test.manifest)
 
     // ----- Instrumented tests (JUnit4 + AndroidX Test + Compose) -----
     androidTestImplementation(libs.junit4)
