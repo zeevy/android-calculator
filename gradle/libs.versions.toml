@@ -47,7 +47,7 @@ hilt-navigation-compose = "1.2.0"
 coroutines = "1.11.0"
 
 # Network
-retrofit = "2.11.0"
+retrofit = "3.0.0"
 okhttp = "4.12.0"
 kotlinx-serialization = "1.11.0"
 retrofit-kotlinx-serialization-converter = "1.0.0"
