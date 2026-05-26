@@ -148,7 +148,7 @@ jobs:
         # job flaked) does not break the build; Gradle will use the
         # committed profile instead.
         continue-on-error: true
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: baseline-prof
           path: app/src/release/generated/baselineProfiles/
@@ -182,13 +182,13 @@ jobs:
 
     steps:
       - name: Download APK
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: calculator-apk
           path: artifacts/apk
 
       - name: Download AAB
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: calculator-aab
           path: artifacts/aab
