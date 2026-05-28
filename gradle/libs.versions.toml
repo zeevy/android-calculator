@@ -65,7 +65,7 @@ androidx-test-espresso = "3.6.1"
 turbine = "1.2.1"
 mockk = "1.14.9"
 robolectric = "4.16.1"
-kotest = "5.9.1"
+kotest = "6.1.11"
 
 [libraries]
 # Compose BOM keeps all Compose artifacts in sync; do not pin individual versions.
