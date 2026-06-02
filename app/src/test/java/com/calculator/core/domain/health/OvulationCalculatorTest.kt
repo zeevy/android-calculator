@@ -24,6 +24,25 @@ class OvulationCalculatorTest {
     }
 
     @Test
+    fun `projects the next three period dates one cycle apart`() {
+        val r = OvulationCalculator.compute(
+            lmp = LocalDate.of(2026, 5, 1),
+            cycleLengthDays = 28,
+        )
+        // First entry is the next period; each subsequent one is +28 days.
+        assertEquals(
+            listOf(
+                LocalDate.of(2026, 5, 29),
+                LocalDate.of(2026, 6, 26),
+                LocalDate.of(2026, 7, 24),
+            ),
+            r.upcomingPeriods,
+        )
+        // The list always leads with nextPeriod.
+        assertEquals(r.nextPeriod, r.upcomingPeriods.first())
+    }
+
+    @Test
     fun `cycle length 35 shifts ovulation by seven days from default`() {
         val r28 = OvulationCalculator.compute(LocalDate.of(2026, 5, 1), 28)
         val r35 = OvulationCalculator.compute(LocalDate.of(2026, 5, 1), 35)

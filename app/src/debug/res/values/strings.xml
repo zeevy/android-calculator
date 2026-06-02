@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug-only resource overrides.
+
+  The debug variant installs under its own application id (".debug"
+  suffix) so it can sit next to a release install. Give it a distinct
+  launcher label too, otherwise it shares the "Calculator" name with
+  both the release build and the stock device calculator and is easy to
+  pick wrong from the launcher.
+-->
+<resources>
+    <string name="app_name">Calculator (Debug)</string>
+</resources>

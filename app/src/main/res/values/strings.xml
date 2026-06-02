@@ -165,7 +165,7 @@
     <string name="ovulation_cycle">Average cycle length</string>
     <string name="ovulation_ovulation_date">Ovulation</string>
     <string name="ovulation_fertile_window">Fertile window</string>
-    <string name="ovulation_next_period">Next period</string>
+    <string name="ovulation_upcoming_periods">Upcoming periods</string>
     <string name="ovulation_due_date">Estimated due date</string>
     <string name="ovulation_disclaimer">Estimator only. Cycles vary; this is not medical advice and not a contraception tool.</string>
 
@@ -306,7 +306,6 @@
 
     <!-- Settings extras -->
     <string name="settings_precision_description">Trades precision for speed - at 6 digits a result like 1/3 reads as 0.333333; at 16 it reads 0.3333333333333333. Engine default is 12.</string>
-    <string name="settings_about_version_value">1.0.0-dev</string>
     <string name="settings_about_license_value">Apache 2.0</string>
     <string name="settings_about_github_value">zeevy/android-calculator</string>
 </resources>

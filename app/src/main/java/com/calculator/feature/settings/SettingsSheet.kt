@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -26,10 +28,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.calculator.BuildConfig
 import com.calculator.R
 import com.calculator.core.data.settings.DataStoreSettingsRepository
 import com.calculator.core.data.settings.UserSettings
@@ -54,11 +58,13 @@ fun SettingsSheetContent(
     val settings by viewModel.settings.collectAsState()
     val accent = SettingsAccent
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
 
     Column(
         modifier =
             Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         Text(
@@ -137,15 +143,20 @@ fun SettingsSheetContent(
         SectionLabel(stringResource(R.string.settings_section_about))
         AboutRow(
             label = stringResource(R.string.settings_about_version),
-            value = stringResource(R.string.settings_about_version_value),
+            // Read from the build instead of a hardcoded string so the row
+            // always tracks the shipped versionName/versionCode (debug
+            // builds show the "-debug" suffix from versionNameSuffix).
+            value = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
         )
         AboutRow(
             label = stringResource(R.string.settings_about_license),
             value = stringResource(R.string.settings_about_license_value),
         )
+        val githubHandle = stringResource(R.string.settings_about_github_value)
         AboutRow(
             label = stringResource(R.string.settings_about_github),
-            value = stringResource(R.string.settings_about_github_value),
+            value = githubHandle,
+            onClick = { uriHandler.openUri("https://github.com/$githubHandle") },
         )
 
         Spacer(Modifier.size(24.dp))
@@ -372,13 +383,19 @@ private fun PrecisionRow(
     }
 }
 
+/**
+ * Label-value row in the About section. When [onClick] is non-null the
+ * whole row is tappable and the value renders in the accent colour to
+ * signal it's a link (e.g. the GitHub row opens the repo in a browser).
+ */
 @Composable
-private fun AboutRow(label: String, value: String) {
+private fun AboutRow(label: String, value: String, onClick: (() -> Unit)? = null) {
     Column {
         Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
+                    .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
                     .padding(horizontal = 16.dp, vertical = 14.dp),
         ) {
             Text(
@@ -390,7 +407,7 @@ private fun AboutRow(label: String, value: String) {
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color.White.copy(alpha = 0.6f),
+                color = if (onClick != null) SettingsAccent else Color.White.copy(alpha = 0.6f),
             )
         }
         HorizontalDivider(

@@ -152,7 +152,7 @@
     <string name="ovulation_cycle">औसत चक्र अवधि</string>
     <string name="ovulation_ovulation_date">ओव्यूलेशन</string>
     <string name="ovulation_fertile_window">उपजाऊ अवधि</string>
-    <string name="ovulation_next_period">अगला मासिक धर्म</string>
+    <string name="ovulation_upcoming_periods">आगामी मासिक धर्म</string>
     <string name="ovulation_due_date">अनुमानित प्रसव तिथि</string>
     <string name="ovulation_disclaimer">केवल अनुमानक है. चक्र अलग-अलग होते हैं; यह चिकित्सीय सलाह नहीं है और गर्भनिरोधक उपकरण नहीं है.</string>
 
@@ -223,7 +223,6 @@
 
     <!-- Settings extras -->
     <string name="settings_precision_description">सटीकता और गति के बीच समझौता - 6 अंक पर 1/3 का परिणाम 0.333333 दिखता है; 16 पर 0.3333333333333333 दिखता है. इंजन डिफ़ॉल्ट 12 है.</string>
-    <string name="settings_about_version_value">1.0.0-dev</string>
     <string name="settings_about_license_value">Apache 2.0</string>
     <string name="settings_about_github_value">zeevy/android-calculator</string>
 </resources>

@@ -128,8 +128,10 @@ fun OvulationScreen(onNavigate: (Any) -> Unit) {
                     ),
                 )
                 StackedOutput(
-                    label = stringResource(R.string.ovulation_next_period),
-                    value = format(result.nextPeriod),
+                    label = stringResource(R.string.ovulation_upcoming_periods),
+                    // One formatted date per line; the first is the
+                    // immediate next period, the rest project ~3 months out.
+                    value = result.upcomingPeriods.joinToString("\n", transform = ::format),
                 )
                 StackedOutput(
                     label = stringResource(R.string.ovulation_due_date),
