@@ -39,8 +39,8 @@ android {
         // Phase 11 versioning. Bumping `versionName` always pairs with
         // a bump of `versionCode` (monotonic across the lifetime of
         // the app). See docs/RELEASE.md for the formula.
-        versionCode = 10000
-        versionName = "1.0.0"
+        versionCode = 10002
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }

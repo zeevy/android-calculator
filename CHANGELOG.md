@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [1.0.2] - 2026-06-02
+
 ### Changed
 
 - Migrated to Android Gradle Plugin 9.2.1 (Gradle 9.4.1) with built-in
