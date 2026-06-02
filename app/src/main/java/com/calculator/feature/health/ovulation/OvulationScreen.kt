@@ -127,11 +127,9 @@ fun OvulationScreen(onNavigate: (Any) -> Unit) {
                         format(result.fertileEnd),
                     ),
                 )
-                StackedOutput(
+                UpcomingPeriods(
                     label = stringResource(R.string.ovulation_upcoming_periods),
-                    // One formatted date per line; the first is the
-                    // immediate next period, the rest project ~3 months out.
-                    value = result.upcomingPeriods.joinToString("\n", transform = ::format),
+                    dates = result.upcomingPeriods,
                 )
                 StackedOutput(
                     label = stringResource(R.string.ovulation_due_date),
@@ -187,6 +185,32 @@ fun OvulationScreen(onNavigate: (Any) -> Unit) {
 // week to plan around.
 private fun format(date: LocalDate): String =
     date.format(DateTimeFormatter.ofPattern("EEE, d MMM yyyy"))
+
+/**
+ * The next few projected period start dates, one per row under a shared
+ * label. The soonest (first) date is highlighted in the accent colour
+ * since it's the immediate next period; the rest are the ~3-month
+ * projection.
+ */
+@Composable
+private fun UpcomingPeriods(label: String, dates: List<LocalDate>) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = Color.White.copy(alpha = 0.7f),
+        )
+        dates.forEachIndexed { index, date ->
+            Text(
+                text = format(date),
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = if (index == 0) FontWeight.Bold else FontWeight.SemiBold,
+                ),
+                color = if (index == 0) LifeCalcAccent else Color.White,
+            )
+        }
+    }
+}
 
 /**
  * Label-above-value output row. Used for the result card here because
