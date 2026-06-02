@@ -595,30 +595,23 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ---
 
-## Phase 9 - Performance: Baseline Profiles + Macrobenchmark
+## Phase 9 - Performance: lightweight init
 
-**Goal:** Cold-start under 600ms on a Pixel 6a-class device; profile generated in CI.
+**Goal:** Keep cold start fast and the install small without heavyweight tooling.
+
+> **Removed (AGP 9 migration):** the Baseline Profile + Macrobenchmark
+> apparatus - the `:baselineprofile` module, the `benchmark` build type,
+> the ProfileInstaller dependency, and the CI profile-generation job -
+> was dropped as not worth the build surface for an app this size. See
+> the CHANGELOG. The points below are what remains.
 
 ### Phase 9 - Deliverables
 
-- [x] New module `:baselineprofile` (Macrobenchmark) - scaffolded at `baselineprofile/`
-- [x] Cold-start, warm-start, frame-timing benchmarks for basic calculator + history - via `baselineprofile/src/main/java/com/calculator/baselineprofile/{BaselineProfileGenerator,StartupBenchmark,FrameTimingBenchmark}.kt`
-- [x] `androidx.startup` initialisers for any eager work - `androidx.startup` is wired in `app/build.gradle.kts`; current eager work is minimal (Hilt handles app init)
-- [x] Baseline profile committed at `app/src/main/baseline-prof.txt`
-- [x] CI step: regenerate profile on `main` and fail PR if cold-start regresses > 10% - via `.github/workflows/baseline-profile.yml` running `:baselineprofile:connectedBenchmarkAndroidTest` after profile generation, then `baselineprofile/scripts/check-startup-regression.sh` compares P50 against committed `baselineprofile/baseline-startup.json` (fail at +10%)
-
-### Phase 9 - Test cases
-
-**Deferred: Macrobenchmark runs on emulator/device only, not part of `:app:test` JVM suite.**
-
-- [ ] Macrobenchmark cold-start: P50 < 600 ms on the chosen device - **Deferred:** runs on emulator/device only
-- [ ] Macrobenchmark warm-start: P50 < 200 ms - **Deferred:** runs on emulator/device only
-- [ ] Frame timing for keypad scroll: no janky frames over 16 ms at P95 - **Deferred:** runs on emulator/device only
-- [x] CI artifact contains a fresh `baseline-prof.txt` on every `main` build - via `.github/workflows/baseline-profile.yml`
+- [x] `androidx.startup` initialisers for any eager work - wired in `app/build.gradle.kts`; current eager work is minimal (Hilt handles app init)
 
 ### Phase 9 - Exit criteria
 
-- Profile checked in, CI gates regressions, app size still under 15 MB after R8. - **Partially met**: profile checked in at `app/src/main/baseline-prof.txt`; CI regenerates on `main`; AAB measured at 5.1 MB (well under 15 MB). The "fail PR if cold-start regresses > 10%" gate is the remaining follow-up.
+- App size stays under 15 MB after R8 - **met**: AAB measured at 5.1 MB.
 
 ---
 
