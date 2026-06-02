@@ -41,7 +41,7 @@ A modern, fully-offline, multi-purpose calculator for Android that bundles a sta
 | Networking | None. App is fully offline; no permissions declared. |
 | Math Engine | Custom evaluator: `BigDecimal` for arithmetic/precision-sensitive ops; bounded `Double` with rounding for transcendental ops (sin/cos/log/exp). Optionally back transcendentals with a BigMath-style library if precision is insufficient. |
 | Build | Gradle Kotlin DSL, Version Catalogs (libs.versions.toml), R8 minification + resource shrinking on release |
-| Performance | Baseline Profiles (Macrobenchmark-generated), Startup library for lightweight init |
+| Performance | Startup library for lightweight init |
 | Widgets | Jetpack Glance (Compose-style App Widget API) |
 | Splash | AndroidX SplashScreen API + adaptive icon |
 | Testing | JUnit5 (unit tests via `android-junit5` plugin), JUnit4 + AndroidX Test (instrumented & Compose UI tests), Turbine, MockK, Robolectric where useful |
@@ -99,7 +99,7 @@ Each is a focused screen with its own inputs/outputs:
 
 | Concern | Target |
 |---|---|
-| Cold start | < 600 ms on a mid-range device (Pixel 6a class), enforced via Baseline Profiles + Macrobenchmark in CI |
+| Cold start | < 600 ms on a mid-range device (Pixel 6a class) |
 | Calculation latency | < 16 ms (one frame) for expressions up to 50 chars |
 | Crash-free rate | ≥ 99.5% - measured only if the user opts in to crash reporting; otherwise treated as an internal pre-release target |
 | Memory footprint | < 100 MB resident |
@@ -155,7 +155,6 @@ app/
 - **Unit tests** for each life-calculator's formula (deterministic golden-input/golden-output cases).
 - **Compose UI tests (JUnit4 + AndroidX Test or Robolectric)** for key flows: basic calculation, scientific mode, unit conversion, every life calculator.
 - **Screenshot tests** (Paparazzi or Roborazzi) for the design system in light / dark / dynamic-color variants.
-- **Macrobenchmark** module to measure cold-start and generate Baseline Profiles in CI.
 - **Static analysis** in CI: ktlint, detekt, Android Lint at error severity.
 
 ## 10. Release Plan (Tentative)
@@ -168,7 +167,7 @@ app/
 | M2 (Week 3) | Scientific mode, settings, themes (dynamic color, dark/light) |
 | M3 (Week 4-5) | Unit converter |
 | M4 (Week 6) | Life calculators (loan, GST, BMI, age, discount, date diff) |
-| M5 (Week 7) | Accessibility, i18n (en + hi), Baseline Profile generation, Play Console internal track |
+| M5 (Week 7) | Accessibility, i18n (en + hi), Play Console internal track |
 | M6 (Week 8) | Closed beta → Production rollout |
 
 ## 11. Risks & Open Questions
@@ -178,7 +177,7 @@ app/
 - **Regional features** (GST is India-only) - hide/show based on locale or expose as an opt-in tool.
 - **Play policy compliance** - the "loan" calculator must use neutral language (no implication that the app is a lender) per Google's personal-loans policy.
 - **Crash-free metric vs no-analytics stance** - resolved by making crash reporting strictly opt-in; pre-launch we'll rely on internal testing instead of telemetry.
-- **Solo-dev velocity** - the 8-week plan assumes no major blockers; Baseline Profile tooling and Glance widget have a learning-curve tail that may push M5/M6.
+- **Solo-dev velocity** - the 8-week plan assumes no major blockers; the Glance widget has a learning-curve tail that may push M5/M6.
 
 ---
 

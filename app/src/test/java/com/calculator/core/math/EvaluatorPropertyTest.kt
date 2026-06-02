@@ -1,8 +1,10 @@
 package com.calculator.core.math
 
+import io.kotest.common.ExperimentalKotest
 import io.kotest.property.Arb
 import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.double
+import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.map
 import io.kotest.property.checkAll
 import kotlinx.coroutines.runBlocking
@@ -49,6 +51,7 @@ class EvaluatorPropertyTest {
      * few thousand temporarily when hunting for a specific class of
      * bug; revert before committing so CI stays fast.
      */
+    @OptIn(ExperimentalKotest::class)
     private val config = PropTestConfig(iterations = 200)
 
     /** Absolute tolerance for Double-precision identities. */
@@ -136,7 +139,7 @@ class EvaluatorPropertyTest {
     fun pythagoreanIdentityHoldsInRadians(): Unit = runBlocking {
         // sin²(x) + cos²(x) = 1 for every x. Avoid the very-large
         // angles where Double range-reduction loses precision.
-        checkAll(config, Arb.double(min = -10.0, max = 10.0)) { x ->
+        checkAll(config, finiteDouble(min = -10.0, max = 10.0)) { x ->
             val str = formatForExpression(x)
             val result = rad.evaluate("sin($str)^2+cos($str)^2").expectSuccessLocal()
             assertNear(result, BigDecimal.ONE, "sin²+cos² ≠ 1 for x=$str")
@@ -146,7 +149,7 @@ class EvaluatorPropertyTest {
     @Test
     fun sinIsOddFunction(): Unit = runBlocking {
         // sin(-x) = -sin(x). Stays away from asymptotes since sin has none.
-        checkAll(config, Arb.double(min = -10.0, max = 10.0)) { x ->
+        checkAll(config, finiteDouble(min = -10.0, max = 10.0)) { x ->
             val str = formatForExpression(x)
             val sinX = rad.evaluate("sin($str)").expectSuccessLocal()
             val sinNegX = rad.evaluate("sin(-($str))").expectSuccessLocal()
@@ -157,7 +160,7 @@ class EvaluatorPropertyTest {
     @Test
     fun cosIsEvenFunction(): Unit = runBlocking {
         // cos(-x) = cos(x).
-        checkAll(config, Arb.double(min = -10.0, max = 10.0)) { x ->
+        checkAll(config, finiteDouble(min = -10.0, max = 10.0)) { x ->
             val str = formatForExpression(x)
             val cosX = rad.evaluate("cos($str)").expectSuccessLocal()
             val cosNegX = rad.evaluate("cos(-($str))").expectSuccessLocal()
@@ -168,7 +171,7 @@ class EvaluatorPropertyTest {
     @Test
     fun asinRoundtripsForUnitInterval(): Unit = runBlocking {
         // sin(asin(x)) = x for x in [-1, 1].
-        checkAll(config, Arb.double(min = -0.999, max = 0.999)) { x ->
+        checkAll(config, finiteDouble(min = -0.999, max = 0.999)) { x ->
             val str = formatForExpression(x)
             val result = rad.evaluate("sin(asin($str))").expectSuccessLocal()
             assertNear(result, BigDecimal(x), "sin(asin(x)) ≠ x for x=$str")
@@ -178,7 +181,7 @@ class EvaluatorPropertyTest {
     @Test
     fun acosRoundtripsForUnitInterval(): Unit = runBlocking {
         // cos(acos(x)) = x for x in [-1, 1].
-        checkAll(config, Arb.double(min = -0.999, max = 0.999)) { x ->
+        checkAll(config, finiteDouble(min = -0.999, max = 0.999)) { x ->
             val str = formatForExpression(x)
             val result = rad.evaluate("cos(acos($str))").expectSuccessLocal()
             assertNear(result, BigDecimal(x), "cos(acos(x)) ≠ x for x=$str")
@@ -190,7 +193,7 @@ class EvaluatorPropertyTest {
         // tan(atan(x)) = x. Avoid the magnitudes where atan saturates
         // numerically near ±π/2 (e.g. x = 1e15 round-trips, but the
         // last few digits depend on the tan/atan implementation chain).
-        checkAll(config, Arb.double(min = -1000.0, max = 1000.0)) { x ->
+        checkAll(config, finiteDouble(min = -1000.0, max = 1000.0)) { x ->
             val str = formatForExpression(x)
             val result = rad.evaluate("tan(atan($str))").expectSuccessLocal()
             // Tolerance scaled to magnitude: tan steepens fast, so for
@@ -207,7 +210,7 @@ class EvaluatorPropertyTest {
     @Test
     fun sqrtSquaredRecoversInput(): Unit = runBlocking {
         // sqrt(x)² = x for x ≥ 0.
-        checkAll(config, Arb.double(min = 0.0, max = 1_000_000.0)) { x ->
+        checkAll(config, finiteDouble(min = 0.0, max = 1_000_000.0)) { x ->
             val str = formatForExpression(x)
             val result = rad.evaluate("sqrt($str)^2").expectSuccessLocal()
             assertNear(
@@ -223,7 +226,7 @@ class EvaluatorPropertyTest {
 
     @Test
     fun cbrtCubedRecoversInput(): Unit = runBlocking {
-        checkAll(config, Arb.double(min = -1000.0, max = 1000.0)) { x ->
+        checkAll(config, finiteDouble(min = -1000.0, max = 1000.0)) { x ->
             val str = formatForExpression(x)
             val result = rad.evaluate("cbrt($str)^3").expectSuccessLocal()
             assertNear(
@@ -238,7 +241,7 @@ class EvaluatorPropertyTest {
     @Test
     fun logExpRoundtripBase10() = runBlocking {
         // log(10^x) = x for any x (within Math.pow's representable range).
-        checkAll(config, Arb.double(min = -50.0, max = 50.0)) { x ->
+        checkAll(config, finiteDouble(min = -50.0, max = 50.0)) { x ->
             val str = formatForExpression(x)
             val result = rad.evaluate("log(10^($str))").expectSuccessLocal()
             assertNear(result, BigDecimal(x), "log(10^x) ≠ x for x=$str")
@@ -248,7 +251,7 @@ class EvaluatorPropertyTest {
     @Test
     fun lnExpRoundtripBaseE(): Unit = runBlocking {
         // ln(e^x) = x. Smaller range than log10 because e is closer to 1.
-        checkAll(config, Arb.double(min = -50.0, max = 50.0)) { x ->
+        checkAll(config, finiteDouble(min = -50.0, max = 50.0)) { x ->
             val str = formatForExpression(x)
             val result = rad.evaluate("ln(e^($str))").expectSuccessLocal()
             assertNear(result, BigDecimal(x), "ln(e^x) ≠ x for x=$str")
@@ -260,12 +263,23 @@ class EvaluatorPropertyTest {
     // ------------------------------------------------------------------
 
     /**
+     * Bounded double generator that never yields non-finite values.
+     *
+     * kotest 6 emits NaN and the infinities as edge cases even for a
+     * range-bounded [Arb.double]; feeding those into `BigDecimal(Double)`
+     * throws NumberFormatException. These identities are only defined over
+     * finite reals, so we filter the non-finite edge cases out.
+     */
+    private fun finiteDouble(min: Double, max: Double): Arb<Double> =
+        Arb.double(min = min, max = max).filter { it.isFinite() }
+
+    /**
      * Generator of small decimals suitable for exact arithmetic
      * identities. Range and scale are chosen so the expression strings
      * stay readable in failure messages and so multiplied/squared
      * results stay inside a few dozen digits.
      */
-    private fun smallDecimal(): Arb<String> = Arb.double(min = -1000.0, max = 1000.0).map { d ->
+    private fun smallDecimal(): Arb<String> = finiteDouble(min = -1000.0, max = 1000.0).map { d ->
         // Round to 4 decimal places so the literal we feed back into
         // the engine is exact (BigDecimal(String) is exact;
         // BigDecimal(Double) carries the binary-float wobble).

@@ -10,7 +10,6 @@ import io.gitlab.arturbosch.detekt.Detekt
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt)
@@ -18,7 +17,6 @@ plugins {
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
     alias(libs.plugins.android.junit5)
-    alias(libs.plugins.baseline.profile)
 }
 
 android {
@@ -65,23 +63,6 @@ android {
                 "proguard-rules.pro",
             )
             // signingConfig set up later via Play App Signing.
-        }
-        // The baselineprofile module measures release-flavoured binaries
-        // but the Macrobenchmark harness needs to attach a profiler, so
-        // we expose a release-shaped, debuggable, no-shrink-equivalents
-        // variant. The benchmark Gradle plugin matches against this.
-        create("benchmark") {
-            initWith(getByName("release"))
-            isMinifyEnabled = false
-            isShrinkResources = false
-            // signingConfig left at debug so the APK installs without a
-            // release key on a contributor's machine.
-            signingConfig = signingConfigs.getByName("debug")
-            // Profileable so the macrobenchmark process can read /
-            // record what we're doing without making the app fully
-            // debuggable (which would skew timings).
-            isProfileable = true
-            matchingFallbacks += listOf("release")
         }
     }
 
@@ -140,11 +121,10 @@ dependencies {
     // Robolectric `createComposeRule()` launches a generic
     // ComponentActivity declared by the compose-ui-test-manifest AAR.
     // Adding it as `implementation` makes the declaration land in the
-    // merged manifest of every build variant (debug / release /
-    // benchmark) so testReleaseUnitTest and testBenchmarkUnitTest can
-    // resolve the activity. The AAR contains only the manifest stub -
-    // no runtime code, so the production cost is one extra `<activity>`
-    // line.
+    // merged manifest of every build variant (debug / release) so
+    // testReleaseUnitTest can resolve the activity. The AAR contains
+    // only the manifest stub - no runtime code, so the production cost
+    // is one extra `<activity>` line.
     implementation(libs.compose.ui.test.manifest)
 
     // ----- AndroidX core / lifecycle / navigation -----
@@ -156,10 +136,6 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.splashscreen)
     implementation(libs.androidx.startup)
-    // Installs the Phase 9 baseline profile at app launch so the
-    // first cold start benefits from AOT compilation of hot paths.
-    implementation(libs.androidx.profileinstaller)
-    "baselineProfile"(project(":baselineprofile"))
     // Phase 10: Glance for the home-screen widget.
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)

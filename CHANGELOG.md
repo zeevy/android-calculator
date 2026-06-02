@@ -7,7 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- Migrated to Android Gradle Plugin 9.2.1 (Gradle 9.4.1) with built-in
+  Kotlin; the standalone `kotlin-android` plugin is no longer applied.
+- Bumped Kotlin 2.3.21, KSP 2.3.9, Hilt 2.59.2, Compose BOM 2026.05.01,
+  the AndroidX core/lifecycle/navigation/room/datastore stack, coroutines,
+  kotlinx.serialization, kotest 6, mockk, and the AndroidX test libraries.
+
+### Removed
+
+- Baseline Profile + Macrobenchmark apparatus (the `:baselineprofile`
+  module, the `benchmark` build type, the ProfileInstaller dependency,
+  and the release-workflow profile-generation job). Not worth the build
+  surface for an app this small.
 
 ## [1.0.0] - 2026-05-20
 

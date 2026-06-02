@@ -1,17 +1,12 @@
 # Release workflow.
 #
-# Triggered manually or by pushing a tag like `v0.1.0`. Split into three
+# Triggered manually or by pushing a tag like `v0.1.0`. Split into two
 # connected jobs so the Actions UI renders the pipeline as a DAG:
 #
-#   baseline-profile  ──>  build-artifacts  ──>  publish-release
+#   build-artifacts  ──>  publish-release
 #
-# 1. `baseline-profile` regenerates the AOT profile on an emulator and
-#    uploads it as an artifact. Non-blocking: if the emulator flakes the
-#    job exits cleanly and the next job falls back to the committed
-#    profile.
-# 2. `build-artifacts` downloads the regenerated profile (if present),
-#    assembles the release APK + AAB, and uploads them.
-# 3. `publish-release` downloads the APK + AAB and attaches them to a
+# 1. `build-artifacts` assembles the release APK + AAB and uploads them.
+# 2. `publish-release` downloads the APK + AAB and attaches them to a
 #    GitHub release. Only runs for tag pushes.
 #
 # Signing is intentionally left unsigned for now; once Play App Signing
@@ -38,93 +33,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  baseline-profile:
-    name: Generate baseline profile
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    # Non-blocking: a flaky emulator must not fail the entire release.
-    # `build-artifacts` always runs and falls back to the committed
-    # profile if this job did not produce one.
-    continue-on-error: true
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Enable KVM
-        # Required so the emulator can use hardware acceleration on the
-        # GitHub-hosted runner.
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
-            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
-        with:
-          cache-read-only: true
-
-      - name: AVD cache
-        uses: actions/cache@v5
-        id: avd-cache
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-pixel6-api34-release
-
-      - name: Create AVD and prime cache
-        if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 34
-          target: aosp_atd
-          arch: x86_64
-          force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: true
-          script: echo "Generated AVD snapshot."
-
-      - name: Generate baseline profile
-        # The androidx.baselineprofile plugin writes the result to
-        #   app/src/release/generated/baselineProfiles/baseline-prof.txt
-        # which `mergeReleaseBaselineProfile` consumes from the next
-        # job after we restore it via download-artifact.
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 34
-          target: aosp_atd
-          arch: x86_64
-          force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: true
-          script: ./gradlew :app:generateReleaseBaselineProfile --stacktrace
-
-      - name: Upload generated baseline profile
-        uses: actions/upload-artifact@v7
-        with:
-          name: baseline-prof
-          path: app/src/release/generated/baselineProfiles/baseline-prof.txt
-          retention-days: 90
-          if-no-files-found: warn
-
   build-artifacts:
     name: Build release artifacts
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: baseline-profile
-    # Always run, even if baseline-profile flaked. The build will then
-    # fall back to the profile committed in source control.
-    if: ${{ always() }}
 
     steps:
       - name: Checkout
@@ -142,16 +54,6 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: true
-
-      - name: Restore generated baseline profile
-        # `continue-on-error` so a missing artifact (when the upstream
-        # job flaked) does not break the build; Gradle will use the
-        # committed profile instead.
-        continue-on-error: true
-        uses: actions/download-artifact@v8
-        with:
-          name: baseline-prof
-          path: app/src/release/generated/baselineProfiles/
 
       - name: Assemble release APK
         run: ./gradlew :app:assembleRelease --stacktrace

@@ -24,7 +24,7 @@ See [REQUIREMENTS.md](REQUIREMENTS.md) for the full product specification - it i
 | Network | None. App is fully offline; no permissions declared. |
 | Math engine | Custom evaluator: `BigDecimal` for arithmetic, bounded `Double` with rounding for transcendentals (sin/cos/log/exp). Revisit BigMath-style libs only if precision bugs appear. |
 | Build | Gradle Kotlin DSL, **Version Catalogs** (`gradle/libs.versions.toml`), R8 minification + resource shrinking on release |
-| Performance | Baseline Profiles via Macrobenchmark, AndroidX Startup for lightweight init |
+| Performance | AndroidX Startup for lightweight init |
 | Widgets | Jetpack **Glance** (not legacy RemoteViews) |
 | Splash | AndroidX SplashScreen API + adaptive icon |
 | Testing | **JUnit5** (unit, via `android-junit5` plugin), **JUnit4 + AndroidX Test** (instrumented & Compose UI), Turbine, MockK, Robolectric where useful |
@@ -128,9 +128,6 @@ These come from the user's global preferences and apply to every commit, file, a
 ./gradlew ktlintCheck
 ./gradlew detekt
 ./gradlew lint
-
-# Generate Baseline Profile (when the macrobenchmark module is added)
-./gradlew :baselineprofile:generateBaselineProfile
 
 # Format code with ktlint
 ./gradlew ktlintFormat

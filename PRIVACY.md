@@ -48,7 +48,7 @@ behavioural-tracking library. The runtime dependencies are limited to:
 - Retrofit + OkHttp + kotlinx.serialization (currency API only)
 - Hilt (dependency injection)
 - AndroidX coroutines (concurrency)
-- AndroidX SplashScreen, Glance, ProfileInstaller
+- AndroidX SplashScreen, Glance
 
 A complete list is in
 [`gradle/libs.versions.toml`](gradle/libs.versions.toml).

@@ -1,7 +1,0 @@
-{
-  "_comment": "Cold-start P50 in milliseconds, measured with CompilationMode.Partial(BaselineProfileMode.Require) on the Pixel 6 API-34 AVD. Bumped manually after each main run where the new number is plausibly representative; the CI gate fails if a PR's measured P50 exceeds (baseline * 1.10).",
-  "_updated": "2026-05-20",
-  "_device": "Pixel 6 AVD api 34 (aosp_atd x86_64)",
-  "compilation_mode": "Partial+BaselineProfile",
-  "startup_p50_ms": 600
-}
