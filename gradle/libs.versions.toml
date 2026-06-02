@@ -54,7 +54,7 @@ retrofit-kotlinx-serialization-converter = "1.0.0"
 
 # Static analysis
 ktlint-plugin = "14.2.0"
-detekt = "1.23.7"
+detekt = "1.23.8"
 
 # Tests
 junit5 = "6.1.0"
