@@ -45,7 +45,7 @@ import com.calculator.navigation.BasicCalculatorRoute
 /**
  * Reusable shell for every life-calculator screen.
  *
- * The seven calculators share the same visual chrome - dark canvas,
+ * The seven calculators share the same visual chrome - themed canvas,
  * hamburger menu + screen title, a column of inputs, a card with outputs -
  * so we lift it into one composable and let each feature plug in only
  * what differs.
@@ -81,11 +81,12 @@ fun LifeCalculatorScaffold(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     var openSheet by remember { mutableStateOf<ToolsMenuSheet?>(null) }
+    val scheme = MaterialTheme.colorScheme
     Column(
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(LifeCalcBackground)
+                .background(scheme.background)
                 .systemBarsPadding()
                 // Horizontal 12dp matches the basic calculator's outer
                 // padding so the top-right hamburger lands at the same
@@ -100,14 +101,14 @@ fun LifeCalculatorScaffold(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = Color.White,
+                color = scheme.onBackground,
                 modifier = Modifier.weight(1f).padding(start = 8.dp),
             )
             IconButton(onClick = { openSheet = ToolsMenuSheet.Tools }) {
                 Icon(
                     imageVector = Icons.Filled.Menu,
                     contentDescription = stringResource(R.string.basic_open_menu),
-                    tint = Color.White,
+                    tint = scheme.onBackground,
                 )
             }
         }
@@ -154,7 +155,7 @@ fun LifeCalcCard(
             modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(20.dp))
-                .background(LifeCalcCardBackground)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
                 .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) { content() }
@@ -166,7 +167,7 @@ fun LifeCalcSectionLabel(text: String) {
     Text(
         text = text.uppercase(),
         style = MaterialTheme.typography.labelSmall,
-        color = Color.White.copy(alpha = 0.55f),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
 
@@ -193,11 +194,12 @@ fun LifeCalcNumberField(
     onValueChange: (String) -> Unit,
     suffix: String? = null,
 ) {
+    val scheme = MaterialTheme.colorScheme
     Column {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.White.copy(alpha = 0.6f),
+            color = scheme.onSurfaceVariant,
         )
         Spacer(Modifier.size(4.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -207,20 +209,20 @@ fun LifeCalcNumberField(
                 singleLine = true,
                 textStyle =
                     TextStyle(
-                        color = Color.White,
+                        color = scheme.onSurface,
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                     ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 cursorBrush = androidx.compose.ui.graphics
-                    .SolidColor(LifeCalcAccent),
+                    .SolidColor(scheme.primary),
                 modifier = Modifier.weight(1f),
             )
             if (suffix != null) {
                 Text(
                     text = suffix,
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.White.copy(alpha = 0.55f),
+                    color = scheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 8.dp),
                 )
             }
@@ -242,11 +244,12 @@ fun LifeCalcNumberField(
  */
 @Composable
 fun LifeCalcOutputRow(label: String, value: String, accent: Boolean = false) {
+    val scheme = MaterialTheme.colorScheme
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
-            color = Color.White.copy(alpha = 0.7f),
+            color = scheme.onSurfaceVariant,
             modifier = Modifier.weight(1f),
         )
         Text(
@@ -255,7 +258,7 @@ fun LifeCalcOutputRow(label: String, value: String, accent: Boolean = false) {
                 MaterialTheme.typography.titleLarge.copy(
                     fontWeight = if (accent) FontWeight.Bold else FontWeight.SemiBold,
                 ),
-            color = if (accent) LifeCalcAccent else Color.White,
+            color = if (accent) scheme.primary else scheme.onSurface,
             textAlign = TextAlign.End,
         )
     }
@@ -280,12 +283,13 @@ fun LifeCalcSegmented(
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
 ) {
+    val scheme = MaterialTheme.colorScheme
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(LifeCalcSegmentBackground)
+                .background(scheme.surfaceContainerHigh)
                 .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -294,13 +298,13 @@ fun LifeCalcSegmented(
             Text(
                 text = opt,
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (selected) Color.Black else Color.White,
+                color = if (selected) scheme.onPrimary else scheme.onSurface,
                 textAlign = TextAlign.Center,
                 modifier =
                     Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(if (selected) LifeCalcAccent else Color.Transparent)
+                        .background(if (selected) scheme.primary else Color.Transparent)
                         .clickable { onSelect(idx) }
                         .padding(vertical = 10.dp),
             )
@@ -308,10 +312,10 @@ fun LifeCalcSegmented(
     }
 }
 
-// iOS palette tokens shared across all life-calc screens. Literal Color
-// values rather than MaterialTheme roles because the look needs to match
-// the basic calculator regardless of the user's dynamic-color settings.
+// Remaining literal palette tokens still referenced directly by individual
+// life-calc screens (e.g. GST rate chips, the ovulation slider). These are
+// being migrated to MaterialTheme.colorScheme screen by screen; prefer
+// colorScheme.primary / .surfaceContainerHigh in new code.
+// TODO: remove once every screen reads these from the theme.
 internal val LifeCalcAccent = Color(0xFFFF9F0A)
-internal val LifeCalcBackground = Color.Black
-internal val LifeCalcCardBackground = Color(0xFF1C1C1E)
 internal val LifeCalcSegmentBackground = Color(0xFF2C2C2E)
