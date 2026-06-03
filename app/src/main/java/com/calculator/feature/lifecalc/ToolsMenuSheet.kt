@@ -43,7 +43,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -153,9 +152,9 @@ fun ToolsMenuOverlay(
     ModalBottomSheet(
         sheetState = sheetState,
         onDismissRequest = onDismiss,
-        containerColor = IosSheetBackground,
-        contentColor = Color.White,
-        dragHandle = { BottomSheetDefaults.DragHandle(color = IosKeyModifierContainer) },
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        dragHandle = { BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.onSurfaceVariant) },
     ) {
         when (openSheet) {
             ToolsMenuSheet.Tools ->
@@ -409,8 +408,8 @@ private data class ToolTile(
 
 @Composable
 private fun ToolTileButton(tile: ToolTile, modifier: Modifier = Modifier) {
-    val containerColor = if (tile.selected) IosKeyOperator else IosKeyDigitContainer
-    val contentColor = Color.White
+    val containerColor = if (tile.selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh
+    val contentColor = if (tile.selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
     Column(
         modifier =
             modifier
@@ -436,11 +435,3 @@ private fun ToolTileButton(tile: ToolTile, modifier: Modifier = Modifier) {
 }
 
 private const val TOOL_TILE_COLUMNS = 3
-
-// iOS palette tokens shared with the basic calculator keypad. Public
-// (well, internal) so the hamburger overlay and any future surfaces can
-// render against the same colors regardless of the system M3 theme.
-internal val IosKeyDigitContainer = Color(0xFF505050)
-internal val IosKeyModifierContainer = Color(0xFFA5A5A5)
-internal val IosKeyOperator = Color(0xFFFF9F0A)
-internal val IosSheetBackground = Color(0xFF1C1C1E)

@@ -56,7 +56,7 @@ fun SettingsSheetContent(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsState()
-    val accent = SettingsAccent
+    val accent = MaterialTheme.colorScheme.primary
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
 
@@ -70,7 +70,7 @@ fun SettingsSheetContent(
         Text(
             text = stringResource(R.string.settings_title),
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 16.dp),
         )
 
@@ -173,7 +173,7 @@ private fun SectionLabel(text: String) {
     Text(
         text = text.uppercase(),
         style = MaterialTheme.typography.labelSmall,
-        color = Color.White.copy(alpha = 0.5f),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(start = 16.dp, bottom = 6.dp),
     )
 }
@@ -207,7 +207,7 @@ private fun ToggleRow(
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(RowBackground)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                 .clickable { onCheckedChange(!checked) }
                 .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -216,13 +216,13 @@ private fun ToggleRow(
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             if (description != null) {
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.55f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -231,10 +231,10 @@ private fun ToggleRow(
             onCheckedChange = onCheckedChange,
             colors =
                 SwitchDefaults.colors(
-                    checkedThumbColor = Color.White,
+                    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                     checkedTrackColor = accent,
-                    uncheckedThumbColor = Color.White,
-                    uncheckedTrackColor = UncheckedTrackColor,
+                    uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                     uncheckedBorderColor = Color.Transparent,
                 ),
         )
@@ -257,7 +257,7 @@ private fun ActionRow(
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(RowBackground)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                 .clickable(onClick = onClick)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -266,20 +266,20 @@ private fun ActionRow(
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             if (description != null) {
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.55f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
         Text(
             text = "›",
             style = MaterialTheme.typography.titleLarge,
-            color = Color.White.copy(alpha = 0.4f),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -295,7 +295,7 @@ private fun SegmentedThemePicker(
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(RowBackground)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                 .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -304,7 +304,7 @@ private fun SegmentedThemePicker(
             Text(
                 text = stringResource(option.labelRes()),
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (isSelected) Color.Black else Color.White,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                 modifier =
                     Modifier
                         .weight(1f)
@@ -342,14 +342,14 @@ private fun PrecisionRow(
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(RowBackground)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = stringResource(R.string.settings_precision_label),
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
             Text(
@@ -370,7 +370,7 @@ private fun PrecisionRow(
                 SliderDefaults.colors(
                     thumbColor = accent,
                     activeTrackColor = accent,
-                    inactiveTrackColor = Color.White.copy(alpha = 0.2f),
+                    inactiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
                     activeTickColor = Color.Transparent,
                     inactiveTickColor = Color.Transparent,
                 ),
@@ -378,7 +378,7 @@ private fun PrecisionRow(
         Text(
             text = stringResource(R.string.settings_precision_description),
             style = MaterialTheme.typography.bodySmall,
-            color = Color.White.copy(alpha = 0.55f),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -401,17 +401,17 @@ private fun AboutRow(label: String, value: String, onClick: (() -> Unit)? = null
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (onClick != null) SettingsAccent else Color.White.copy(alpha = 0.6f),
+                color = if (onClick != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         HorizontalDivider(
-            color = Color.White.copy(alpha = 0.08f),
+            color = MaterialTheme.colorScheme.outlineVariant,
             modifier = Modifier.padding(horizontal = 16.dp),
         )
     }
@@ -423,15 +423,6 @@ private fun UserSettings.ThemeOption.labelRes(): Int =
         UserSettings.ThemeOption.Light -> R.string.settings_theme_light
         UserSettings.ThemeOption.Dark -> R.string.settings_theme_dark
     }
-
-// Background tint for settings rows. Slightly lighter than the
-// sheet container so individual rows read as distinct cards.
-private val RowBackground = Color(0xFF2C2C2E)
-private val UncheckedTrackColor = Color(0xFF555555)
-
-// Same orange as the keypad operator keys. Reused here so the settings
-// sheet stays visually consistent with the rest of the app.
-private val SettingsAccent = Color(0xFFFF9F0A)
 
 @Suppress("unused")
 private val PaddingPlaceholder = PaddingValues(0.dp)
