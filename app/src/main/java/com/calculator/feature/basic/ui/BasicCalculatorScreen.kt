@@ -54,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -943,22 +944,36 @@ private fun KeyButton(
     val category = keyCategoryOf(key)
     val keyShape = RoundedCornerShape(20.dp)
 
-    // iOS-style palette: dark-grey digits, light-grey modifiers (with
-    // black text), vivid orange operators and equals (white text).
-    // Sourced from the named constants below so the popup sheet and any
-    // future surfaces can share the same palette.
+    // iOS-style keypad palette. Only operators carry an accent (primary);
+    // every other key is a NEUTRAL grey so the pad reads as "greys + one
+    // accent" rather than a multi-hue patchwork. The greys are derived by
+    // blending surface -> onSurface at a fixed lightness instead of using
+    // the dynamic surface-container roles directly: that keeps the keys at
+    // a controlled, clearly-visible brightness in every scheme (the raw
+    // dynamic neutrals come out near-black in dark mode), while still
+    // picking up a subtle wallpaper tint. The fractions reproduce the
+    // original iOS greys (0x50 / 0x70 / 0xA5) in the static dark scheme.
+    val scheme = MaterialTheme.colorScheme
+    val keyGreyFraction =
+        when (category) {
+            KeyCategory.Digit -> 0.31f
+            KeyCategory.Function -> 0.44f
+            KeyCategory.Modifier -> 0.65f
+            KeyCategory.Operator, KeyCategory.Equals -> 0f // unused; operators use primary
+        }
     val containerColor =
         when (category) {
-            KeyCategory.Digit -> IosKeyDigitContainer
-            KeyCategory.Function -> IosKeyFunctionContainer
-            KeyCategory.Modifier -> IosKeyModifierContainer
-            KeyCategory.Operator, KeyCategory.Equals -> IosKeyOperator
+            KeyCategory.Operator, KeyCategory.Equals -> scheme.primary
+            else -> lerp(scheme.surface, scheme.onSurface, keyGreyFraction)
         }
     val contentColor =
         when (category) {
-            KeyCategory.Digit, KeyCategory.Function -> Color.White
-            KeyCategory.Modifier -> Color.Black
-            KeyCategory.Operator, KeyCategory.Equals -> Color.White
+            KeyCategory.Operator, KeyCategory.Equals -> scheme.onPrimary
+            // Modifier keys are the light end of the grey ramp, so they take
+            // the background color as their text (dark text in dark mode,
+            // light text in light mode) for guaranteed contrast.
+            KeyCategory.Modifier -> scheme.surface
+            else -> scheme.onSurface
         }
 
     // Operators and equals get the larger display ramp so the action keys
@@ -966,9 +981,9 @@ private fun KeyButton(
     // slightly tighter ramp because their labels are longer (sin⁻¹, M+).
     // In compact rows (height ~33dp), the displaySmall ramp would
     // exceed the button height and clip - so every category drops one
-    // step down in the type ramp when compact is true. This is what
-    // fixes "π" and "e" being half-cut: those keys are operator-color
-    // but live in a compact row.
+    // step down in the type ramp when compact is true. This keeps keys
+    // like the constants and x²/x³ in the compact scientific rows from
+    // being half-cut.
     val labelStyle =
         if (compact) {
             when (category) {
@@ -1157,18 +1172,26 @@ private fun keyCategoryOf(key: Key): KeyCategory =
         Key.Empty -> KeyCategory.Digit // unused; Empty is rendered separately
         is Key.Function -> KeyCategory.Function
         is Key.Symbol ->
-            if (key.label in OperatorLabels) KeyCategory.Operator else KeyCategory.Digit
+            when {
+                key.label in OperatorLabels -> KeyCategory.Operator
+                // Constants (pi, e) sit among the scientific keys, so they
+                // take the function color rather than the digit color.
+                key.label in ConstantLabels -> KeyCategory.Function
+                else -> KeyCategory.Digit
+            }
     }
 
 /**
  * Labels of arithmetic-operator keys that get the operator (orange) color.
- *
- * Note: π and e are *constants*, not operators - tapping one inserts a
- * literal value, the same conceptual action as tapping `7`. They sit in
- * the digit color bucket so the orange in advanced mode is contained to
- * column 4 (which lines up with the basic-mode operator column ×/-/+).
  */
 private val OperatorLabels = setOf("+", "-", "×", "÷", "%", "^")
+
+/**
+ * Labels of constant keys (pi, e). They insert a literal value like a digit,
+ * but visually they belong with the scientific function keys they sit among,
+ * so they take the function color rather than the digit color.
+ */
+private val ConstantLabels = setOf("π", "e")
 
 // Width-to-height ratio for every keypad button. 1.6 gives a clean
 // "horizontal rectangle" silhouette - wider than tall by ~60%, the
@@ -1204,11 +1227,6 @@ internal fun extractLeadingNumber(text: String): String? {
     // produce this but the explicit guard makes the intent obvious).
     return cleaned.takeIf { it.toDoubleOrNull() != null }
 }
-
-private val IosKeyDigitContainer = Color(0xFF505050)
-private val IosKeyFunctionContainer = Color(0xFF707070)
-private val IosKeyModifierContainer = Color(0xFFA5A5A5)
-private val IosKeyOperator = Color(0xFFFF9F0A)
 
 // ----- Previews -----
 
