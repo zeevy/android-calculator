@@ -152,15 +152,15 @@ dependencies {
     ksp(libs.hilt.compiler)
 
     // ----- Async + serialization -----
-    // kotlinx.serialization.json stays even though the network layer
-    // is gone - Navigation Compose's type-safe routes serialize via
-    // it. Don't strip it together with the Retrofit / OkHttp deps.
+    // kotlinx.serialization.json is required by Navigation Compose's
+    // type-safe routes; it is the only reason serialization is on the
+    // classpath now that the network layer is gone. Don't remove it.
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
 
-    // Network deps removed when the currency converter was deleted -
-    // there are no other callers in this app. INTERNET permission also
-    // dropped from the manifest in the same change.
+    // No network deps: Retrofit / OkHttp and their catalog entries were
+    // removed when the currency converter was deleted, along with the
+    // INTERNET permission. The app is fully offline.
 
     // ----- Unit tests (JUnit5 for our own tests; JUnit4 vintage runner
     //                  carries Robolectric tests since Robolectric is

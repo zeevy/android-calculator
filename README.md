@@ -1,17 +1,20 @@
 # Calculator
 
-A modern, offline-first, multi-purpose calculator for Android - inspired by Mi Calculator, built with Kotlin and Jetpack Compose.
+A modern, fully-offline, multi-purpose calculator for Android - inspired by Mi Calculator, built with Kotlin and Jetpack Compose.
 
-> Status: **scaffold** - core architecture in place, features being filled in. See [REQUIREMENTS.md](REQUIREMENTS.md) for the full product spec.
+> Status: **v1** - shipping. See [CHANGELOG.md](CHANGELOG.md) for releases and [REQUIREMENTS.md](REQUIREMENTS.md) for the full product spec.
 
-## Features (target v1)
+## Features
 
-- Basic and scientific calculator with editable history
-- Unit converter (length, area, volume, mass, temperature, speed, time, data, pressure, energy, power)
-- Currency converter (offline-cached, daily rates)
-- Life calculators: Loan/EMI, GST, BMI, Age, Discount, Date difference
+- Basic and scientific calculator with editable history and a running tape view
+- Percentage calculator
+- Unit converter (length, area, volume, mass, temperature, speed, time, data, pressure, energy, power) plus a number-base converter
+- Finance calculators: Loan/EMI, GST (India), Discount, Investment, Tip split
+- Health calculators: BMI, Ovulation
+- Date & time calculators: Age, Date difference, Timezone converter
+- Floating overlay calculator (draw-over-other-apps) and a home-screen widget (Jetpack Glance)
 - Material 3 + Material 3 Expressive UI, Material You dynamic color, light/dark themes
-- Fully offline for non-currency features, no analytics, no ads
+- **Fully offline** - no network calls, no analytics, no ads
 
 ## Tech stack
 
@@ -25,23 +28,29 @@ A modern, offline-first, multi-purpose calculator for Android - inspired by Mi C
 | DI | Hilt |
 | Async | Coroutines + Flow |
 | Persistence | Room + DataStore |
-| Network | Retrofit + OkHttp + kotlinx.serialization (currency rates only) |
+| Network | None - fully offline, no permissions for network |
+| Widgets | Jetpack Glance |
 | Build | Gradle Kotlin DSL, Version Catalogs |
-| Testing | JUnit5 (unit), AndroidX Test + Compose UI Test (instrumented), Turbine, MockK |
+| Testing | JUnit5 (unit), JUnit4 + AndroidX Test + Compose UI Test, Turbine, MockK, Robolectric, Kotest (property tests) |
 | CI | GitHub Actions |
 
 ## Project layout
 
+Everything ships from a single Gradle module (`:app`); `feature/` and `core/` are Kotlin packages.
+
 ```
 app/
   src/main/java/com/calculator/
-    feature/        # User-facing features (basic, converter, finance, health, datetime)
+    feature/        # User-facing features: basic, math, converter, finance,
+                    #   health, datetime, lifecalc, history, tape, shortcuts,
+                    #   floating, settings
     core/
       math/         # Expression parser + evaluator (pure Kotlin, no Android deps)
       designsystem/ # Theme, colors, typography, shared Compose components
-      data/         # Room, DataStore, network
-      domain/       # Cross-feature use-cases
-      common/       # Utilities, formatters
+      data/         # Room + DataStore
+      domain/       # Cross-feature use-cases (pure Kotlin)
+      common/       # Utilities, formatters, locale helpers
+      widget/       # Jetpack Glance home-screen widget
     navigation/     # Type-safe Navigation Compose host
     CalculatorApplication.kt
     MainActivity.kt
@@ -52,7 +61,7 @@ app/
 ### Prerequisites
 
 - **JDK 17** (or newer)
-- **Android Studio** Ladybug | 2024.2.1 or newer
+- **Android Studio** - latest stable, compatible with Android Gradle Plugin 9.x
 - **Android SDK** with platform 36 (Android 16) installed
 
 ### First-time setup
@@ -62,10 +71,7 @@ app/
 git clone https://github.com/YOUR_USERNAME/calculator.git
 cd calculator
 
-# If the Gradle wrapper isn't checked in, generate it once:
-gradle wrapper --gradle-version 8.11.1
-
-# Build the debug APK
+# Build the debug APK (the Gradle wrapper is checked in)
 ./gradlew :app:assembleDebug
 
 # Install on a connected device or emulator

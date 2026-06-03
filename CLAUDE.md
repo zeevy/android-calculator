@@ -36,27 +36,37 @@ If you need to change any of the locked decisions above, raise the trade-off exp
 
 ## Project layout
 
+Everything ships from a **single Gradle module (`:app`)**. The `feature/` and `core/` directories are Kotlin **packages**, not Gradle modules - the app build script notes they can be promoted to library modules later if build times or isolation demand it. "Module" in the rules below means "package boundary" until that split happens.
+
 ```
 app/
   src/main/java/com/calculator/
     feature/            # User-facing features (each owns ui/, domain/, data/)
-      basic/            # Basic + scientific calculator
-      converter/        # Unit converter
-      finance/          # Loan, GST, discount
-      health/           # BMI, ovulation
-      datetime/         # Age, date diff
+      basic/            # Basic calculator (ui/)
+      math/             # percent/ - percentage calculator
+      converter/        # unit/ converter + base/ (number-base) converter
+      finance/          # loan/, gst/, discount/, investment/, tipsplit/
+      health/           # bmi/, ovulation/
+      datetime/         # age/, datediff/, timezone/
+      lifecalc/         # life-calculator hub/landing
+      history/          # calculation history screen
+      tape/             # running tape/paper-roll view
+      shortcuts/        # app-shortcut entry points
+      floating/         # floating overlay calculator (foreground service)
+      settings/         # settings + about
     core/
-      math/             # Expression parser + evaluator (pure Kotlin, no Android deps)
-      data/             # Room DB, DAOs, DataStore
-      domain/           # Cross-feature use-cases (pure Kotlin)
-      designsystem/     # Theme, colors, typography, shared Compose components
-      common/           # Utilities, formatters, locale helpers
-    navigation/         # NavHost + type-safe destination definitions
+      math/             # Expression parser + evaluator (pure Kotlin, no Android deps); di/
+      data/             # Room DB, DAOs, DataStore (history/, converter/, settings/, db/, di/)
+      domain/           # Cross-feature use-cases, pure Kotlin (converter/, datetime/, health/, math/, finance/)
+      designsystem/     # theme/ - colors, typography, shared Compose components
+      common/           # format/ - utilities, formatters, locale helpers
+      widget/           # Glance home-screen widget
+    navigation/         # CalculatorNavHost.kt + Destinations.kt (type-safe routes)
     CalculatorApplication.kt
     MainActivity.kt
 ```
 
-Keep features self-contained. **A `feature/` module never imports another `feature/` module** - share via `core/`.
+Keep features self-contained. **A `feature/` package never imports another `feature/` package** - share via `core/`. Scientific functions route through `core/math`; there is no separate scientific feature package.
 
 ## Coding style and conventions
 
@@ -118,8 +128,14 @@ These come from the user's global preferences and apply to every commit, file, a
 # Install on connected device/emulator
 ./gradlew :app:installDebug
 
-# Unit tests
+# Unit tests (JVM; includes Robolectric-backed Compose UI tests - no emulator needed)
 ./gradlew test
+./gradlew testDebugUnitTest          # single variant, faster
+
+# Run a single test class or method (Gradle test filter)
+./gradlew testDebugUnitTest --tests "com.calculator.core.math.EvaluatorTest"
+./gradlew testDebugUnitTest --tests "com.calculator.core.math.EvaluatorTest.divides by zero returns error"
+./gradlew testDebugUnitTest --tests "com.calculator.feature.*"   # glob a package
 
 # Instrumented tests (needs running emulator/device)
 ./gradlew connectedAndroidTest
@@ -132,6 +148,11 @@ These come from the user's global preferences and apply to every commit, file, a
 # Format code with ktlint
 ./gradlew ktlintFormat
 ```
+
+**Testing notes:**
+- Unit tests use **JUnit5 (Jupiter)** as the engine; Robolectric tests are JUnit4 and run through the **vintage engine** in the same `test` task. Don't split them into separate runs.
+- **Compose UI tests run headless on the JVM** via `createComposeRule()` + Robolectric - they execute under `./gradlew test`, not `connectedAndroidTest`. Reserve instrumented tests for things that genuinely need a device.
+- **Kotest property tests** (e.g. `EvaluatorPropertyTest`) call `checkAll` directly inside `@org.junit.jupiter.api.Test` bodies. Don't add the `kotest-runner-junit5` plugin - layering a second engine breaks discovery.
 
 ## Things to know (gotchas)
 
