@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import com.calculator.R
 import com.calculator.core.domain.health.OvulationCalculator
 import com.calculator.feature.datetime.age.DateRow
-import com.calculator.feature.lifecalc.LifeCalcAccent
 import com.calculator.feature.lifecalc.LifeCalcCard
 import com.calculator.feature.lifecalc.LifeCalcSectionLabel
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
@@ -61,6 +60,7 @@ fun OvulationScreen(onNavigate: (Any) -> Unit) {
     // Seed the LMP to ~two weeks ago so on first open the user sees a
     // populated result roughly centred on today's date. They will replace
     // it with their actual LMP via the picker.
+    val scheme = MaterialTheme.colorScheme
     var lmp by remember { mutableStateOf(LocalDate.now().minusDays(DEFAULT_LMP_OFFSET_DAYS)) }
     var cycleDays by remember { mutableIntStateOf(OvulationCalculator.DEFAULT_CYCLE_DAYS) }
     var pickerOpen by remember { mutableStateOf(false) }
@@ -78,7 +78,7 @@ fun OvulationScreen(onNavigate: (Any) -> Unit) {
             Text(
                 text = stringResource(R.string.ovulation_cycle_days_format, cycleDays),
                 style = MaterialTheme.typography.titleLarge,
-                color = LifeCalcAccent,
+                color = scheme.primary,
             )
             Slider(
                 value = cycleDays.toFloat(),
@@ -90,9 +90,9 @@ fun OvulationScreen(onNavigate: (Any) -> Unit) {
                         OvulationCalculator.MIN_CYCLE_DAYS - 1,
                 colors =
                     SliderDefaults.colors(
-                        thumbColor = LifeCalcAccent,
-                        activeTrackColor = LifeCalcAccent,
-                        inactiveTrackColor = Color.White.copy(alpha = 0.2f),
+                        thumbColor = scheme.primary,
+                        activeTrackColor = scheme.primary,
+                        inactiveTrackColor = scheme.onSurface.copy(alpha = 0.2f),
                         activeTickColor = Color.Transparent,
                         inactiveTickColor = Color.Transparent,
                     ),
@@ -107,7 +107,7 @@ fun OvulationScreen(onNavigate: (Any) -> Unit) {
                 Text(
                     text = stringResource(R.string.ovulation_error_invalid),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.55f),
+                    color = scheme.error,
                 )
             } else {
                 // Stacked rows: weekday + full date strings (and the
@@ -141,7 +141,7 @@ fun OvulationScreen(onNavigate: (Any) -> Unit) {
         Text(
             text = stringResource(R.string.ovulation_disclaimer),
             style = MaterialTheme.typography.bodySmall,
-            color = Color.White.copy(alpha = 0.45f),
+            color = scheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 4.dp),
         )
     }
@@ -194,11 +194,12 @@ private fun format(date: LocalDate): String =
  */
 @Composable
 private fun UpcomingPeriods(label: String, dates: List<LocalDate>) {
+    val scheme = MaterialTheme.colorScheme
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
-            color = Color.White.copy(alpha = 0.7f),
+            color = scheme.onSurfaceVariant,
         )
         dates.forEachIndexed { index, date ->
             Text(
@@ -206,7 +207,7 @@ private fun UpcomingPeriods(label: String, dates: List<LocalDate>) {
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = if (index == 0) FontWeight.Bold else FontWeight.SemiBold,
                 ),
-                color = if (index == 0) LifeCalcAccent else Color.White,
+                color = if (index == 0) scheme.primary else scheme.onSurface,
             )
         }
     }
@@ -219,18 +220,19 @@ private fun UpcomingPeriods(label: String, dates: List<LocalDate>) {
  */
 @Composable
 private fun StackedOutput(label: String, value: String, accent: Boolean = false) {
+    val scheme = MaterialTheme.colorScheme
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
-            color = Color.White.copy(alpha = 0.7f),
+            color = scheme.onSurfaceVariant,
         )
         Text(
             text = value,
             style = MaterialTheme.typography.titleLarge.copy(
                 fontWeight = if (accent) FontWeight.Bold else FontWeight.SemiBold,
             ),
-            color = if (accent) LifeCalcAccent else Color.White,
+            color = if (accent) scheme.primary else scheme.onSurface,
         )
     }
 }

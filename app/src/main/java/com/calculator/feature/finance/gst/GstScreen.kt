@@ -17,7 +17,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -25,12 +24,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.R
 import com.calculator.core.common.format.NumberFormatter
 import com.calculator.core.domain.finance.GstCalculator
-import com.calculator.feature.lifecalc.LifeCalcAccent
 import com.calculator.feature.lifecalc.LifeCalcCard
 import com.calculator.feature.lifecalc.LifeCalcNumberField
 import com.calculator.feature.lifecalc.LifeCalcOutputRow
 import com.calculator.feature.lifecalc.LifeCalcSectionLabel
-import com.calculator.feature.lifecalc.LifeCalcSegmentBackground
 import com.calculator.feature.lifecalc.LifeCalcSegmented
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
 import com.calculator.navigation.GstRoute
@@ -85,6 +82,7 @@ fun GstScreen(onNavigate: (Any) -> Unit) {
         mutableIntStateOf(if (userSettings.gstIntraState) 0 else 1)
     }
     var ratePercent by remember(userSettings.gstRate) { mutableStateOf(userSettings.gstRate) }
+    val scheme = MaterialTheme.colorScheme
 
     // Recompute the non-source side from the source side. Done as a
     // simple derivation rather than inside an effect because the two
@@ -169,7 +167,7 @@ fun GstScreen(onNavigate: (Any) -> Unit) {
                 Text(
                     text = stringResource(R.string.gst_error_invalid),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.55f),
+                    color = scheme.error,
                 )
             } else {
                 LifeCalcOutputRow(stringResource(R.string.gst_label_net), money(result.net))
@@ -218,6 +216,7 @@ private fun plain(value: Double): String {
  */
 @Composable
 private fun RatePresets(selected: String, onSelect: (String) -> Unit) {
+    val scheme = MaterialTheme.colorScheme
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -227,13 +226,13 @@ private fun RatePresets(selected: String, onSelect: (String) -> Unit) {
             Text(
                 text = "$rate%",
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (isSelected) Color.Black else Color.White,
+                color = if (isSelected) scheme.onPrimary else scheme.onSurface,
                 textAlign = TextAlign.Center,
                 modifier =
                     Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(if (isSelected) LifeCalcAccent else LifeCalcSegmentBackground)
+                        .background(if (isSelected) scheme.primary else scheme.surfaceContainerHigh)
                         .clickable { onSelect(rate) }
                         .padding(vertical = 10.dp),
             )

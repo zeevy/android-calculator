@@ -39,7 +39,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -49,10 +48,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.R
 import com.calculator.core.domain.datetime.TimezoneConverter
-import com.calculator.feature.lifecalc.LifeCalcAccent
 import com.calculator.feature.lifecalc.LifeCalcCard
 import com.calculator.feature.lifecalc.LifeCalcSectionLabel
-import com.calculator.feature.lifecalc.LifeCalcSegmentBackground
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
 import com.calculator.navigation.TimezoneRoute
 import java.time.Instant
@@ -85,6 +82,7 @@ fun TimezoneScreen(
     viewModel: TimezoneViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val scheme = MaterialTheme.colorScheme
 
     LifeCalculatorScaffold(
         title = stringResource(R.string.tz_title),
@@ -108,12 +106,12 @@ fun TimezoneScreen(
                     Modifier
                         .size(48.dp)
                         .clip(RoundedCornerShape(24.dp))
-                        .background(LifeCalcAccent),
+                        .background(scheme.primary),
             ) {
                 Icon(
                     imageVector = Icons.Filled.SwapVert,
                     contentDescription = stringResource(R.string.tz_swap),
-                    tint = Color.White,
+                    tint = scheme.onPrimary,
                 )
             }
         }
@@ -199,15 +197,16 @@ private fun ZoneCard(
 /** Light-grey pill row that opens a picker when tapped. */
 @Composable
 private fun TappableRow(text: String, onClick: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
     Text(
         text = text,
         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-        color = LifeCalcAccent,
+        color = scheme.primary,
         modifier =
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(LifeCalcSegmentBackground)
+                .background(scheme.surfaceContainerHigh)
                 .clickable(onClick = onClick)
                 .padding(horizontal = 16.dp, vertical = 14.dp),
     )
@@ -228,6 +227,7 @@ private fun ZonePickerSheet(
     onPick: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val scheme = MaterialTheme.colorScheme
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var query by remember { mutableStateOf("") }
     val all = remember { TimezoneConverter.allZoneIds() }
@@ -242,14 +242,14 @@ private fun ZonePickerSheet(
     ModalBottomSheet(
         sheetState = sheetState,
         onDismissRequest = onDismiss,
-        containerColor = Color.Black,
-        contentColor = Color.White,
+        containerColor = scheme.surfaceContainerLow,
+        contentColor = scheme.onSurface,
     ) {
         Column(modifier = Modifier.fillMaxSize().padding(bottom = 16.dp)) {
             Text(
                 text = stringResource(R.string.tz_picker_title),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = Color.White,
+                color = scheme.onSurface,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
             )
             // Search field. Plain BasicTextField for the iOS look.
@@ -257,22 +257,22 @@ private fun ZonePickerSheet(
                 value = query,
                 onValueChange = { query = it },
                 singleLine = true,
-                textStyle = TextStyle(color = Color.White, fontSize = 16.sp),
+                textStyle = TextStyle(color = scheme.onSurface, fontSize = 16.sp),
                 cursorBrush = androidx.compose.ui.graphics
-                    .SolidColor(LifeCalcAccent),
+                    .SolidColor(scheme.primary),
                 modifier =
                     Modifier
                         .padding(horizontal = 24.dp)
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(LifeCalcSegmentBackground)
+                        .background(scheme.surfaceContainerHigh)
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                 decorationBox = { inner ->
                     Box(modifier = Modifier.fillMaxWidth()) {
                         if (query.isEmpty()) {
                             Text(
                                 text = stringResource(R.string.tz_picker_search_hint),
-                                color = Color.White.copy(alpha = 0.5f),
+                                color = scheme.onSurfaceVariant,
                                 style = TextStyle(fontSize = 16.sp),
                             )
                         }
@@ -305,13 +305,14 @@ private fun SectionHeader(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.labelMedium,
-        color = Color.White.copy(alpha = 0.5f),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
     )
 }
 
 @Composable
 private fun ZoneRow(id: String, isSelected: Boolean, onClick: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
     // Show the current offset next to the id so the user can pick the
     // closest match without having to know the IANA name from memory.
     val offset =
@@ -333,13 +334,13 @@ private fun ZoneRow(id: String, isSelected: Boolean, onClick: () -> Unit) {
         Text(
             text = id,
             style = MaterialTheme.typography.bodyLarge,
-            color = if (isSelected) LifeCalcAccent else Color.White,
+            color = if (isSelected) scheme.primary else scheme.onSurface,
             modifier = Modifier.weight(1f),
         )
         Text(
             text = offset,
             style = MaterialTheme.typography.bodySmall,
-            color = Color.White.copy(alpha = 0.5f),
+            color = scheme.onSurfaceVariant,
         )
     }
 }

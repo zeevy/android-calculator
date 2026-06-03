@@ -13,7 +13,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -23,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.calculator.R
 import com.calculator.core.domain.math.BaseConverter
-import com.calculator.feature.lifecalc.LifeCalcAccent
 import com.calculator.feature.lifecalc.LifeCalcCard
 import com.calculator.feature.lifecalc.LifeCalcSectionLabel
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
@@ -150,11 +148,12 @@ private fun BaseField(
     keyboard: KeyboardType,
     monospace: Boolean = false,
 ) {
+    val scheme = MaterialTheme.colorScheme
     Column {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.White.copy(alpha = 0.6f),
+            color = scheme.onSurfaceVariant,
         )
         Spacer(Modifier.size(4.dp))
         BasicTextField(
@@ -163,14 +162,14 @@ private fun BaseField(
             singleLine = true,
             textStyle =
                 TextStyle(
-                    color = Color.White,
+                    color = scheme.onSurface,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily =
                         if (monospace) androidx.compose.ui.text.font.FontFamily.Monospace else null,
                 ),
             keyboardOptions = KeyboardOptions(keyboardType = keyboard),
-            cursorBrush = SolidColor(LifeCalcAccent),
+            cursorBrush = SolidColor(scheme.primary),
         )
     }
 }

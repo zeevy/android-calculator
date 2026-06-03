@@ -8,7 +8,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.R
@@ -158,7 +157,7 @@ fun BmiScreen(onNavigate: (Any) -> Unit) {
                 Text(
                     text = stringResource(R.string.bmi_error_empty),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.55f),
+                    color = MaterialTheme.colorScheme.error,
                 )
             } else {
                 LifeCalcOutputRow(

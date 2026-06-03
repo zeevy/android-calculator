@@ -8,7 +8,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import com.calculator.R
 import com.calculator.core.common.format.NumberFormatter
@@ -41,6 +40,7 @@ fun InvestmentScreen(onNavigate: (Any) -> Unit) {
     var amount by remember { mutableStateOf("5000") }
     var rate by remember { mutableStateOf("12") }
     var years by remember { mutableStateOf("10") }
+    val scheme = MaterialTheme.colorScheme
 
     val result =
         runCatching {
@@ -96,7 +96,7 @@ fun InvestmentScreen(onNavigate: (Any) -> Unit) {
                 Text(
                     text = stringResource(R.string.investment_error_invalid),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.55f),
+                    color = scheme.error,
                 )
             } else {
                 LifeCalcOutputRow(

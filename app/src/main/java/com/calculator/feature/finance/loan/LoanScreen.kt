@@ -10,7 +10,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.calculator.R
@@ -51,6 +50,7 @@ fun LoanScreen(onNavigate: (Any) -> Unit) {
     var principal by remember { mutableStateOf("100000") }
     var rate by remember { mutableStateOf("10") }
     var months by remember { mutableStateOf("12") }
+    val scheme = MaterialTheme.colorScheme
 
     LifeCalculatorScaffold(
         title = stringResource(R.string.loan_title),
@@ -115,7 +115,7 @@ fun LoanScreen(onNavigate: (Any) -> Unit) {
             Text(
                 text = stringResource(R.string.loan_disclaimer),
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.45f),
+                color = scheme.onSurfaceVariant,
                 modifier = Modifier.padding(),
             )
         } else {
@@ -124,7 +124,7 @@ fun LoanScreen(onNavigate: (Any) -> Unit) {
                 Text(
                     text = stringResource(R.string.loan_error_empty),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.55f),
+                    color = scheme.error,
                 )
             }
         }

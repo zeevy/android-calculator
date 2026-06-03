@@ -8,7 +8,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import com.calculator.R
 import com.calculator.core.common.format.NumberFormatter
@@ -41,6 +40,7 @@ fun PercentScreen(onNavigate: (Any) -> Unit) {
     var mode by remember { mutableIntStateOf(0) }
     var a by remember { mutableStateOf("20") }
     var b by remember { mutableStateOf("250") }
+    val scheme = MaterialTheme.colorScheme
 
     // Compute lazily per recompose - inputs are small and parsing
     // cheap. runCatching swallows NaN / divide-by-zero (require()
@@ -118,7 +118,7 @@ fun PercentScreen(onNavigate: (Any) -> Unit) {
                 Text(
                     text = stringResource(R.string.percent_error_invalid),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.55f),
+                    color = scheme.error,
                 )
             } else {
                 val (label, formatted) =

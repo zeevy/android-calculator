@@ -16,14 +16,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.calculator.R
 import com.calculator.core.domain.datetime.DateDiffCalculator
 import com.calculator.feature.datetime.age.DateRow
-import com.calculator.feature.lifecalc.LifeCalcAccent
 import com.calculator.feature.lifecalc.LifeCalcCard
 import com.calculator.feature.lifecalc.LifeCalcNumberField
 import com.calculator.feature.lifecalc.LifeCalcOutputRow
@@ -54,6 +52,7 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateDiffScreen(onNavigate: (Any) -> Unit) {
+    val scheme = MaterialTheme.colorScheme
     var mode by remember { mutableIntStateOf(0) } // 0 = two dates, 1 = date + offset
     // Defaults seed a sample 1-year span so the result card has
     // something to display on first render. The single picker state
@@ -132,7 +131,7 @@ fun DateDiffScreen(onNavigate: (Any) -> Unit) {
                     Text(
                         text = stringResource(R.string.datediff_error_invalid_offset),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.55f),
+                        color = scheme.error,
                     )
                 } else {
                     // Stacked layout: full "Wednesday, 18 February 2026"
@@ -143,12 +142,12 @@ fun DateDiffScreen(onNavigate: (Any) -> Unit) {
                         Text(
                             text = stringResource(R.string.datediff_label_resulting_date),
                             style = MaterialTheme.typography.bodyLarge,
-                            color = Color.White.copy(alpha = 0.7f),
+                            color = scheme.onSurfaceVariant,
                         )
                         Text(
                             text = result.format(DateTimeFormatter.ofPattern("EEEE, d MMM yyyy")),
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            color = LifeCalcAccent,
+                            color = scheme.primary,
                             modifier = Modifier,
                         )
                     }

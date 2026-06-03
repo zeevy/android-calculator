@@ -22,17 +22,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.calculator.R
 import com.calculator.core.domain.datetime.AgeCalculator
-import com.calculator.feature.lifecalc.LifeCalcAccent
 import com.calculator.feature.lifecalc.LifeCalcCard
 import com.calculator.feature.lifecalc.LifeCalcOutputRow
 import com.calculator.feature.lifecalc.LifeCalcSectionLabel
-import com.calculator.feature.lifecalc.LifeCalcSegmentBackground
 import com.calculator.feature.lifecalc.LifeCalculatorScaffold
 import com.calculator.navigation.AgeRoute
 import java.time.Instant
@@ -55,6 +52,7 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AgeScreen(onNavigate: (Any) -> Unit) {
+    val scheme = MaterialTheme.colorScheme
     var dob by remember { mutableStateOf(LocalDate.of(DEFAULT_DOB_YEAR, 1, DEFAULT_DOB_DAY)) }
     var pickerOpen by remember { mutableStateOf(false) }
     // Cached for this composition. The result card recomputes when
@@ -80,7 +78,7 @@ fun AgeScreen(onNavigate: (Any) -> Unit) {
                 Text(
                     stringResource(R.string.age_error_past_date),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.55f),
+                    color = scheme.error,
                 )
             } else {
                 LifeCalcOutputRow(
@@ -150,25 +148,26 @@ fun AgeScreen(onNavigate: (Any) -> Unit) {
  */
 @Composable
 internal fun DateRow(date: LocalDate, onClick: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
     Column(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(LifeCalcSegmentBackground)
+                .background(scheme.surfaceContainerHigh)
                 .clickable(onClick = onClick)
                 .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Text(
             text = date.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy")),
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = LifeCalcAccent,
+            color = scheme.primary,
         )
         Spacer(Modifier.size(2.dp))
         Text(
             text = stringResource(R.string.age_tap_to_change),
             style = MaterialTheme.typography.bodySmall,
-            color = Color.White.copy(alpha = 0.5f),
+            color = scheme.onSurfaceVariant,
         )
     }
 }

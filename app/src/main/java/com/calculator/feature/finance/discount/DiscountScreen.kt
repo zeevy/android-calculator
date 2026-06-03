@@ -8,7 +8,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import com.calculator.R
 import com.calculator.core.common.format.NumberFormatter
@@ -48,6 +47,7 @@ fun DiscountScreen(onNavigate: (Any) -> Unit) {
     // final-price field. MRP edits don't flip this - they just
     // recompute the non-source side from the new MRP.
     var lastEdited by remember { mutableIntStateOf(0) }
+    val scheme = MaterialTheme.colorScheme
 
     val result =
         runCatching {
@@ -104,7 +104,7 @@ fun DiscountScreen(onNavigate: (Any) -> Unit) {
                 Text(
                     text = stringResource(R.string.discount_error_invalid),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.55f),
+                    color = scheme.error,
                 )
             } else {
                 LifeCalcOutputRow(

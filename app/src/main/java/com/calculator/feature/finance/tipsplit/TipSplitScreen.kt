@@ -21,14 +21,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.calculator.R
 import com.calculator.core.common.format.NumberFormatter
 import com.calculator.core.domain.finance.TipSplitCalculator
-import com.calculator.feature.lifecalc.LifeCalcAccent
 import com.calculator.feature.lifecalc.LifeCalcCard
 import com.calculator.feature.lifecalc.LifeCalcNumberField
 import com.calculator.feature.lifecalc.LifeCalcOutputRow
@@ -55,6 +53,7 @@ fun TipSplitScreen(onNavigate: (Any) -> Unit) {
     var tipAmount by remember { mutableStateOf("100") }
     var people by remember { mutableIntStateOf(2) }
     var roundUp by remember { mutableStateOf(false) }
+    val scheme = MaterialTheme.colorScheme
 
     val result =
         runCatching {
@@ -96,7 +95,7 @@ fun TipSplitScreen(onNavigate: (Any) -> Unit) {
                 Text(
                     text = stringResource(R.string.tipsplit_error_invalid),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.55f),
+                    color = scheme.error,
                 )
             } else {
                 LifeCalcOutputRow(
@@ -120,6 +119,7 @@ fun TipSplitScreen(onNavigate: (Any) -> Unit) {
 /** Headcount stepper: `-`  N people  `+`. */
 @Composable
 private fun PeopleStepper(people: Int, onChange: (Int) -> Unit) {
+    val scheme = MaterialTheme.colorScheme
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -127,7 +127,7 @@ private fun PeopleStepper(people: Int, onChange: (Int) -> Unit) {
         Text(
             text = stringResource(R.string.tipsplit_people),
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.White.copy(alpha = 0.6f),
+            color = scheme.onSurfaceVariant,
             modifier = Modifier.weight(1f),
         )
         StepperButton(symbol = "-", enabled = people > 1) {
@@ -137,7 +137,7 @@ private fun PeopleStepper(people: Int, onChange: (Int) -> Unit) {
         Text(
             text = people.toString(),
             style = MaterialTheme.typography.titleLarge,
-            color = LifeCalcAccent,
+            color = scheme.primary,
         )
         Spacer(Modifier.size(16.dp))
         StepperButton(symbol = "+", enabled = true) {
@@ -148,17 +148,18 @@ private fun PeopleStepper(people: Int, onChange: (Int) -> Unit) {
 
 @Composable
 private fun StepperButton(symbol: String, enabled: Boolean, onClick: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
     val alpha = if (enabled) 1f else DISABLED_ALPHA
     Text(
         text = symbol,
         style = MaterialTheme.typography.titleLarge,
-        color = Color.White.copy(alpha = alpha),
+        color = scheme.onSurface.copy(alpha = alpha),
         textAlign = TextAlign.Center,
         modifier =
             Modifier
                 .size(36.dp)
                 .clip(RoundedCornerShape(18.dp))
-                .background(Color.White.copy(alpha = 0.08f * alpha))
+                .background(scheme.onSurface.copy(alpha = 0.08f * alpha))
                 .clickable(enabled = enabled, onClick = onClick)
                 .padding(top = 2.dp),
     )
@@ -166,6 +167,7 @@ private fun StepperButton(symbol: String, enabled: Boolean, onClick: () -> Unit)
 
 @Composable
 private fun RoundUpRow(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    val scheme = MaterialTheme.colorScheme
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -173,7 +175,7 @@ private fun RoundUpRow(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
         Text(
             text = stringResource(R.string.tipsplit_round_up),
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.White.copy(alpha = 0.7f),
+            color = scheme.onSurfaceVariant,
             modifier = Modifier.weight(1f),
         )
         Switch(
@@ -181,8 +183,8 @@ private fun RoundUpRow(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
             onCheckedChange = onCheckedChange,
             colors =
                 SwitchDefaults.colors(
-                    checkedThumbColor = Color.White,
-                    checkedTrackColor = LifeCalcAccent,
+                    checkedThumbColor = scheme.onSurface,
+                    checkedTrackColor = scheme.primary,
                 ),
         )
     }
