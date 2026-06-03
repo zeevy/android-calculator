@@ -601,9 +601,12 @@ internal fun Keypad(
     // (row 4 col 4) and = (row 1 col 4). The middle rows around it
     // (rows 2 and 3) are rendered together by [TallPlusBlock]; the
     // rows above and below it use the regular KeypadRow path.
+    // % sits in column 3 and ÷ in column 4 so that the four arithmetic
+    // operators (÷ × - +) and = line up as a single orange column down the
+    // right edge; % is a grey modifier (iOS-style), not part of that column.
     val memoryRow =
         KeypadRowSpec(
-            keys = listOf(Key.MemoryClear, Key.MemoryRecall, Key.Symbol("÷"), Key.Symbol("%")),
+            keys = listOf(Key.MemoryClear, Key.MemoryRecall, Key.Symbol("%"), Key.Symbol("÷")),
             compact = true,
         )
     val aboveTallPlusRows =
@@ -642,11 +645,13 @@ internal fun Keypad(
 
     // Render order (top -> bottom):
     //   1. Scientific rows (advanced mode only).
-    //   2. Memory row.
-    //   3. aboveTallPlusRows: `÷ % ± ×`, then `7 8 9 -`.
+    //   2. Memory row: `MC MR % ÷`.
+    //   3. aboveTallPlusRows: `M+ M- ± ×`, then `7 8 9 -`.
     //   4. TallPlusBlock: `4 5 6` / `1 2 3` on the left, tall + on
     //      the right covering both digit rows.
     //   5. belowTallPlusRow: `⌫ 0 . =`.
+    // Columns 4 of rows 2-5 (÷ × - + =) form the single orange operator
+    // column down the right edge.
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -1162,11 +1167,10 @@ private fun keyCategoryOf(key: Key): KeyCategory =
     when (key) {
         Key.Equals -> KeyCategory.Equals
         Key.Clear, Key.LeftParen, Key.RightParen, Key.Backspace -> KeyCategory.Modifier
-        // ± lives alongside ×/÷/+/- visually - it's an arithmetic
-        // action, not a clear/parenthesis modifier - so it takes the
-        // orange operator color even though under the hood it just
-        // mutates the trailing operand.
-        Key.SignFlip -> KeyCategory.Operator
+        // ± is a grey modifier (it mutates the trailing operand rather than
+        // combining two operands), matching how iOS colors +/- and keeping
+        // the orange confined to the ÷ × - + = column.
+        Key.SignFlip -> KeyCategory.Modifier
         Key.MemoryClear, Key.MemoryRecall, Key.MemoryAdd, Key.MemorySubtract -> KeyCategory.Function
         Key.Factorial, Key.Squared, Key.Cubed -> KeyCategory.Function
         Key.Empty -> KeyCategory.Digit // unused; Empty is rendered separately
@@ -1174,6 +1178,12 @@ private fun keyCategoryOf(key: Key): KeyCategory =
         is Key.Symbol ->
             when {
                 key.label in OperatorLabels -> KeyCategory.Operator
+                // % is a grey modifier (iOS-style), not part of the orange
+                // operator column.
+                key.label == "%" -> KeyCategory.Modifier
+                // ^ (power) reads as an advanced function, so it takes the
+                // function grey rather than the operator orange.
+                key.label == "^" -> KeyCategory.Function
                 // Constants (pi, e) sit among the scientific keys, so they
                 // take the function color rather than the digit color.
                 key.label in ConstantLabels -> KeyCategory.Function
@@ -1182,9 +1192,12 @@ private fun keyCategoryOf(key: Key): KeyCategory =
     }
 
 /**
- * Labels of arithmetic-operator keys that get the operator (orange) color.
+ * Labels of arithmetic-operator keys that get the operator (orange) color:
+ * the four binary operators that form the right-hand column (= is handled
+ * separately as [Key.Equals]). %, ^ and ± are deliberately excluded so the
+ * orange stays a single column.
  */
-private val OperatorLabels = setOf("+", "-", "×", "÷", "%", "^")
+private val OperatorLabels = setOf("+", "-", "×", "÷")
 
 /**
  * Labels of constant keys (pi, e). They insert a literal value like a digit,
