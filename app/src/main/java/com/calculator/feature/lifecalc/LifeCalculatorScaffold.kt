@@ -311,11 +311,3 @@ fun LifeCalcSegmented(
         }
     }
 }
-
-// Remaining literal palette tokens still referenced directly by individual
-// life-calc screens (e.g. GST rate chips, the ovulation slider). These are
-// being migrated to MaterialTheme.colorScheme screen by screen; prefer
-// colorScheme.primary / .surfaceContainerHigh in new code.
-// TODO: remove once every screen reads these from the theme.
-internal val LifeCalcAccent = Color(0xFFFF9F0A)
-internal val LifeCalcSegmentBackground = Color(0xFF2C2C2E)

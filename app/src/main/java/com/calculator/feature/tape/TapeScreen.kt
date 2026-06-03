@@ -31,13 +31,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.calculator.R
-import com.calculator.feature.lifecalc.LifeCalcAccent
 import com.calculator.feature.lifecalc.PendingExpressionHolder
 import com.calculator.feature.lifecalc.ToolsMenuOverlay
 import com.calculator.feature.lifecalc.ToolsMenuSheet
@@ -59,12 +57,13 @@ import com.calculator.navigation.TapeRoute
 fun TapeScreen(onNavigate: (Any) -> Unit) {
     val entries by TapeHolder.entries.collectAsState()
     var openSheet by remember { mutableStateOf<ToolsMenuSheet?>(null) }
+    val scheme = MaterialTheme.colorScheme
 
     Column(
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(Color.Black)
+                .background(scheme.background)
                 .systemBarsPadding()
                 .padding(horizontal = 12.dp),
     ) {
@@ -75,7 +74,7 @@ fun TapeScreen(onNavigate: (Any) -> Unit) {
             Text(
                 text = stringResource(R.string.tape_title),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = Color.White,
+                color = scheme.onBackground,
                 modifier = Modifier.weight(1f).padding(start = 8.dp),
             )
             if (entries.isNotEmpty()) {
@@ -83,7 +82,7 @@ fun TapeScreen(onNavigate: (Any) -> Unit) {
                     Icon(
                         imageVector = Icons.Filled.DeleteOutline,
                         contentDescription = stringResource(R.string.tape_clear),
-                        tint = Color.White,
+                        tint = scheme.onBackground,
                     )
                 }
             }
@@ -91,7 +90,7 @@ fun TapeScreen(onNavigate: (Any) -> Unit) {
                 Icon(
                     imageVector = Icons.Filled.Menu,
                     contentDescription = stringResource(R.string.basic_open_menu),
-                    tint = Color.White,
+                    tint = scheme.onBackground,
                 )
             }
         }
@@ -104,7 +103,7 @@ fun TapeScreen(onNavigate: (Any) -> Unit) {
                 Text(
                     text = stringResource(R.string.tape_empty),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White.copy(alpha = 0.45f),
+                    color = scheme.onSurfaceVariant,
                 )
             }
         } else {
@@ -149,19 +148,20 @@ fun TapeScreen(onNavigate: (Any) -> Unit) {
 
 @Composable
 private fun TapeRow(entry: TapeEntry, onTap: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
     Column(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
-                .background(TapeRowBackground)
+                .background(scheme.surfaceContainer)
                 .clickable(onClick = onTap)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         Text(
             text = entry.expression,
             style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
-            color = Color.White.copy(alpha = 0.7f),
+            color = scheme.onSurfaceVariant,
         )
         Spacer(Modifier.size(2.dp))
         Text(
@@ -171,11 +171,7 @@ private fun TapeRow(entry: TapeEntry, onTap: () -> Unit) {
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace,
                 ),
-            color = LifeCalcAccent,
+            color = scheme.primary,
         )
     }
 }
-
-// Card background for each tape row. Same near-black as the tools
-// sheet so the rows read as part of the same visual system.
-private val TapeRowBackground = Color(0xFF1C1C1E)
