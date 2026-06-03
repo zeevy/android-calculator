@@ -40,7 +40,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -81,7 +80,7 @@ fun UnitConverterScreen(
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(Color.Black)
+                .background(MaterialTheme.colorScheme.background)
                 .systemBarsPadding()
                 // 12dp matches the basic calculator's outer padding so
                 // the top-right hamburger sits at the same pixel.
@@ -96,14 +95,14 @@ fun UnitConverterScreen(
             Text(
                 text = stringResource(R.string.units_title),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f).padding(start = 8.dp),
             )
             IconButton(onClick = { openSheet = ToolsMenuSheet.Tools }) {
                 Icon(
                     imageVector = Icons.Filled.Menu,
                     contentDescription = stringResource(R.string.basic_open_menu),
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
@@ -136,12 +135,12 @@ fun UnitConverterScreen(
                     Modifier
                         .size(48.dp)
                         .clip(RoundedCornerShape(24.dp))
-                        .background(ConverterAccent),
+                        .background(MaterialTheme.colorScheme.primary),
             ) {
                 Icon(
                     imageVector = Icons.Filled.SwapVert,
                     contentDescription = stringResource(R.string.units_swap),
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                 )
             }
         }
@@ -222,20 +221,20 @@ private fun CategoryDropdown(
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(20.dp))
-                .background(CardBackground)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                 .clickable { sheetOpen = true }
                 .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         Text(
             text = selected.displayName,
             style = MaterialTheme.typography.titleMedium,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
         Icon(
             imageVector = Icons.Filled.ArrowDropDown,
             contentDescription = null,
-            tint = Color.White,
+            tint = MaterialTheme.colorScheme.onSurface,
         )
     }
 
@@ -243,11 +242,11 @@ private fun CategoryDropdown(
         ModalBottomSheet(
             sheetState = sheetState,
             onDismissRequest = { sheetOpen = false },
-            containerColor = Color.Black,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
             // Force-white content so titles render correctly in light
             // system theme too - same fix we applied to the main
             // calculator's bottom sheets.
-            contentColor = Color.White,
+            contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
             Column(modifier = Modifier.padding(bottom = 16.dp)) {
                 Text(
@@ -256,7 +255,7 @@ private fun CategoryDropdown(
                         MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.SemiBold,
                         ),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
                 )
                 categories.forEach { category ->
@@ -274,14 +273,14 @@ private fun CategoryDropdown(
                         Text(
                             text = category.displayName,
                             style = MaterialTheme.typography.bodyLarge,
-                            color = if (isSelected) ConverterAccent else Color.White,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.weight(1f),
                         )
                         if (isSelected) {
                             Icon(
                                 imageVector = Icons.Filled.Check,
                                 contentDescription = null,
-                                tint = ConverterAccent,
+                                tint = MaterialTheme.colorScheme.primary,
                             )
                         }
                     }
@@ -313,7 +312,7 @@ private fun FromCard(
                 singleLine = true,
                 textStyle =
                     TextStyle(
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.End,
@@ -322,7 +321,7 @@ private fun FromCard(
                     KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 cursorBrush =
                     androidx.compose.ui.graphics
-                        .SolidColor(ConverterAccent),
+                        .SolidColor(MaterialTheme.colorScheme.primary),
                 modifier = Modifier.fillMaxWidth(),
                 decorationBox = { inner ->
                     Box(
@@ -332,7 +331,7 @@ private fun FromCard(
                         if (value.isEmpty()) {
                             Text(
                                 text = "0",
-                                color = Color.White.copy(alpha = 0.3f),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style =
                                     MaterialTheme.typography.displayMedium.copy(
                                         fontWeight = FontWeight.Bold,
@@ -371,7 +370,7 @@ private fun ToCard(
                 singleLine = true,
                 textStyle =
                     TextStyle(
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.End,
@@ -380,7 +379,7 @@ private fun ToCard(
                     KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 cursorBrush =
                     androidx.compose.ui.graphics
-                        .SolidColor(ConverterAccent),
+                        .SolidColor(MaterialTheme.colorScheme.primary),
                 modifier = Modifier.fillMaxWidth(),
                 decorationBox = { inner ->
                     Box(
@@ -390,7 +389,7 @@ private fun ToCard(
                         if (value.isEmpty()) {
                             Text(
                                 text = "0",
-                                color = Color.White.copy(alpha = 0.3f),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style =
                                     MaterialTheme.typography.displayMedium.copy(
                                         fontWeight = FontWeight.Bold,
@@ -412,7 +411,7 @@ private fun UnitCard(content: @Composable () -> Unit) {
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(20.dp))
-                .background(CardBackground),
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
     ) { content() }
 }
 
@@ -434,13 +433,13 @@ private fun UnitChooser(
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium,
-            color = Color.White.copy(alpha = 0.6f),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f),
         )
         Text(
             text = unit?.let { "${it.displayName} (${it.symbol})" } ?: "",
             style = MaterialTheme.typography.bodyLarge,
-            color = ConverterAccent,
+            color = MaterialTheme.colorScheme.primary,
         )
     }
 }
@@ -457,7 +456,7 @@ private fun UnitPickerSheet(
     ModalBottomSheet(
         sheetState = sheetState,
         onDismissRequest = onDismiss,
-        containerColor = SheetBackground,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
     ) {
         LazyColumn(
@@ -483,24 +482,20 @@ private fun UnitPickerSheet(
                         style = MaterialTheme.typography.bodyLarge,
                         color =
                             if (unit.symbol == currentSymbol) {
-                                ConverterAccent
+                                MaterialTheme.colorScheme.primary
                             } else {
-                                Color.White
+                                MaterialTheme.colorScheme.onSurface
                             },
                         modifier = Modifier.weight(1f),
                     )
                     Text(
                         text = unit.symbol,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.6f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
     }
 }
-
-private val CardBackground = Color(0xFF2C2C2E)
-private val SheetBackground = Color(0xFF1C1C1E)
-private val ConverterAccent = Color(0xFFFF9F0A)
