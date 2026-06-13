@@ -2,6 +2,6 @@
 <!-- Operator and equals keys: iOS-orange accent. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#FFFF9F0A" />
+    <solid android:color="@color/floating_key_op" />
     <corners android:radius="12dp" />
 </shape>

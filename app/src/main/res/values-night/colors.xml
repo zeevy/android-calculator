@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Dark overrides for the floating-calculator overlay palette. These
+  reproduce the original fixed iOS-dark look and apply when the system is
+  in dark mode (the overlay is hosted by a Service, so it follows the
+  system night setting). Light values live in values/colors.xml.
+-->
+<resources>
+    <color name="floating_panel">#EE1C1C1E</color>
+    <color name="floating_key_digit">#FF505050</color>
+    <color name="floating_key_op">#FFFF9F0A</color>
+    <color name="floating_key_modifier">#FFA5A5A5</color>
+    <color name="floating_panel_text">#FFFFFFFF</color>
+    <color name="floating_key_text">#FFFFFFFF</color>
+    <color name="floating_op_text">#FFFFFFFF</color>
+    <color name="floating_modifier_text">#FF000000</color>
+</resources>

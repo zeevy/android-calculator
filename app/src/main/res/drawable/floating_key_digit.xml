@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Digit keys: dark grey to match the in-app keypad. -->
+<!-- Digit keys: neutral grey, theme-aware via values/values-night colors. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#FF505050" />
+    <solid android:color="@color/floating_key_digit" />
     <corners android:radius="12dp" />
 </shape>

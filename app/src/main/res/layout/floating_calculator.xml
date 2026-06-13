@@ -40,7 +40,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/floating_header"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/floating_panel_text"
             android:textSize="14sp" />
 
         <TextView
@@ -49,7 +49,7 @@
             android:layout_height="36dp"
             android:gravity="center"
             android:text="✕"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/floating_panel_text"
             android:textSize="18sp"
             android:background="?android:attr/selectableItemBackgroundBorderless" />
     </LinearLayout>
@@ -63,7 +63,7 @@
         android:paddingHorizontal="12dp"
         android:paddingVertical="6dp"
         android:text="0"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/floating_panel_text"
         android:textSize="28sp"
         android:textStyle="bold"
         android:singleLine="true"
@@ -77,21 +77,23 @@
         <Button android:id="@+id/floating_back" android:text="⌫"
             android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
             android:layout_margin="3dp" android:background="@drawable/floating_key_modifier"
-            android:textColor="#000000"
+            android:textColor="@color/floating_modifier_text"
             style="@style/FloatingKeyBase" />
         <Button android:id="@+id/floating_pct" android:text="%"
             android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
             android:layout_margin="3dp" android:background="@drawable/floating_key_modifier"
-            android:textColor="#000000"
+            android:textColor="@color/floating_modifier_text"
             style="@style/FloatingKeyBase" />
         <Button android:id="@+id/floating_sub" android:text="-"
             android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
             android:layout_margin="3dp" android:background="@drawable/floating_key_op"
+            android:textColor="@color/floating_op_text"
             android:textStyle="bold"
             style="@style/FloatingKeyBase" />
         <Button android:id="@+id/floating_div" android:text="÷"
             android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
             android:layout_margin="3dp" android:background="@drawable/floating_key_op"
+            android:textColor="@color/floating_op_text"
             android:textStyle="bold"
             style="@style/FloatingKeyBase" />
     </LinearLayout>
@@ -116,6 +118,7 @@
         <Button android:id="@+id/floating_mul" android:text="×"
             android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
             android:layout_margin="3dp" android:background="@drawable/floating_key_op"
+            android:textColor="@color/floating_op_text"
             android:textStyle="bold"
             style="@style/FloatingKeyBase" />
     </LinearLayout>
@@ -176,6 +179,7 @@
         <Button android:id="@+id/floating_add" android:text="+"
             android:layout_width="0dp" android:layout_height="94dp" android:layout_weight="1"
             android:layout_margin="3dp" android:background="@drawable/floating_key_op"
+            android:textColor="@color/floating_op_text"
             android:textStyle="bold"
             style="@style/FloatingKeyBase" />
     </LinearLayout>
@@ -196,6 +200,7 @@
         <Button android:id="@+id/floating_eq" android:text="="
             android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
             android:layout_margin="3dp" android:background="@drawable/floating_key_op"
+            android:textColor="@color/floating_op_text"
             android:textStyle="bold"
             style="@style/FloatingKeyBase" />
     </LinearLayout>

@@ -5,6 +5,8 @@
   Used only by resources that can't be expressed in Compose:
     - The adaptive launcher icon background.
     - The SplashScreen API background (XML-only).
+    - The floating-calculator overlay (an XML View hosted by a Service,
+      so it can't read the Compose colorScheme).
 
   Theme colors for the running app live in Compose (`Theme.kt`).
 -->
@@ -19,4 +21,16 @@
          black canvas so the splash hands off into the running app
          without a colour flash. -->
     <color name="splash_background">#000000</color>
+
+    <!-- Floating-calculator overlay palette (LIGHT; see values-night for
+         dark). Lets the overlay follow the system light/dark setting instead
+         of being fixed-dark. The brand orange operator keys stay in both. -->
+    <color name="floating_panel">#EEF2F2F7</color>
+    <color name="floating_key_digit">#FFD1D1D6</color>
+    <color name="floating_key_op">#FFFF9F0A</color>
+    <color name="floating_key_modifier">#FFC7C7CC</color>
+    <color name="floating_panel_text">#FF1C1C1E</color>
+    <color name="floating_key_text">#FF1C1C1E</color>
+    <color name="floating_op_text">#FFFFFFFF</color>
+    <color name="floating_modifier_text">#FF1C1C1E</color>
 </resources>
