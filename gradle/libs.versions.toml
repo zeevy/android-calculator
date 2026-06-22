@@ -17,7 +17,7 @@ min-sdk = "31"
 target-sdk = "36"
 
 # Compose
-compose-bom = "2026.05.01"
+compose-bom = "2026.06.00"
 
 # AndroidX
 androidx-core-ktx = "1.18.0"
