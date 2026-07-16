@@ -20,9 +20,9 @@ target-sdk = "36"
 compose-bom = "2026.06.01"
 
 # AndroidX
-androidx-core-ktx = "1.18.0"
+androidx-core-ktx = "1.19.0"
 androidx-activity-compose = "1.13.0"
-androidx-lifecycle = "2.10.0"
+androidx-lifecycle = "2.11.0"
 androidx-navigation-compose = "2.9.8"
 androidx-splashscreen = "1.2.0"
 androidx-datastore = "1.2.1"
