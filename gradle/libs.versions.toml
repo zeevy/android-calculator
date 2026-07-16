@@ -6,7 +6,7 @@
 
 [versions]
 # Build toolchain
-agp = "9.2.1"
+agp = "9.3.0"
 kotlin = "2.3.21"
 ksp = "2.3.9"
 java-toolchain = "17"
@@ -17,7 +17,7 @@ min-sdk = "31"
 target-sdk = "36"
 
 # Compose
-compose-bom = "2026.05.01"
+compose-bom = "2026.06.01"
 
 # AndroidX
 androidx-core-ktx = "1.18.0"
