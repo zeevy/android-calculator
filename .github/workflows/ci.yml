@@ -47,7 +47,7 @@ jobs:
           distribution: temurin
           java-version: 17
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@v6.2.0
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
       - name: Run ktlint
@@ -72,7 +72,7 @@ jobs:
           distribution: temurin
           java-version: 17
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@v6.2.0
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
       - name: Run detekt
@@ -97,7 +97,7 @@ jobs:
           distribution: temurin
           java-version: 17
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@v6.2.0
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
       - name: Run Android Lint
@@ -122,7 +122,7 @@ jobs:
           distribution: temurin
           java-version: 17
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@v6.2.0
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
       - name: Run unit tests
@@ -147,7 +147,7 @@ jobs:
           distribution: temurin
           java-version: 17
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@v6.2.0
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
       - name: Assemble debug APK
