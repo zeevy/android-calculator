@@ -33,6 +33,7 @@ A modern, fully-offline, multi-purpose calculator for Android that bundles a sta
 | Language | Kotlin (latest stable, 2.x) |
 | Min SDK | API 31 (Android 12) - chosen to make Material You dynamic color, native SplashScreen API, and modern motion/shape primitives first-class without compat branching |
 | Target SDK | API 36 (Android 16) - latest stable |
+| Compile SDK | API 37 - required by the AndroidX/Compose artifacts in use (they declare a minCompileSdk of 37). Bumped independently of Target SDK, which stays at API 36 until Android 17 runtime behavior changes are reviewed and device-tested. |
 | UI Toolkit | Jetpack Compose + Material 3 (adopting Material 3 Expressive components) |
 | Architecture | MVVM + Unidirectional Data Flow, single-activity |
 | DI | Hilt |

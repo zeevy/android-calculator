@@ -47,6 +47,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -68,15 +69,18 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.R
+import com.calculator.core.common.clipboard.plainTextClipEntry
+import com.calculator.core.common.clipboard.readPlainText
 import com.calculator.core.designsystem.theme.CalculatorTheme
 import com.calculator.core.math.AngleMode
 import com.calculator.feature.lifecalc.ToolsMenuOverlay
 import com.calculator.feature.lifecalc.ToolsMenuSheet
 import com.calculator.navigation.BasicCalculatorRoute
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
 /**
@@ -225,8 +229,12 @@ private fun DisplaySection(
     onOpenMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    val clipboard = androidx.compose.ui.platform.LocalClipboard.current
     val context = androidx.compose.ui.platform.LocalContext.current
+    // The Clipboard API is suspend-based (it may hop to the system
+    // clipboard service), so copy/paste run in a composition-scoped
+    // coroutine rather than inline in the click handler.
+    val clipboardScope = rememberCoroutineScope()
     Box(modifier = modifier) {
         Display(
             expression = state.expression,
@@ -236,24 +244,25 @@ private fun DisplaySection(
             lastValidPreview = state.lastValidPreview,
             onCopyResult = { text ->
                 if (text.isNotBlank()) {
-                    clipboard.setText(
-                        androidx.compose.ui.text
-                            .AnnotatedString(text),
-                    )
-                    android.widget.Toast
-                        .makeText(context, R.string.basic_copied, android.widget.Toast.LENGTH_SHORT)
-                        .show()
+                    clipboardScope.launch {
+                        clipboard.setClipEntry(plainTextClipEntry(text))
+                        android.widget.Toast
+                            .makeText(context, R.string.basic_copied, android.widget.Toast.LENGTH_SHORT)
+                            .show()
+                    }
                 }
             },
             onPasteRequested = {
-                val pasted = clipboard.getText()?.text.orEmpty()
-                val number = extractLeadingNumber(pasted)
-                if (number != null) {
-                    onEvent(BasicCalculatorEvent.Append(number))
-                } else {
-                    android.widget.Toast
-                        .makeText(context, R.string.basic_paste_no_number, android.widget.Toast.LENGTH_SHORT)
-                        .show()
+                clipboardScope.launch {
+                    val pasted = clipboard.getClipEntry().readPlainText(context)
+                    val number = extractLeadingNumber(pasted)
+                    if (number != null) {
+                        onEvent(BasicCalculatorEvent.Append(number))
+                    } else {
+                        android.widget.Toast
+                            .makeText(context, R.string.basic_paste_no_number, android.widget.Toast.LENGTH_SHORT)
+                            .show()
+                    }
                 }
             },
             modifier =
@@ -961,9 +970,9 @@ private fun KeyButton(
     val scheme = MaterialTheme.colorScheme
     val keyGreyFraction =
         when (category) {
-            KeyCategory.Digit -> 0.31f
-            KeyCategory.Function -> 0.44f
-            KeyCategory.Modifier -> 0.65f
+            KeyCategory.Digit -> KEY_GREY_FRACTION_DIGIT
+            KeyCategory.Function -> KEY_GREY_FRACTION_FUNCTION
+            KeyCategory.Modifier -> KEY_GREY_FRACTION_MODIFIER
             KeyCategory.Operator, KeyCategory.Equals -> 0f // unused; operators use primary
         }
     val containerColor =
@@ -1205,6 +1214,13 @@ private val OperatorLabels = setOf("+", "-", "×", "÷")
  * so they take the function color rather than the digit color.
  */
 private val ConstantLabels = setOf("π", "e")
+
+// Blend fractions used to derive the neutral key greys (surface -> onSurface).
+// They reproduce the original iOS greys - 0x50 / 0x70 / 0xA5 - in the static
+// dark scheme, and stay legible in every dynamic scheme.
+private const val KEY_GREY_FRACTION_DIGIT = 0.31f
+private const val KEY_GREY_FRACTION_FUNCTION = 0.44f
+private const val KEY_GREY_FRACTION_MODIFIER = 0.65f
 
 // Width-to-height ratio for every keypad button. 1.6 gives a clean
 // "horizontal rectangle" silhouette - wider than tall by ~60%, the

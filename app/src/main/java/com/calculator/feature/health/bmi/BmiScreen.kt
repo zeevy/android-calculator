@@ -43,7 +43,7 @@ fun BmiScreen(onNavigate: (Any) -> Unit) {
     // Imperial silently interpreted the 93 as pounds and reported
     // "Underweight" (BMI 12 instead of 27).
     val settingsViewModel: com.calculator.feature.settings.SettingsViewModel =
-        androidx.hilt.navigation.compose
+        androidx.hilt.lifecycle.viewmodel.compose
             .hiltViewModel()
     val userSettings by settingsViewModel.settings.collectAsStateWithLifecycle()
     var heightUnitIdx by remember(userSettings.bmiHeightImperial) {

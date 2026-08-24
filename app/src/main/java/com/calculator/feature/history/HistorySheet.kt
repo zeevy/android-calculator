@@ -35,20 +35,22 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.calculator.R
+import com.calculator.core.common.clipboard.plainTextClipEntry
 import com.calculator.core.data.history.HistoryEntry
+import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Date
 
@@ -248,14 +250,20 @@ private fun HistoryRow(
     onTap: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     val context = LocalContext.current
     val copiedToastText = stringResource(R.string.history_copied_toast)
+    // Clipboard writes are suspend calls, so the long-press handler
+    // dispatches into a composition-scoped coroutine.
+    val clipboardScope = rememberCoroutineScope()
     val copyOnLongPress = {
-        // Copying "expression = result" so the clipboard payload reads
-        // as a complete equation when pasted into a note or chat.
-        clipboard.setText(AnnotatedString("${entry.expression} = ${entry.result}"))
-        Toast.makeText(context, copiedToastText, Toast.LENGTH_SHORT).show()
+        clipboardScope.launch {
+            // Copying "expression = result" so the clipboard payload reads
+            // as a complete equation when pasted into a note or chat.
+            clipboard.setClipEntry(plainTextClipEntry("${entry.expression} = ${entry.result}"))
+            Toast.makeText(context, copiedToastText, Toast.LENGTH_SHORT).show()
+        }
+        Unit
     }
     Row(
         modifier =

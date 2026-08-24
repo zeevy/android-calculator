@@ -15,6 +15,7 @@ See [REQUIREMENTS.md](REQUIREMENTS.md) for the full product specification - it i
 | Language | Kotlin 2.x (K2 compiler) |
 | Min SDK | **API 31** (Android 12) - chosen so Material You dynamic color, native SplashScreen, and modern motion/shape are first-class with no compat branching |
 | Target SDK | **API 36** (Android 16) |
+| Compile SDK | **API 37** - required by the AndroidX/Compose artifacts in use (they declare a minCompileSdk of 37). Independent of `targetSdk`, which stays at 36 until the Android 17 behavior changes are reviewed and device-tested. |
 | UI | Jetpack Compose + Material 3 with **Material 3 Expressive** components |
 | Architecture | MVVM, single-activity, unidirectional data flow |
 | Navigation | Navigation Compose with **type-safe routes** (serializable route classes) |

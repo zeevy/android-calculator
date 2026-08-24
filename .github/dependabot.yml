@@ -40,6 +40,14 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Workflows pin actions to floating major tags (@v6), so patch and minor
+    # releases arrive without any change here. Only major bumps need a PR -
+    # otherwise every upstream patch reopens a no-op PR that pins the tag.
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-minor
+          - version-update:semver-patch
     labels:
       - dependencies
       - github-actions
