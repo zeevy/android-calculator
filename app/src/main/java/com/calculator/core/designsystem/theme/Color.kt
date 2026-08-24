@@ -59,6 +59,7 @@ internal val LightOnSurfaceVariant = Color(0xFF6C6C70)
 internal val LightSurfaceContainerLowest = Color(0xFFFFFFFF)
 internal val LightSurfaceContainerLow = Color(0xFFFFFFFF)
 internal val LightSurfaceContainer = Color(0xFFFFFFFF)
+
 // High / Highest double as the keypad digit / function key greys.
 internal val LightSurfaceContainerHigh = Color(0xFFD1D1D6)
 internal val LightSurfaceContainerHighest = Color(0xFFE5E5EA)
