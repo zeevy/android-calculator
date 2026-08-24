@@ -9,6 +9,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing yet.
 
+## [1.1.0] - 2026-08-24
+
+The `v1.0.3` tag was cut without a changelog entry or a `versionName` bump,
+so everything it carried is folded into this release.
+
+### Added
+
+- Ovulation calculator: the single "Next period" row is now an "Upcoming
+  periods" list showing the next three period start dates, one cycle apart.
+- Settings > About shows the real version from `BuildConfig` instead of a
+  hardcoded `1.0.0-dev`, and the GitHub row opens the repository.
+
+### Changed
+
+- **Every screen now takes its colors from Material 3 color roles** instead of
+  private hardcoded palettes, so the whole app follows Material You dynamic
+  color and the light/dark setting: the keypad, the three bottom sheets, the
+  life-calculator screens and their shared scaffold, the unit converter, and
+  the tape view.
+- **The orange accent is confined to one column.** The four arithmetic
+  operators plus equals run down the right edge; `%`, `±`, and `^` become grey
+  modifier/function keys. Applies to both basic and advanced modes.
+- The floating calculator overlay follows the system light/dark setting. It is
+  a Service-hosted XML view and cannot read the Compose color scheme, so the
+  palette moved into color resources with `values-night` overrides.
+- Copy and paste use the suspend-based Compose `Clipboard` API, replacing the
+  deprecated `LocalClipboardManager`.
+- The debug variant is labelled "Calculator (Debug)" so it is distinguishable
+  from a release install and the stock device calculator.
+- Toolchain and dependencies: AGP 9.3.2, Kotlin 2.4.10, KSP 2.3.11, Gradle
+  9.7.0, Compose BOM 2026.08.00, Hilt 2.60.1, and the AndroidX, junit5, and
+  kotest stacks. `compileSdk` moves to 37 because the new AndroidX and Compose
+  artifacts require it; `targetSdk` stays at 36.
+
+### Fixed
+
+- The Settings sheet and the Tools menu grid no longer clip their lower rows -
+  both were unscrollable Columns inside a `ModalBottomSheet`.
+
+### Removed
+
+- Unused Retrofit and OkHttp catalog entries. The app has been fully offline
+  since the currency converter was dropped; these were dead weight.
+
 ## [1.0.2] - 2026-06-02
 
 ### Changed
