@@ -62,7 +62,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            // signingConfig set up later via Play App Signing.
+            // No signingConfig: release artifacts come out UNSIGNED, so the
+            // APK cannot be installed and the AAB cannot be uploaded to Play.
+            // See the Signing section of docs/RELEASE.md for what enrolling
+            // Play App Signing requires.
         }
     }
 

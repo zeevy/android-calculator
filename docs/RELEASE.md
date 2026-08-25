@@ -34,9 +34,15 @@ Before pushing a `v*` tag:
 
 1. Bump `versionName` / `versionCode` in `app/build.gradle.kts`.
 2. Add a `## [vX.Y.Z] - YYYY-MM-DD` block to `CHANGELOG.md`.
-3. Commit on `main`: `chore(release): vX.Y.Z`.
-4. Tag: `git tag -s vX.Y.Z -m "Release vX.Y.Z"`.
-5. Push: `git push origin main --follow-tags`.
+3. Commit as `chore(release): vX.Y.Z`. `main` is protected (PR plus one
+   approving review), so this lands through a short-lived `release/vX.Y.Z`
+   branch and a PR, not a direct push.
+4. Tag: `git tag -s vX.Y.Z -m "Release vX.Y.Z"`. This needs a signing
+   key in git config (`user.signingkey`); without one, use `-a` for a
+   plain annotated tag.
+5. Once the PR is merged, tag the merge commit on `main` and push the tag
+   alone: `git push origin vX.Y.Z`. The tag push is what triggers the
+   workflow.
 6. The [Release workflow](../.github/workflows/release.yml) picks
    the tag up, builds the AAB + APK, and creates a draft GitHub
    release with both files attached.
@@ -49,7 +55,8 @@ Before pushing a `v*` tag:
 (Manual - the Play Console API requires elevated credentials we
 don't have in CI yet.)
 
-1. Download the signed AAB from the GitHub release.
+1. Download the AAB from the GitHub release. It must be signed with the
+   upload key first - see [Signing](#signing).
 2. Play Console → **Internal testing** → **Create new release**.
 3. Upload the AAB. Internal testing is gated to the Google account
    list on the testing track.
@@ -64,11 +71,17 @@ don't have in CI yet.)
 
 ## Signing
 
-Currently the release workflow builds with **debug signing**
-(intentionally - we haven't enrolled Play App Signing yet). Pre-1.0
-Internal/Closed-beta tracks accept this.
+**Release artifacts are currently UNSIGNED.** The `release` build type in
+`app/build.gradle.kts` declares no `signingConfig`, so the workflow produces
+`app-release-unsigned.apk` and an unsigned AAB. Two consequences:
 
-When enrolling Play App Signing:
+- The APK **cannot be installed** on a device, so the sideload path below is
+  not live yet.
+- The AAB **cannot be uploaded to Play**, which rejects unsigned bundles. The
+  Play Console steps above are blocked until an upload key is wired in.
+
+So enrolling Play App Signing is the prerequisite for the first real
+distribution, not a later nicety:
 
 1. Generate the upload keystore locally (`keytool -genkey -v -keystore
    upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias
@@ -102,7 +115,11 @@ codepath plus the fix is the recovery path.
 
 ## GitHub release for sideloaders
 
-Every tagged release also publishes the **signed APK** to the GitHub
-release page, so users who can't (or don't want to) install from Play
-can sideload directly. The APK is built from the same commit as the
-AAB, so behaviour is identical.
+Every tagged release also attaches an APK to the GitHub release page, built
+from the same commit as the AAB, so users who can't (or don't want to) install
+from Play can sideload directly.
+
+**Not live yet:** until signing is set up (see below) that asset is
+`app-release-unsigned.apk`, and Android refuses to install an unsigned APK. If
+you publish a release before then, say so in the notes rather than leaving
+people to discover it.
