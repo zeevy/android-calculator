@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing yet.
 
+## [1.2.0] - 2026-08-25
+
+### Added
+
+- **Inline calculation history on the basic calculator.** Every `=` prints an
+  `expression = result` line above the display, oldest at the top and newest
+  just above the result, so a chain of calculations stays visible without
+  opening the History sheet. The lines scroll once they outgrow the space,
+  with a scroll indicator on the right and the top edge fading out to show
+  there is more above. Tap a line to reuse its result; long-press one to copy
+  the whole equation or delete just that line. The lines are per-session and
+  are not written to disk - the History sheet remains the durable record.
+
+### Changed
+
+- After `=`, the display no longer repeats the expression above the result.
+  The new history line already shows `5+6 = 11`, so printing `5+6` again
+  directly underneath was the same input twice, one line apart.
+- Press-and-hold on backspace now clears the inline history along with the
+  expression, for a genuine blank sheet. Reusing an expression from the
+  History sheet or a life calculator leaves the history intact.
+
+### Fixed
+
+- Pressing `=` on a value with nothing left to compute no longer records
+  anything. `5+6 =` followed by more `=` presses was saving a `11 = 11` row
+  to History on every press.
+
 ## [1.1.0] - 2026-08-24
 
 The `v1.0.3` tag was cut without a changelog entry or a `versionName` bump,
