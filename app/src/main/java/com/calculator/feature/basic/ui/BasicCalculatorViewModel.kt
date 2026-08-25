@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.calculator.core.data.history.HistoryEntry
 import com.calculator.core.data.history.HistoryRepository
 import com.calculator.core.data.settings.SettingsRepository
+import com.calculator.core.data.tape.TapeEntry
+import com.calculator.core.data.tape.TapeHolder
 import com.calculator.core.math.AngleMode
 import com.calculator.core.math.EvaluationResult
 import com.calculator.core.math.Evaluator
@@ -81,6 +83,17 @@ class BasicCalculatorViewModel
         private val _state = MutableStateFlow(loadFromSavedState())
         val state: StateFlow<BasicCalculatorUiState> = _state.asStateFlow()
 
+        /**
+         * Session tape of committed equations, oldest first.
+         *
+         * Surfaced as its own flow rather than folded into
+         * [BasicCalculatorUiState] because it lives in the process-wide
+         * [TapeHolder] - the display state is per-ViewModel, the tape is
+         * not, and keeping them separate avoids copying the whole list
+         * into a new state object on every keystroke.
+         */
+        val tape: StateFlow<List<TapeEntry>> = TapeHolder.entries
+
         private fun loadFromSavedState(): BasicCalculatorUiState {
             val expression = savedStateHandle.get<String>(KEY_EXPRESSION).orEmpty()
             val angleMode =
@@ -128,6 +141,14 @@ class BasicCalculatorViewModel
                 is BasicCalculatorEvent.Append -> append(event.symbol)
                 BasicCalculatorEvent.Backspace -> backspace()
                 BasicCalculatorEvent.Clear -> clear()
+                BasicCalculatorEvent.ClearAll -> {
+                    // A deliberate press-and-hold on backspace means "blank
+                    // sheet", so the inline tape goes with the expression.
+                    // The persistent History sheet is untouched - that is
+                    // the durable record.
+                    TapeHolder.clear()
+                    clear()
+                }
                 BasicCalculatorEvent.Equals -> commit()
                 BasicCalculatorEvent.ToggleScientific -> toggleScientific()
                 BasicCalculatorEvent.ToggleAngleMode -> toggleAngleMode()
@@ -136,6 +157,7 @@ class BasicCalculatorViewModel
                 BasicCalculatorEvent.MemoryRecall -> memoryRecall()
                 BasicCalculatorEvent.MemoryClear -> memoryClear()
                 BasicCalculatorEvent.SignFlip -> signFlip()
+                is BasicCalculatorEvent.DeleteTapeLine -> TapeHolder.remove(event.id)
             }
         }
 
@@ -248,13 +270,25 @@ class BasicCalculatorViewModel
                 when (val result = evaluatorFor(current.angleMode).evaluate(toEvaluate)) {
                     is EvaluationResult.Success -> {
                         val canonicalResult = result.value.stripTrailingZeros().toPlainString()
-                        // Record into history only on a fresh equals (not on
-                        // a replay through pendingRepeat) so the repeat-equals
-                        // chain doesn't spam the table. The repository call is
-                        // a fire-and-forget; failures are non-fatal because
-                        // the user already saw their result.
-                        if (current.pendingRepeat == null) {
-                            recordHistory(toEvaluate, canonicalResult, current.scientific)
+                        // An identity commit computed nothing, so it earns no
+                        // line in either sink. This is what `=` does on a bare
+                        // number: `5+6 =` leaves `11` on the display, and every
+                        // further press just re-evaluates `11` to `11`. Only a
+                        // literal string match counts as an identity, so real
+                        // arithmetic that happens to be a no-op numerically
+                        // (`5×1`, `5+0`) still records.
+                        //
+                        // A repeat-equals chain is unaffected: its equation
+                        // moves on with every press (`2+2`, `4+2`, `6+2`), so
+                        // none of those are identities.
+                        val isIdentity = toEvaluate == canonicalResult
+                        if (!isIdentity) {
+                            recordCommit(
+                                expression = toEvaluate,
+                                result = canonicalResult,
+                                scientific = current.scientific,
+                                isRepeat = current.pendingRepeat != null,
+                            )
                         }
                         current
                             .copy(
@@ -296,12 +330,32 @@ class BasicCalculatorViewModel
                 }
             }
 
-        private fun recordHistory(expression: String, result: String, scientific: Boolean) {
-            // Always push to the in-memory tape - it's process-wide and
-            // cheap. The persistent history below is best-effort and may
-            // be skipped when no repository is wired (tests / previews).
-            com.calculator.feature.tape.TapeHolder
-                .add(expression, result)
+        /**
+         * Fan a successful `=` out to the session tape and the durable
+         * history.
+         *
+         * The two sinks deliberately disagree about repeat-equals
+         * replays. Every `=` prints a tape line the way a desk
+         * calculator's paper roll does - the display no longer echoes
+         * the committed expression, so without a line per replay a
+         * `1 + 5 = = =` chain would show `16` with nothing saying where
+         * it came from. The durable history skips replays so the table
+         * isn't filled with near-identical rows.
+         *
+         * @param isRepeat Whether this `=` was a replay of the stored
+         *   `op + operand` rather than a freshly typed equation.
+         */
+        private fun recordCommit(
+            expression: String,
+            result: String,
+            scientific: Boolean,
+            isRepeat: Boolean,
+        ) {
+            TapeHolder.add(expression, result)
+            if (isRepeat) return
+            // Best-effort and fire-and-forget: no repository is wired in
+            // tests and previews, and a failed insert is non-fatal
+            // because the user already saw their result.
             val repo = historyRepository ?: return
             viewModelScope.launch {
                 runCatching {

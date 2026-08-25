@@ -225,4 +225,8 @@
     <string name="settings_precision_description">सटीकता और गति के बीच समझौता - 6 अंक पर 1/3 का परिणाम 0.333333 दिखता है; 16 पर 0.3333333333333333 दिखता है. इंजन डिफ़ॉल्ट 12 है.</string>
     <string name="settings_about_license_value">Apache 2.0</string>
     <string name="settings_about_github_value">zeevy/android-calculator</string>
+
+    <!-- Tape extras -->
+    <string name="tape_copy_line">पंक्ति कॉपी करें</string>
+    <string name="tape_delete_line">पंक्ति हटाएँ</string>
 </resources>

@@ -1,4 +1,4 @@
-package com.calculator.feature.tape
+package com.calculator.core.data.tape
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +18,11 @@ data class TapeEntry(
 
 /**
  * Process-wide running tape of basic-calculator evaluations.
+ *
+ * Lives in `core/` rather than `feature/tape/` because two features
+ * read it - the standalone tape screen and the basic calculator's
+ * inline tape - and a feature package never imports another feature
+ * package.
  *
  * Lives in-memory only - the tape is the *session* ledger, not the
  * persisted history. Cleared on process death by design: a fresh app
@@ -43,6 +48,12 @@ object TapeHolder {
                 if (it.size > MAX_ENTRIES) it.drop(it.size - MAX_ENTRIES) else it
             }
         _entries.value = updated
+    }
+
+    /** Drop a single line, addressed by its [TapeEntry.id]. */
+    @Synchronized
+    fun remove(id: Long) {
+        _entries.value = _entries.value.filterNot { it.id == id }
     }
 
     fun clear() {

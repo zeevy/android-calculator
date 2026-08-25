@@ -98,6 +98,22 @@ class BasicCalculatorHistoryTest {
         }
 
     @Test
+    fun `identity equals does not record`() =
+        runTest(dispatcher) {
+            // No pendingRepeat is armed for a complete expression, so
+            // every `=` after the first re-evaluated `11` to `11` and
+            // inserted another junk row.
+            viewModel.onEvent(BasicCalculatorEvent.Append("5+6"))
+            viewModel.onEvent(BasicCalculatorEvent.Equals)
+            viewModel.onEvent(BasicCalculatorEvent.Equals)
+            viewModel.onEvent(BasicCalculatorEvent.Equals)
+            advanceUntilIdle()
+
+            assertEquals(1, repo.added.size)
+            assertEquals("5+6", repo.added.single().expression)
+        }
+
+    @Test
     fun `blank equals does not record`() =
         runTest(dispatcher) {
             viewModel.onEvent(BasicCalculatorEvent.Equals)

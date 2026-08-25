@@ -79,8 +79,18 @@ sealed interface BasicCalculatorEvent {
     /** Remove the last character from the expression. */
     data object Backspace : BasicCalculatorEvent
 
-    /** Clear the expression entirely. */
+    /** Clear the expression entirely, leaving the session tape intact. */
     data object Clear : BasicCalculatorEvent
+
+    /**
+     * Clear the expression *and* empty the session tape - the
+     * "blank sheet" reset bound to a long-press on backspace.
+     *
+     * Distinct from [Clear], which the app also fires programmatically
+     * when handing an expression over from a tool page or a history
+     * row; those hand-offs must not throw the tape away.
+     */
+    data object ClearAll : BasicCalculatorEvent
 
     /** Evaluate the expression and replace it with the result. */
     data object Equals : BasicCalculatorEvent
@@ -105,4 +115,9 @@ sealed interface BasicCalculatorEvent {
 
     /** Flip the sign of the trailing operand in the expression. */
     data object SignFlip : BasicCalculatorEvent
+
+    /** Drop a single line from the inline session tape. */
+    data class DeleteTapeLine(
+        val id: Long,
+    ) : BasicCalculatorEvent
 }

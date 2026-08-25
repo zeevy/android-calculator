@@ -259,6 +259,8 @@
     <string name="tape_title">Tape</string>
     <string name="tape_empty">No calculations yet. Run a few on the basic calculator and they\'ll show up here.</string>
     <string name="tape_clear">Clear tape</string>
+    <string name="tape_copy_line">Copy line</string>
+    <string name="tape_delete_line">Delete line</string>
 
     <!-- Floating calculator overlay -->
     <string name="floating_header">Calculator</string>

@@ -54,6 +54,11 @@ A modern, fully-offline, multi-purpose calculator for Android that bundles a sta
 ### 4.1 Basic Calculator (must-have)
 - Operations: + - × ÷, parentheses, percentage, sign toggle, decimal.
 - Live preview of the result as the user types.
+- Inline session tape above the display: one `expression = result` line per
+  committed `=`, newest at the bottom, scrollable (with a scroll indicator)
+  once the lines overflow the display area. Tap a line to recall its result.
+  In-memory only - a long-press on backspace clears it along with the
+  expression; the durable record stays in the History view.
 - Clear (C) and backspace.
 - Editable expression (tap to position cursor; edit anywhere).
 - History view: scroll past calculations, tap to reuse, swipe to delete, clear all.

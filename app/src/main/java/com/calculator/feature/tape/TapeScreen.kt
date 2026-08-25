@@ -36,6 +36,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.calculator.R
+import com.calculator.core.data.tape.TapeEntry
+import com.calculator.core.data.tape.TapeHolder
 import com.calculator.feature.lifecalc.PendingExpressionHolder
 import com.calculator.feature.lifecalc.ToolsMenuOverlay
 import com.calculator.feature.lifecalc.ToolsMenuSheet

@@ -59,10 +59,12 @@ class BasicCalculatorDisplayTest {
     }
 
     @Test
-    fun afterEquals_topShowsCommittedExpression_bottomShowsResult() {
-        // Mirrors the post-`=` state machine: lastCommittedExpression
-        // wins on top, lastValidPreview surfaces on the bottom even
-        // though the live preview is null.
+    fun afterEquals_topLineIsBlank_bottomShowsResult() {
+        // Post-`=`, the committed expression is deliberately NOT echoed
+        // on the top line - the inline tape above the display already
+        // carries the `5+3 = 8` line, so repeating it here printed the
+        // same input twice. lastValidPreview still surfaces on the
+        // bottom even though the live preview is null.
         composeRule.setContent {
             Display(
                 expression = "8",
@@ -72,7 +74,7 @@ class BasicCalculatorDisplayTest {
                 lastValidPreview = "8",
             )
         }
-        composeRule.onNodeWithText("5+3").assertIsDisplayed()
+        composeRule.onNodeWithText("5+3").assertDoesNotExist()
         composeRule.onNodeWithText("8").assertIsDisplayed()
     }
 

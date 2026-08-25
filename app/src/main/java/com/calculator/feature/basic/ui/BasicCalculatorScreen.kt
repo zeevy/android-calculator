@@ -74,6 +74,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.R
 import com.calculator.core.common.clipboard.plainTextClipEntry
 import com.calculator.core.common.clipboard.readPlainText
+import com.calculator.core.data.tape.TapeEntry
 import com.calculator.core.designsystem.theme.CalculatorTheme
 import com.calculator.core.math.AngleMode
 import com.calculator.feature.lifecalc.ToolsMenuOverlay
@@ -96,6 +97,7 @@ fun BasicCalculatorScreen(
     viewModel: BasicCalculatorViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val tape by viewModel.tape.collectAsStateWithLifecycle()
     // On first composition, pick up any expression or scientific-mode
     // hint a tool page stashed for us. The holder is one-shot - read
     // once, then null it out so re-navigating back doesn't re-apply.
@@ -115,6 +117,7 @@ fun BasicCalculatorScreen(
     }
     BasicCalculatorScreenContent(
         state = state,
+        tape = tape,
         onEvent = viewModel::onEvent,
         onNavigate = onNavigate,
     )
@@ -133,6 +136,7 @@ internal fun BasicCalculatorScreenContent(
     state: BasicCalculatorUiState,
     onEvent: (BasicCalculatorEvent) -> Unit,
     onNavigate: (Any) -> Unit = {},
+    tape: List<TapeEntry> = emptyList(),
 ) {
     var openSheet by remember { mutableStateOf<ToolsMenuSheet?>(null) }
     val tones = rememberKeyToneGenerator()
@@ -171,6 +175,7 @@ internal fun BasicCalculatorScreenContent(
                 // does the section separation.
                 DisplaySection(
                     state = state,
+                    tape = tape,
                     onEvent = onEvent,
                     onOpenMenu = { openSheet = ToolsMenuSheet.Tools },
                     modifier =
@@ -225,6 +230,7 @@ internal fun BasicCalculatorScreenContent(
 @Composable
 private fun DisplaySection(
     state: BasicCalculatorUiState,
+    tape: List<TapeEntry>,
     onEvent: (BasicCalculatorEvent) -> Unit,
     onOpenMenu: () -> Unit,
     modifier: Modifier = Modifier,
@@ -236,42 +242,62 @@ private fun DisplaySection(
     // coroutine rather than inline in the click handler.
     val clipboardScope = rememberCoroutineScope()
     Box(modifier = modifier) {
-        Display(
-            expression = state.expression,
-            preview = state.liveResult,
-            error = state.errorMessage,
-            lastCommittedExpression = state.lastCommittedExpression,
-            lastValidPreview = state.lastValidPreview,
-            onCopyResult = { text ->
-                if (text.isNotBlank()) {
-                    clipboardScope.launch {
-                        clipboard.setClipEntry(plainTextClipEntry(text))
-                        android.widget.Toast
-                            .makeText(context, R.string.basic_copied, android.widget.Toast.LENGTH_SHORT)
-                            .show()
-                    }
-                }
-            },
-            onPasteRequested = {
-                clipboardScope.launch {
-                    val pasted = clipboard.getClipEntry().readPlainText(context)
-                    val number = extractLeadingNumber(pasted)
-                    if (number != null) {
-                        onEvent(BasicCalculatorEvent.Append(number))
-                    } else {
-                        android.widget.Toast
-                            .makeText(context, R.string.basic_paste_no_number, android.widget.Toast.LENGTH_SHORT)
-                            .show()
-                    }
-                }
-            },
+        // Column so the tape stacks above the display lines: the tape
+        // takes the leftover height (weight) while the display keeps its
+        // intrinsic two-line height, which means a growing tape can never
+        // squeeze the result text.
+        Column(
             modifier =
                 Modifier
                     .fillMaxSize()
                     .windowInsetsPadding(WindowInsets.statusBars)
                     .padding(horizontal = 16.dp)
+                    // Clears the chip row / hamburger overlaid at the top
+                    // of this Box.
                     .padding(top = 48.dp),
-        )
+        ) {
+            InlineTape(
+                entries = tape,
+                // Tapping a tape line appends its result, matching the
+                // recall behaviour of the History sheet and Tape screen.
+                onRecall = { result -> onEvent(BasicCalculatorEvent.Append(result)) },
+                // Deleting one line goes through the event channel like
+                // every other interaction on this screen.
+                onDelete = { id -> onEvent(BasicCalculatorEvent.DeleteTapeLine(id)) },
+                modifier = Modifier.fillMaxWidth().weight(1f),
+            )
+            Display(
+                expression = state.expression,
+                preview = state.liveResult,
+                error = state.errorMessage,
+                lastCommittedExpression = state.lastCommittedExpression,
+                lastValidPreview = state.lastValidPreview,
+                onCopyResult = { text ->
+                    if (text.isNotBlank()) {
+                        clipboardScope.launch {
+                            clipboard.setClipEntry(plainTextClipEntry(text))
+                            android.widget.Toast
+                                .makeText(context, R.string.basic_copied, android.widget.Toast.LENGTH_SHORT)
+                                .show()
+                        }
+                    }
+                },
+                onPasteRequested = {
+                    clipboardScope.launch {
+                        val pasted = clipboard.getClipEntry().readPlainText(context)
+                        val number = extractLeadingNumber(pasted)
+                        if (number != null) {
+                            onEvent(BasicCalculatorEvent.Append(number))
+                        } else {
+                            android.widget.Toast
+                                .makeText(context, R.string.basic_paste_no_number, android.widget.Toast.LENGTH_SHORT)
+                                .show()
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
 
         Row(
             modifier =
@@ -341,7 +367,7 @@ private fun DisplaySection(
  *     |-------------------------------|----------------|-------------------|
  *     | Empty / just digits ("5")     | (blank)        | expression / "0"  |
  *     | Mid-expression ("5+3")        | expression     | liveResult        |
- *     | Post-equals ("5+3=8")         | committed expr | expression (8)    |
+ *     | Post-equals ("5+3=8")         | (blank)        | expression (8)    |
  *     | After-= chain ("8+2")         | expression     | liveResult        |
  *     | Error                         | expression     | error (red)       |
  *
@@ -362,14 +388,21 @@ internal fun Display(
     onCopyResult: (String) -> Unit = {},
     onPasteRequested: () -> Unit = {},
 ) {
-    // Top (input) line: always the expression, with the committed-
-    // expression preferred when it's set (i.e. after `=`). We do NOT
-    // gate this on `preview != null` because the live preview can
-    // disappear mid-typing - typing the next operator (`5+3` -> `5+3+`)
-    // makes the preview unevaluable, and gating on it would blank the
-    // top line on every operator press. Showing the expression
-    // unconditionally keeps the layout stable across every keystroke.
-    val topText: String = lastCommittedExpression ?: expression
+    // Top (input) line: the expression as typed. We do NOT gate this on
+    // `preview != null` because the live preview can disappear mid-
+    // typing - typing the next operator (`5+3` -> `5+3+`) makes the
+    // preview unevaluable, and gating on it would blank the top line on
+    // every operator press. Showing the expression unconditionally keeps
+    // the layout stable across every keystroke.
+    //
+    // The one exception is the post-`=` state, where the line goes
+    // blank: the inline tape directly above already carries the
+    // `5+3 = 8` line, so echoing `5+3` here printed the same input
+    // twice, one line apart. The slot itself stays (an empty Text still
+    // occupies its line height) so the result never shifts vertically,
+    // the long-press-to-paste target survives, and the gap gives the
+    // result room to breathe under the tape.
+    val topText: String = if (lastCommittedExpression != null) "" else expression
     // Bottom (result) line: result only - never the expression itself.
     // Priority order:
     //   1. error message (red)
@@ -936,11 +969,12 @@ private fun KeyButton(
     }
 
     // Long-press wiring. Only Backspace defines a long-press action - it
-    // clears the whole expression, in place of the standalone C key.
+    // clears the whole expression plus the inline tape, in place of the
+    // standalone C key.
     val longClick: (() -> Unit)? =
         when (key) {
             Key.Backspace -> {
-                { onEvent(BasicCalculatorEvent.Clear) }
+                { onEvent(BasicCalculatorEvent.ClearAll) }
             }
             else -> null
         }
