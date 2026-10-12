@@ -286,7 +286,7 @@
     <string name="age_value_format"><xliff:g id="years" example="34">%1$d</xliff:g>y <xliff:g id="months" example="5">%2$d</xliff:g>m <xliff:g id="days" example="12">%3$d</xliff:g>d</string>
     <string name="age_days_format"><xliff:g id="days" example="42">%1$d</xliff:g>d</string>
     <string name="age_error_past_date">Pick a date in the past.</string>
-    <string name="age_tap_to_change">Tap to change</string>
+    <string name="date_tap_to_change">Tap to change</string>
 
     <!-- DateDiff extras -->
     <string name="datediff_section_mode">Mode</string>

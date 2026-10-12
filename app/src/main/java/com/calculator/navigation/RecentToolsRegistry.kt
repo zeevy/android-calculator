@@ -1,4 +1,4 @@
-package com.calculator.feature.shortcuts
+package com.calculator.navigation
 
 import android.content.Context
 import android.content.Intent

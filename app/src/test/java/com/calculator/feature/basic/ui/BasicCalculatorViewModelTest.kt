@@ -40,6 +40,27 @@ class BasicCalculatorViewModelTest {
     private val state get() = viewModel.state.value
 
     @Nested
+    inner class HandOffFromOtherPages {
+        @Test
+        fun `Reuse replaces the current input`() {
+            type("9", "+", "1")
+            viewModel.onEvent(BasicCalculatorEvent.Reuse("12×3"))
+            assertEquals("12×3", state.expression)
+            assertEquals("36", state.liveResult)
+        }
+
+        @Test
+        fun `SetScientific switches the keypad only when the mode differs`() {
+            viewModel.onEvent(BasicCalculatorEvent.SetScientific(true))
+            assertTrue(state.scientific)
+            viewModel.onEvent(BasicCalculatorEvent.SetScientific(true))
+            assertTrue(state.scientific)
+            viewModel.onEvent(BasicCalculatorEvent.SetScientific(false))
+            assertEquals(false, state.scientific)
+        }
+    }
+
+    @Nested
     inner class OperatorCollapse {
         @Test
         fun `consecutive plus operators collapse to one`() {

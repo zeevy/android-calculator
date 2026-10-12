@@ -2,13 +2,9 @@ package com.calculator.feature.datetime.datediff
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -20,18 +16,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.calculator.R
+import com.calculator.core.designsystem.component.DateField
+import com.calculator.core.designsystem.component.LifeCalcCard
+import com.calculator.core.designsystem.component.LifeCalcNumberField
+import com.calculator.core.designsystem.component.LifeCalcOutputRow
+import com.calculator.core.designsystem.component.LifeCalcSectionLabel
+import com.calculator.core.designsystem.component.LifeCalcSegmented
+import com.calculator.core.designsystem.component.LifeCalculatorScaffold
 import com.calculator.core.domain.datetime.DateDiffCalculator
-import com.calculator.feature.datetime.age.DateRow
-import com.calculator.feature.lifecalc.LifeCalcCard
-import com.calculator.feature.lifecalc.LifeCalcNumberField
-import com.calculator.feature.lifecalc.LifeCalcOutputRow
-import com.calculator.feature.lifecalc.LifeCalcSectionLabel
-import com.calculator.feature.lifecalc.LifeCalcSegmented
-import com.calculator.feature.lifecalc.LifeCalculatorScaffold
-import com.calculator.navigation.DateDiffRoute
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 /**
@@ -46,28 +39,22 @@ import java.time.format.DateTimeFormatter
  * integer day count, returns the resulting calendar date. Offset is
  * stored as a string so the field can show "" or "-" mid-edit.
  *
- * @param onNavigate Jump to another tool / home. Wired to the scaffold's
- *   hamburger menu.
+ * @param onOpenMenu Opens the app's tools menu.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DateDiffScreen(onNavigate: (Any) -> Unit) {
+fun DateDiffScreen(onOpenMenu: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     var mode by remember { mutableIntStateOf(0) } // 0 = two dates, 1 = date + offset
     // Defaults seed a sample 1-year span so the result card has
-    // something to display on first render. The single picker state
-    // (`openPicker`) doubles as a flag (null = closed) and a routing
-    // tag (which date to update on confirm) - simpler than carrying a
-    // boolean + selector pair.
+    // something to display on first render.
     var dateA by remember { mutableStateOf(LocalDate.now().minusYears(1)) }
     var dateB by remember { mutableStateOf(LocalDate.now()) }
     var offsetDays by remember { mutableStateOf("90") }
-    var openPicker by remember { mutableStateOf<Picker?>(null) }
 
     LifeCalculatorScaffold(
         title = stringResource(R.string.datediff_title),
-        currentRoute = DateDiffRoute,
-        onNavigate = onNavigate,
+        onOpenMenu = onOpenMenu,
     ) {
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.datediff_section_mode))
@@ -81,12 +68,12 @@ fun DateDiffScreen(onNavigate: (Any) -> Unit) {
             )
             if (mode == 0) {
                 LifeCalcSectionLabel(stringResource(R.string.datediff_from))
-                DateRow(date = dateA, onClick = { openPicker = Picker.A })
+                DateField(date = dateA, onDateChange = { dateA = it })
                 LifeCalcSectionLabel(stringResource(R.string.datediff_to_label))
-                DateRow(date = dateB, onClick = { openPicker = Picker.B })
+                DateField(date = dateB, onDateChange = { dateB = it })
             } else {
                 LifeCalcSectionLabel(stringResource(R.string.datediff_section_start_date))
-                DateRow(date = dateA, onClick = { openPicker = Picker.A })
+                DateField(date = dateA, onDateChange = { dateA = it })
                 LifeCalcNumberField(
                     label = stringResource(R.string.datediff_offset),
                     value = offsetDays,
@@ -155,38 +142,4 @@ fun DateDiffScreen(onNavigate: (Any) -> Unit) {
             }
         }
     }
-
-    openPicker?.let { picker ->
-        val initial =
-            when (picker) {
-                Picker.A -> dateA
-                Picker.B -> dateB
-            }.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
-        val state = rememberDatePickerState(initialSelectedDateMillis = initial)
-        DatePickerDialog(
-            onDismissRequest = { openPicker = null },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        state.selectedDateMillis?.let { ms ->
-                            val d = Instant.ofEpochMilli(ms).atZone(ZoneOffset.UTC).toLocalDate()
-                            when (picker) {
-                                Picker.A -> dateA = d
-                                Picker.B -> dateB = d
-                            }
-                        }
-                        openPicker = null
-                    },
-                ) { Text(stringResource(R.string.action_ok)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { openPicker = null }) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            },
-        ) { DatePicker(state = state) }
-    }
 }
-
-/** Identifies which date the picker dialog should write back to on confirm. */
-private enum class Picker { A, B }

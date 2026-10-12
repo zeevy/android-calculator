@@ -64,7 +64,7 @@ class DataStoreSettingsRepository
                     dynamicColor = prefs[Keys.DynamicColor] ?: true,
                     haptics = prefs[Keys.Haptics] ?: true,
                     sound = prefs[Keys.Sound] ?: true,
-                    precision = prefs[Keys.Precision] ?: DEFAULT_PRECISION,
+                    precision = prefs[Keys.Precision] ?: UserSettings.DEFAULT_PRECISION,
                     crashOptIn = prefs[Keys.CrashOptIn] ?: false,
                     lastUnitCategory = prefs[Keys.LastUnitCategory],
                     gstIntraState = prefs[Keys.GstIntraState] ?: true,
@@ -93,7 +93,7 @@ class DataStoreSettingsRepository
         }
 
         override suspend fun setPrecision(precision: Int) {
-            dataStore.edit { it[Keys.Precision] = precision.coerceIn(MIN_PRECISION, MAX_PRECISION) }
+            dataStore.edit { it[Keys.Precision] = precision.coerceIn(UserSettings.PRECISION_RANGE) }
         }
 
         override suspend fun setCrashOptIn(enabled: Boolean) {
@@ -145,11 +145,5 @@ class DataStoreSettingsRepository
             val BmiWeightImperial = booleanPreferencesKey("bmiWeightImperial")
             val LastTzFromZone = stringPreferencesKey("lastTzFromZone")
             val LastTzToZone = stringPreferencesKey("lastTzToZone")
-        }
-
-        companion object {
-            const val DEFAULT_PRECISION = 12
-            const val MIN_PRECISION = 6
-            const val MAX_PRECISION = 16
         }
     }

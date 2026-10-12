@@ -201,7 +201,7 @@
     <string name="age_value_format"><xliff:g id="years" example="34">%1$d</xliff:g>व <xliff:g id="months" example="5">%2$d</xliff:g>म <xliff:g id="days" example="12">%3$d</xliff:g>द</string>
     <string name="age_days_format"><xliff:g id="days" example="42">%1$d</xliff:g>द</string>
     <string name="age_error_past_date">अतीत में एक तिथि चुनें.</string>
-    <string name="age_tap_to_change">बदलने के लिए टैप करें</string>
+    <string name="date_tap_to_change">बदलने के लिए टैप करें</string>
 
     <!-- DateDiff extras -->
     <string name="datediff_section_mode">मोड</string>

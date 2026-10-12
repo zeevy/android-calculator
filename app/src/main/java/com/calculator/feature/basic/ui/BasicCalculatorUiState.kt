@@ -62,6 +62,10 @@ data class BasicCalculatorUiState(
      * because there's no longer any "previous result" to remember.
      */
     val lastValidPreview: String? = null,
+    /** Play a tone on key press. Follows Settings; not saved with the state. */
+    val soundEnabled: Boolean = true,
+    /** Vibrate on key press. Follows Settings; not saved with the state. */
+    val hapticsEnabled: Boolean = true,
 )
 
 /**
@@ -78,6 +82,16 @@ sealed interface BasicCalculatorEvent {
 
     /** Remove the last character from the expression. */
     data object Backspace : BasicCalculatorEvent
+
+    /** Replace the expression, as when a History entry or tape line is reused from any page. */
+    data class Reuse(
+        val expression: String,
+    ) : BasicCalculatorEvent
+
+    /** Show the scientific keypad when [enabled] is true, the basic one otherwise. */
+    data class SetScientific(
+        val enabled: Boolean,
+    ) : BasicCalculatorEvent
 
     /** Clear the expression entirely, leaving the session tape intact. */
     data object Clear : BasicCalculatorEvent

@@ -14,13 +14,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.calculator.R
 import com.calculator.core.common.format.NumberFormatter
+import com.calculator.core.designsystem.component.LifeCalcCard
+import com.calculator.core.designsystem.component.LifeCalcNumberField
+import com.calculator.core.designsystem.component.LifeCalcOutputRow
+import com.calculator.core.designsystem.component.LifeCalcSectionLabel
+import com.calculator.core.designsystem.component.LifeCalculatorScaffold
 import com.calculator.core.domain.finance.EmiCalculator
-import com.calculator.feature.lifecalc.LifeCalcCard
-import com.calculator.feature.lifecalc.LifeCalcNumberField
-import com.calculator.feature.lifecalc.LifeCalcOutputRow
-import com.calculator.feature.lifecalc.LifeCalcSectionLabel
-import com.calculator.feature.lifecalc.LifeCalculatorScaffold
-import com.calculator.navigation.LoanRoute
 import java.util.Locale
 
 /**
@@ -36,12 +35,10 @@ import java.util.Locale
  * copy implies the app *is* a lender or pre-qualifier, the listing is
  * subject to additional review and possible takedown).
  *
- * @param onNavigate Jump to another tool / home. Wired to the scaffold's
- *   hamburger menu; defined as `(Any) -> Unit` rather than a
- *   `NavController` so previews can pass a no-op.
+ * @param onOpenMenu Opens the app's tools menu.
  */
 @Composable
-fun LoanScreen(onNavigate: (Any) -> Unit) {
+fun LoanScreen(onOpenMenu: () -> Unit) {
     // Sensible defaults that immediately render a populated result card
     // so first-time users see the shape of the output without having to
     // type anything. Numbers are stored as strings (not Double) because
@@ -54,8 +51,7 @@ fun LoanScreen(onNavigate: (Any) -> Unit) {
 
     LifeCalculatorScaffold(
         title = stringResource(R.string.loan_title),
-        currentRoute = LoanRoute,
-        onNavigate = onNavigate,
+        onOpenMenu = onOpenMenu,
     ) {
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.loan_section_inputs))

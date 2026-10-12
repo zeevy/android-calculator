@@ -21,11 +21,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.calculator.R
+import com.calculator.core.designsystem.component.LifeCalcCard
+import com.calculator.core.designsystem.component.LifeCalcSectionLabel
+import com.calculator.core.designsystem.component.LifeCalculatorScaffold
 import com.calculator.core.domain.math.BaseConverter
-import com.calculator.feature.lifecalc.LifeCalcCard
-import com.calculator.feature.lifecalc.LifeCalcSectionLabel
-import com.calculator.feature.lifecalc.LifeCalculatorScaffold
-import com.calculator.navigation.BaseConverterRoute
 
 /**
  * Number-base converter (binary / octal / decimal / hex).
@@ -39,10 +38,10 @@ import com.calculator.navigation.BaseConverterRoute
  * Defaults render the value 42 in all four bases so the layout is
  * populated on first frame.
  *
- * @param onNavigate Jump to another tool / home.
+ * @param onOpenMenu Opens the app's tools menu.
  */
 @Composable
-fun BaseConverterScreen(onNavigate: (Any) -> Unit) {
+fun BaseConverterScreen(onOpenMenu: () -> Unit) {
     // Seed each field independently so a mid-edit string like "" or
     // "0xff" doesn't have to round-trip through Long before showing
     // back. lastEdited tracks which radix is the source-of-truth and
@@ -74,8 +73,7 @@ fun BaseConverterScreen(onNavigate: (Any) -> Unit) {
 
     LifeCalculatorScaffold(
         title = stringResource(R.string.basecalc_title),
-        currentRoute = BaseConverterRoute,
-        onNavigate = onNavigate,
+        onOpenMenu = onOpenMenu,
     ) {
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.basecalc_section_values))

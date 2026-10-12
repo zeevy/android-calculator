@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.calculator.core.data.history.HistoryEntry
 import com.calculator.core.data.history.HistoryRepository
 import com.calculator.core.data.settings.SettingsRepository
+import com.calculator.core.data.settings.UserSettings
 import com.calculator.core.data.tape.TapeEntry
 import com.calculator.core.data.tape.TapeHolder
 import com.calculator.core.math.AngleMode
@@ -62,7 +63,7 @@ class BasicCalculatorViewModel
         settingsRepository: SettingsRepository? = null,
     ) : ViewModel() {
         // Precision flows in from SettingsRepository, defaulting to
-        // DECIMAL64 when no repo is wired (e.g. unit tests construct
+        // the app default when no repo is wired (e.g. unit tests construct
         // the VM without one). Each `=` and live preview pulls the
         // current value, so a precision change in Settings takes
         // effect on the next keypress without restarting anything.
@@ -73,9 +74,9 @@ class BasicCalculatorViewModel
                 ?.stateIn(
                     scope = viewModelScope,
                     started = SharingStarted.Eagerly,
-                    initialValue = DEFAULT_PRECISION,
+                    initialValue = UserSettings.DEFAULT_PRECISION,
                 )
-                ?: MutableStateFlow(DEFAULT_PRECISION).asStateFlow()
+                ?: MutableStateFlow(UserSettings.DEFAULT_PRECISION).asStateFlow()
 
         // Restore from the SavedStateHandle so calculator state survives
         // process death and config changes. `liveResult` is derived from
@@ -135,6 +136,18 @@ class BasicCalculatorViewModel
             savedStateHandle[KEY_LAST_PREVIEW] = state.lastValidPreview
         }
 
+        init {
+            // Key sounds and haptics follow Settings live; they are not part
+            // of the saved calculator state.
+            settingsRepository?.settings?.let { flow ->
+                viewModelScope.launch {
+                    flow.collect { s ->
+                        _state.update { it.copy(soundEnabled = s.sound, hapticsEnabled = s.haptics) }
+                    }
+                }
+            }
+        }
+
         /** Dispatch a user event - typically called from the UI on key press. */
         fun onEvent(event: BasicCalculatorEvent) {
             when (event) {
@@ -151,6 +164,12 @@ class BasicCalculatorViewModel
                 }
                 BasicCalculatorEvent.Equals -> commit()
                 BasicCalculatorEvent.ToggleScientific -> toggleScientific()
+                is BasicCalculatorEvent.SetScientific ->
+                    if (_state.value.scientific != event.enabled) toggleScientific()
+                is BasicCalculatorEvent.Reuse -> {
+                    clear()
+                    append(event.expression)
+                }
                 BasicCalculatorEvent.ToggleAngleMode -> toggleAngleMode()
                 BasicCalculatorEvent.MemoryAdd -> memoryDelta(addToMemory = true)
                 BasicCalculatorEvent.MemorySubtract -> memoryDelta(addToMemory = false)
@@ -686,10 +705,6 @@ class BasicCalculatorViewModel
         }
 
         private companion object {
-            // Matches DataStoreSettingsRepository.DEFAULT_PRECISION; pulled
-            // in only so the VM can construct an Evaluator without a
-            // settings repo (tests).
-            const val DEFAULT_PRECISION = 12
             const val KEY_EXPRESSION = "calculator.expression"
             const val KEY_ERROR = "calculator.error"
             const val KEY_PENDING_REPEAT = "calculator.pendingRepeat"

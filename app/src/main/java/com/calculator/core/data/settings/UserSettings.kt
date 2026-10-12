@@ -16,7 +16,7 @@ data class UserSettings(
     val dynamicColor: Boolean = true,
     val haptics: Boolean = true,
     val sound: Boolean = true,
-    val precision: Int = 12,
+    val precision: Int = DEFAULT_PRECISION,
     val crashOptIn: Boolean = false,
     /**
      * Per-tool "remember last selection" preferences.
@@ -49,4 +49,12 @@ data class UserSettings(
     val lastTzToZone: String? = null,
 ) {
     enum class ThemeOption { System, Light, Dark }
+
+    companion object {
+        /** Significant digits used until the user picks another value. */
+        const val DEFAULT_PRECISION = 12
+
+        /** Precision values the Settings slider offers and the repository accepts. */
+        val PRECISION_RANGE: IntRange = 6..16
+    }
 }

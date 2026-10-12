@@ -1,20 +1,6 @@
-package com.calculator.feature.shortcuts
+package com.calculator.navigation
 
 import com.calculator.R
-import com.calculator.navigation.AgeRoute
-import com.calculator.navigation.BaseConverterRoute
-import com.calculator.navigation.BmiRoute
-import com.calculator.navigation.DateDiffRoute
-import com.calculator.navigation.DiscountRoute
-import com.calculator.navigation.GstRoute
-import com.calculator.navigation.InvestmentRoute
-import com.calculator.navigation.LoanRoute
-import com.calculator.navigation.OvulationRoute
-import com.calculator.navigation.PercentRoute
-import com.calculator.navigation.TapeRoute
-import com.calculator.navigation.TimezoneRoute
-import com.calculator.navigation.TipSplitRoute
-import com.calculator.navigation.UnitConverterRoute
 
 /**
  * Stable ID + display labels for every tool that can show up as a

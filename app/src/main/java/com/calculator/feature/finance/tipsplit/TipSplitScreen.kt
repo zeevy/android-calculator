@@ -26,13 +26,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.calculator.R
 import com.calculator.core.common.format.NumberFormatter
+import com.calculator.core.designsystem.component.LifeCalcCard
+import com.calculator.core.designsystem.component.LifeCalcNumberField
+import com.calculator.core.designsystem.component.LifeCalcOutputRow
+import com.calculator.core.designsystem.component.LifeCalcSectionLabel
+import com.calculator.core.designsystem.component.LifeCalculatorScaffold
 import com.calculator.core.domain.finance.TipSplitCalculator
-import com.calculator.feature.lifecalc.LifeCalcCard
-import com.calculator.feature.lifecalc.LifeCalcNumberField
-import com.calculator.feature.lifecalc.LifeCalcOutputRow
-import com.calculator.feature.lifecalc.LifeCalcSectionLabel
-import com.calculator.feature.lifecalc.LifeCalculatorScaffold
-import com.calculator.navigation.TipSplitRoute
 import java.util.Locale
 
 /**
@@ -45,10 +44,10 @@ import java.util.Locale
  * Defaults render a populated result on entry (₹1,000 bill / 10% tip /
  * 2 people) so the first frame shows the row layout.
  *
- * @param onNavigate Jump to another tool / home.
+ * @param onOpenMenu Opens the app's tools menu.
  */
 @Composable
-fun TipSplitScreen(onNavigate: (Any) -> Unit) {
+fun TipSplitScreen(onOpenMenu: () -> Unit) {
     var bill by remember { mutableStateOf("1000") }
     var tipAmount by remember { mutableStateOf("100") }
     var people by remember { mutableIntStateOf(2) }
@@ -67,8 +66,7 @@ fun TipSplitScreen(onNavigate: (Any) -> Unit) {
 
     LifeCalculatorScaffold(
         title = stringResource(R.string.tipsplit_title),
-        currentRoute = TipSplitRoute,
-        onNavigate = onNavigate,
+        onOpenMenu = onOpenMenu,
     ) {
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.tipsplit_section_inputs))

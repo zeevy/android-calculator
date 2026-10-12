@@ -47,7 +47,7 @@ class SettingsRepositoryTest {
                 assertTrue(snapshot.dynamicColor)
                 assertTrue(snapshot.haptics)
                 assertTrue(snapshot.sound)
-                assertEquals(DataStoreSettingsRepository.DEFAULT_PRECISION, snapshot.precision)
+                assertEquals(UserSettings.DEFAULT_PRECISION, snapshot.precision)
                 assertFalse(snapshot.crashOptIn)
                 cancelAndIgnoreRemainingEvents()
             }
@@ -80,7 +80,7 @@ class SettingsRepositoryTest {
             val repo = DataStoreSettingsRepository(newDataStore())
             repo.setPrecision(99) // out of range
             repo.settings.test {
-                assertEquals(DataStoreSettingsRepository.MAX_PRECISION, awaitItem().precision)
+                assertEquals(UserSettings.PRECISION_RANGE.last, awaitItem().precision)
                 cancelAndIgnoreRemainingEvents()
             }
         }

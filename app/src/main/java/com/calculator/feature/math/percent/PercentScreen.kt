@@ -11,14 +11,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import com.calculator.R
 import com.calculator.core.common.format.NumberFormatter
+import com.calculator.core.designsystem.component.LifeCalcCard
+import com.calculator.core.designsystem.component.LifeCalcNumberField
+import com.calculator.core.designsystem.component.LifeCalcOutputRow
+import com.calculator.core.designsystem.component.LifeCalcSectionLabel
+import com.calculator.core.designsystem.component.LifeCalcSegmented
+import com.calculator.core.designsystem.component.LifeCalculatorScaffold
 import com.calculator.core.domain.math.PercentCalculator
-import com.calculator.feature.lifecalc.LifeCalcCard
-import com.calculator.feature.lifecalc.LifeCalcNumberField
-import com.calculator.feature.lifecalc.LifeCalcOutputRow
-import com.calculator.feature.lifecalc.LifeCalcSectionLabel
-import com.calculator.feature.lifecalc.LifeCalcSegmented
-import com.calculator.feature.lifecalc.LifeCalculatorScaffold
-import com.calculator.navigation.PercentRoute
 import java.util.Locale
 import kotlin.math.absoluteValue
 
@@ -33,10 +32,10 @@ import kotlin.math.absoluteValue
  * output row reports the answer. Defaults pre-seed each mode with
  * representative numbers so the result line is never blank.
  *
- * @param onNavigate Jump to another tool / home.
+ * @param onOpenMenu Opens the app's tools menu.
  */
 @Composable
-fun PercentScreen(onNavigate: (Any) -> Unit) {
+fun PercentScreen(onOpenMenu: () -> Unit) {
     var mode by remember { mutableIntStateOf(0) }
     var a by remember { mutableStateOf("20") }
     var b by remember { mutableStateOf("250") }
@@ -58,8 +57,7 @@ fun PercentScreen(onNavigate: (Any) -> Unit) {
 
     LifeCalculatorScaffold(
         title = stringResource(R.string.percent_title),
-        currentRoute = PercentRoute,
-        onNavigate = onNavigate,
+        onOpenMenu = onOpenMenu,
     ) {
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.percent_section_mode))

@@ -11,14 +11,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import com.calculator.R
 import com.calculator.core.common.format.NumberFormatter
+import com.calculator.core.designsystem.component.LifeCalcCard
+import com.calculator.core.designsystem.component.LifeCalcNumberField
+import com.calculator.core.designsystem.component.LifeCalcOutputRow
+import com.calculator.core.designsystem.component.LifeCalcSectionLabel
+import com.calculator.core.designsystem.component.LifeCalcSegmented
+import com.calculator.core.designsystem.component.LifeCalculatorScaffold
 import com.calculator.core.domain.finance.InvestmentCalculator
-import com.calculator.feature.lifecalc.LifeCalcCard
-import com.calculator.feature.lifecalc.LifeCalcNumberField
-import com.calculator.feature.lifecalc.LifeCalcOutputRow
-import com.calculator.feature.lifecalc.LifeCalcSectionLabel
-import com.calculator.feature.lifecalc.LifeCalcSegmented
-import com.calculator.feature.lifecalc.LifeCalculatorScaffold
-import com.calculator.navigation.InvestmentRoute
 import java.util.Locale
 
 /**
@@ -32,10 +31,10 @@ import java.util.Locale
  * Defaults: ₹5,000/month at 12% for 10y (SIP) - a common reference -
  * so the result card is populated on first render.
  *
- * @param onNavigate Jump to another tool / home.
+ * @param onOpenMenu Opens the app's tools menu.
  */
 @Composable
-fun InvestmentScreen(onNavigate: (Any) -> Unit) {
+fun InvestmentScreen(onOpenMenu: () -> Unit) {
     var mode by remember { mutableIntStateOf(0) } // 0 = SIP, 1 = lump-sum
     var amount by remember { mutableStateOf("5000") }
     var rate by remember { mutableStateOf("12") }
@@ -56,8 +55,7 @@ fun InvestmentScreen(onNavigate: (Any) -> Unit) {
 
     LifeCalculatorScaffold(
         title = stringResource(R.string.investment_title),
-        currentRoute = InvestmentRoute,
-        onNavigate = onNavigate,
+        onOpenMenu = onOpenMenu,
     ) {
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.investment_section_mode))

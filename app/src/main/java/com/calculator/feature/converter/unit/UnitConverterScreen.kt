@@ -8,12 +8,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,7 +20,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -49,13 +46,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.calculator.R
+import com.calculator.core.designsystem.component.LifeCalculatorScaffold
 import com.calculator.core.domain.converter.ConverterUnit
 import com.calculator.core.domain.converter.UnitCategory
-import com.calculator.feature.lifecalc.PendingExpressionHolder
-import com.calculator.feature.lifecalc.ToolsMenuOverlay
-import com.calculator.feature.lifecalc.ToolsMenuSheet
-import com.calculator.navigation.BasicCalculatorRoute
-import com.calculator.navigation.UnitConverterRoute
 
 /**
  * Full-screen unit converter.
@@ -70,43 +63,16 @@ import com.calculator.navigation.UnitConverterRoute
  */
 @Composable
 fun UnitConverterScreen(
-    onNavigate: (Any) -> Unit,
+    onOpenMenu: () -> Unit,
     viewModel: UnitConverterViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    var openSheet by remember { mutableStateOf<ToolsMenuSheet?>(null) }
 
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .systemBarsPadding()
-                // 12dp matches the basic calculator's outer padding so
-                // the top-right hamburger sits at the same pixel.
-                .padding(horizontal = 12.dp),
+    LifeCalculatorScaffold(
+        title = stringResource(R.string.units_title),
+        onOpenMenu = onOpenMenu,
+        scrollable = false,
     ) {
-        // App-bar row: title on the left, hamburger pinned to the right
-        // so it matches the basic calculator's top-right menu position.
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.units_title),
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f).padding(start = 8.dp),
-            )
-            IconButton(onClick = { openSheet = ToolsMenuSheet.Tools }) {
-                Icon(
-                    imageVector = Icons.Filled.Menu,
-                    contentDescription = stringResource(R.string.basic_open_menu),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-        }
-
         // Category dropdown: one tap reveals all 11 categories vertically
         // with the current selection marked. Replaced an earlier
         // horizontal-scroll chip row that hid most of the categories
@@ -172,22 +138,6 @@ fun UnitConverterScreen(
             onDismiss = viewModel::dismissPicker,
         )
     }
-
-    ToolsMenuOverlay(
-        openSheet = openSheet,
-        onDismiss = { openSheet = null },
-        currentRoute = UnitConverterRoute,
-        isOnBasicCalc = false,
-        scientific = false,
-        onToggleScientific = {},
-        onOpenHistory = { openSheet = ToolsMenuSheet.History },
-        onOpenSettings = { openSheet = ToolsMenuSheet.Settings },
-        onNavigate = onNavigate,
-        onReuseExpression = { expr ->
-            PendingExpressionHolder.expression = expr
-            onNavigate(BasicCalculatorRoute)
-        },
-    )
 }
 
 /**

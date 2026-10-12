@@ -77,9 +77,6 @@ import com.calculator.core.common.clipboard.readPlainText
 import com.calculator.core.data.tape.TapeEntry
 import com.calculator.core.designsystem.theme.CalculatorTheme
 import com.calculator.core.math.AngleMode
-import com.calculator.feature.lifecalc.ToolsMenuOverlay
-import com.calculator.feature.lifecalc.ToolsMenuSheet
-import com.calculator.navigation.BasicCalculatorRoute
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -93,33 +90,16 @@ import java.math.BigDecimal
  */
 @Composable
 fun BasicCalculatorScreen(
-    onNavigate: (Any) -> Unit = {},
+    onOpenMenu: () -> Unit = {},
     viewModel: BasicCalculatorViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val tape by viewModel.tape.collectAsStateWithLifecycle()
-    // On first composition, pick up any expression or scientific-mode
-    // hint a tool page stashed for us. The holder is one-shot - read
-    // once, then null it out so re-navigating back doesn't re-apply.
-    androidx.compose.runtime.LaunchedEffect(Unit) {
-        val holder = com.calculator.feature.lifecalc.PendingExpressionHolder
-        holder.scientificMode?.let { desired ->
-            holder.scientificMode = null
-            if (state.scientific != desired) {
-                viewModel.onEvent(BasicCalculatorEvent.ToggleScientific)
-            }
-        }
-        holder.expression?.let { pending ->
-            holder.expression = null
-            viewModel.onEvent(BasicCalculatorEvent.Clear)
-            viewModel.onEvent(BasicCalculatorEvent.Append(pending))
-        }
-    }
     BasicCalculatorScreenContent(
         state = state,
         tape = tape,
         onEvent = viewModel::onEvent,
-        onNavigate = onNavigate,
+        onOpenMenu = onOpenMenu,
     )
 }
 
@@ -135,21 +115,15 @@ fun BasicCalculatorScreen(
 internal fun BasicCalculatorScreenContent(
     state: BasicCalculatorUiState,
     onEvent: (BasicCalculatorEvent) -> Unit,
-    onNavigate: (Any) -> Unit = {},
+    onOpenMenu: () -> Unit = {},
     tape: List<TapeEntry> = emptyList(),
 ) {
-    var openSheet by remember { mutableStateOf<ToolsMenuSheet?>(null) }
     val tones = rememberKeyToneGenerator()
-    // Settings drives sound and haptics toggles. Falling back to defaults
-    // (both on) when the settings VM hasn't emitted yet keeps the UI
-    // responsive during the first frame.
-    val settingsViewModel: com.calculator.feature.settings.SettingsViewModel = hiltViewModel()
-    val userSettings by settingsViewModel.settings.collectAsStateWithLifecycle()
-    val tonesIfEnabled = if (userSettings.sound) tones else null
+    val tonesIfEnabled = if (state.soundEnabled) tones else null
 
     CompositionLocalProvider(
         LocalKeyTones provides tonesIfEnabled,
-        LocalHapticsEnabled provides userSettings.haptics,
+        LocalHapticsEnabled provides state.hapticsEnabled,
     ) {
         Scaffold(
             // Hand out insets per-child: outer Column absorbs the status-bar
@@ -177,7 +151,7 @@ internal fun BasicCalculatorScreenContent(
                     state = state,
                     tape = tape,
                     onEvent = onEvent,
-                    onOpenMenu = { openSheet = ToolsMenuSheet.Tools },
+                    onOpenMenu = onOpenMenu,
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -203,22 +177,6 @@ internal fun BasicCalculatorScreenContent(
                 )
             }
         }
-
-        ToolsMenuOverlay(
-            openSheet = openSheet,
-            onDismiss = { openSheet = null },
-            currentRoute = BasicCalculatorRoute,
-            isOnBasicCalc = true,
-            scientific = state.scientific,
-            onToggleScientific = { onEvent(BasicCalculatorEvent.ToggleScientific) },
-            onOpenHistory = { openSheet = ToolsMenuSheet.History },
-            onOpenSettings = { openSheet = ToolsMenuSheet.Settings },
-            onNavigate = onNavigate,
-            onReuseExpression = { expr ->
-                onEvent(BasicCalculatorEvent.Clear)
-                onEvent(BasicCalculatorEvent.Append(expr))
-            },
-        )
     } // CompositionLocalProvider
 }
 

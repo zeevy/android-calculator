@@ -34,9 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.calculator.BuildConfig
 import com.calculator.R
-import com.calculator.core.data.settings.DataStoreSettingsRepository
 import com.calculator.core.data.settings.UserSettings
-import com.calculator.feature.floating.rememberFloatingCalculatorLauncher
 
 /**
  * Settings sheet shown when the user taps the Settings tile in the tools
@@ -46,18 +44,18 @@ import com.calculator.feature.floating.rememberFloatingCalculatorLauncher
  * Writes go straight through the ViewModel into [SettingsRepository] -
  * Compose collects the resulting StateFlow so the UI always reflects
  * the latest persisted state.
+ *
+ * @param onLaunchFloating Starts the floating calculator overlay. The app
+ *   shell owns that feature, so the sheet only reports the tap.
  */
 @Composable
 fun SettingsSheetContent(
-    // Kept in the API so the host bottom sheet can wire dismiss into its
-    // own state; the sheet itself has no in-content close affordance.
-    @Suppress("UnusedParameter") onClose: () -> Unit,
+    onLaunchFloating: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsState()
     val accent = MaterialTheme.colorScheme.primary
     val uriHandler = LocalUriHandler.current
-    val launchFloating = rememberFloatingCalculatorLauncher()
 
     Column(
         modifier =
@@ -123,7 +121,7 @@ fun SettingsSheetContent(
         ActionRow(
             label = stringResource(R.string.settings_floating_launch),
             description = stringResource(R.string.settings_floating_desc),
-            onClick = launchFloating,
+            onClick = onLaunchFloating,
         )
 
         // Privacy.
@@ -320,13 +318,11 @@ private fun SegmentedThemePicker(
 /**
  * Significant-figures slider.
  *
- * Steps are the integer count between
- * [DataStoreSettingsRepository.MIN_PRECISION] and
- * [DataStoreSettingsRepository.MAX_PRECISION]. Slider's `steps` value
- * is "tick marks between min and max" (exclusive of both endpoints),
- * so it's `(max - min) - 1`.
+ * Steps are the integer count within [UserSettings.PRECISION_RANGE].
+ * Slider's `steps` value is "tick marks between min and max" (exclusive
+ * of both endpoints), so it's `(max - min) - 1`.
  *
- * Picked-up changes flow through [DataStoreSettingsRepository] and the
+ * Picked-up changes flow through the settings repository and the
  * Evaluator instances pull the new precision on their next construction
  * - precision changes take effect on the next keypress, no restart.
  */
@@ -361,10 +357,8 @@ private fun PrecisionRow(
             value = precision.toFloat(),
             onValueChange = { onChange(it.toInt()) },
             valueRange =
-                DataStoreSettingsRepository.MIN_PRECISION.toFloat()..DataStoreSettingsRepository.MAX_PRECISION.toFloat(),
-            steps =
-                DataStoreSettingsRepository.MAX_PRECISION -
-                    DataStoreSettingsRepository.MIN_PRECISION - 1,
+                UserSettings.PRECISION_RANGE.first.toFloat()..UserSettings.PRECISION_RANGE.last.toFloat(),
+            steps = UserSettings.PRECISION_RANGE.last - UserSettings.PRECISION_RANGE.first - 1,
             colors =
                 SliderDefaults.colors(
                     thumbColor = accent,

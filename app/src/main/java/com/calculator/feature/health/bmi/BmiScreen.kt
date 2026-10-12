@@ -9,16 +9,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.R
+import com.calculator.core.designsystem.component.LifeCalcCard
+import com.calculator.core.designsystem.component.LifeCalcNumberField
+import com.calculator.core.designsystem.component.LifeCalcOutputRow
+import com.calculator.core.designsystem.component.LifeCalcSectionLabel
+import com.calculator.core.designsystem.component.LifeCalcSegmented
+import com.calculator.core.designsystem.component.LifeCalculatorScaffold
 import com.calculator.core.domain.health.BmiCalculator
-import com.calculator.feature.lifecalc.LifeCalcCard
-import com.calculator.feature.lifecalc.LifeCalcNumberField
-import com.calculator.feature.lifecalc.LifeCalcOutputRow
-import com.calculator.feature.lifecalc.LifeCalcSectionLabel
-import com.calculator.feature.lifecalc.LifeCalcSegmented
-import com.calculator.feature.lifecalc.LifeCalculatorScaffold
-import com.calculator.navigation.BmiRoute
 
 /**
  * Body-Mass-Index calculator. Accepts metric (cm + kg) or imperial
@@ -29,11 +29,14 @@ import com.calculator.navigation.BmiRoute
  * which lands in "Normal") so the screen always renders a sensible
  * result the moment it appears.
  *
- * @param onNavigate Jump to another tool / home. Wired to the scaffold's
- *   hamburger menu.
+ * @param onOpenMenu Opens the app's tools menu.
+ * @param viewModel Remembers the last height and weight units.
  */
 @Composable
-fun BmiScreen(onNavigate: (Any) -> Unit) {
+fun BmiScreen(
+    onOpenMenu: () -> Unit,
+    viewModel: BmiViewModel = hiltViewModel(),
+) {
     // Read persisted unit preferences so the user lands on whichever
     // unit they used last for each axis. Height and weight have
     // independent toggles - mixing them (feet/inches for height, kg
@@ -42,10 +45,7 @@ fun BmiScreen(onNavigate: (Any) -> Unit) {
     // caused a real bug: entering 6'1" 93 kg with the system on
     // Imperial silently interpreted the 93 as pounds and reported
     // "Underweight" (BMI 12 instead of 27).
-    val settingsViewModel: com.calculator.feature.settings.SettingsViewModel =
-        androidx.hilt.lifecycle.viewmodel.compose
-            .hiltViewModel()
-    val userSettings by settingsViewModel.settings.collectAsStateWithLifecycle()
+    val userSettings by viewModel.settings.collectAsStateWithLifecycle()
     var heightUnitIdx by remember(userSettings.bmiHeightImperial) {
         mutableIntStateOf(if (userSettings.bmiHeightImperial) 1 else 0)
     }
@@ -62,8 +62,7 @@ fun BmiScreen(onNavigate: (Any) -> Unit) {
 
     LifeCalculatorScaffold(
         title = stringResource(R.string.bmi_title),
-        currentRoute = BmiRoute,
-        onNavigate = onNavigate,
+        onOpenMenu = onOpenMenu,
     ) {
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.bmi_section_height))
@@ -75,7 +74,7 @@ fun BmiScreen(onNavigate: (Any) -> Unit) {
                 selectedIndex = heightUnitIdx,
                 onSelect = {
                     heightUnitIdx = it
-                    settingsViewModel.setBmiHeightImperial(it == 1)
+                    viewModel.setHeightImperial(it == 1)
                 },
             )
             if (heightUnitIdx == 0) {
@@ -110,7 +109,7 @@ fun BmiScreen(onNavigate: (Any) -> Unit) {
                 selectedIndex = weightUnitIdx,
                 onSelect = {
                     weightUnitIdx = it
-                    settingsViewModel.setBmiWeightImperial(it == 1)
+                    viewModel.setWeightImperial(it == 1)
                 },
             )
             if (weightUnitIdx == 0) {

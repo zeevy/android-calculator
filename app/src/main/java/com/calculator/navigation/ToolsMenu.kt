@@ -1,4 +1,4 @@
-package com.calculator.feature.lifecalc
+package com.calculator.navigation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -39,6 +39,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,24 +47,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
+import androidx.navigation.NavDestination
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.calculator.R
+import com.calculator.feature.basic.ui.BasicCalculatorEvent
+import com.calculator.feature.floating.rememberFloatingCalculatorLauncher
 import com.calculator.feature.history.HistorySheetContent
 import com.calculator.feature.settings.SettingsSheetContent
-import com.calculator.navigation.AgeRoute
-import com.calculator.navigation.BaseConverterRoute
-import com.calculator.navigation.BasicCalculatorRoute
-import com.calculator.navigation.BmiRoute
-import com.calculator.navigation.DateDiffRoute
-import com.calculator.navigation.DiscountRoute
-import com.calculator.navigation.GstRoute
-import com.calculator.navigation.InvestmentRoute
-import com.calculator.navigation.LoanRoute
-import com.calculator.navigation.OvulationRoute
-import com.calculator.navigation.PercentRoute
-import com.calculator.navigation.TapeRoute
-import com.calculator.navigation.TimezoneRoute
-import com.calculator.navigation.TipSplitRoute
-import com.calculator.navigation.UnitConverterRoute
 import kotlinx.coroutines.launch
 
 /**
@@ -76,71 +69,26 @@ import kotlinx.coroutines.launch
 enum class ToolsMenuSheet { Tools, History, Settings }
 
 /**
- * One-shot expression handoff between tool pages and the basic calculator.
+ * The app's tools menu: a bottom sheet with the tool grid, History and
+ * Settings. The app shell hosts one instance above the NavHost, so tool
+ * screens only need an `onOpenMenu` callback.
  *
- * The History sheet can be opened from any screen. When the user taps a
- * row from a tool page, the expression is stashed here and navigation
- * jumps to the basic calculator, whose ViewModel consumes the holder on
- * init and clears it. A simple `object` is enough - the handoff is in
- * the same process and the value is read exactly once.
- */
-object PendingExpressionHolder {
-    @Volatile
-    var expression: String? = null
-
-    /**
-     * Desired scientific-mode setting for the next basic-calc appearance.
-     * Used by the Advanced tile on tool pages: tapping it sets this to
-     * `true` and navigates home; the basic calc reads & clears the hint
-     * on init. Null = no change requested.
-     */
-    @Volatile
-    var scientificMode: Boolean? = null
-}
-
-/**
- * Shared bottom-sheet host for the hamburger menu used across the app.
+ * Actions that change the basic calculator (Home, Advanced, reusing a
+ * history entry) go straight to its ViewModel, which lives on the basic
+ * calculator's back stack entry and keeps its state across process death.
  *
- * Each screen that needs the menu manages its own [openSheet] state and
- * passes it in; this composable renders nothing when [openSheet] is null
- * and otherwise shows the appropriate sub-sheet on top of the host.
- *
- * @param openSheet Which sub-sheet is currently visible, or null when the
- *   menu is closed.
- * @param onDismiss Invoked when the sheet should be hidden (drag-down,
- *   scrim tap, or after a tile is chosen).
- * @param currentRoute The route this overlay is hosted on; used to
- *   highlight (or no-op) the matching tile.
- * @param isOnBasicCalc True when the host is the basic calculator. Only
- *   then does the Advanced tile show (it toggles scientific mode, which
- *   is meaningless from a tool page).
- * @param scientific Whether the basic calculator is currently in
- *   scientific mode. Drives Basic/Advanced tile selection.
- * @param onToggleScientific Called when Advanced is tapped on basic calc.
- * @param onOpenHistory Asks the host to swap the visible sheet to History.
- * @param onOpenSettings Asks the host to swap the visible sheet to Settings.
- * @param onNavigate Invoked with a destination route when a tile other
- *   than History/Settings is tapped. The host translates this to a real
- *   nav action; see [com.calculator.navigation.CalculatorNavHost].
- * @param onReuseExpression Invoked with the chosen history expression.
- *   On basic calc, this applies the expression directly; on tool pages,
- *   the caller stashes it in [PendingExpressionHolder] and navigates
- *   back to the basic calculator.
+ * @param openSheet Which sub-sheet is visible, or null when closed.
+ * @param onOpenSheet Switches the visible sub-sheet.
+ * @param onDismiss Hides the menu.
+ * @param navController The app's nav controller.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@Suppress("LongParameterList")
 fun ToolsMenuOverlay(
     openSheet: ToolsMenuSheet?,
+    onOpenSheet: (ToolsMenuSheet) -> Unit,
     onDismiss: () -> Unit,
-    currentRoute: Any,
-    isOnBasicCalc: Boolean,
-    scientific: Boolean,
-    onToggleScientific: () -> Unit,
-    onOpenHistory: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onNavigate: (Any) -> Unit,
-    onReuseExpression: (String) -> Unit,
+    navController: NavController,
 ) {
     if (openSheet == null) return
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -149,6 +97,10 @@ fun ToolsMenuOverlay(
         scope.launch { sheetState.hide() }
         onDismiss()
     }
+    val calculator = rememberBasicCalculatorViewModel(navController)
+    val calculatorState by calculator.state.collectAsStateWithLifecycle()
+    val currentEntry by navController.currentBackStackEntryAsState()
+    val launchFloating = rememberFloatingCalculatorLauncher()
     ModalBottomSheet(
         sheetState = sheetState,
         onDismissRequest = onDismiss,
@@ -159,30 +111,31 @@ fun ToolsMenuOverlay(
         when (openSheet) {
             ToolsMenuSheet.Tools ->
                 ToolsGrid(
-                    currentRoute = currentRoute,
-                    isOnBasicCalc = isOnBasicCalc,
-                    scientific = scientific,
-                    onToggleScientific = {
-                        onToggleScientific()
+                    current = currentEntry?.destination,
+                    scientific = calculatorState.scientific,
+                    onOpenCalculator = { scientific ->
+                        calculator.onEvent(BasicCalculatorEvent.SetScientific(scientific))
                         close()
+                        navController.openTool(BasicCalculatorRoute)
                     },
-                    onOpenHistory = onOpenHistory,
-                    onOpenSettings = onOpenSettings,
+                    onOpenHistory = { onOpenSheet(ToolsMenuSheet.History) },
+                    onOpenSettings = { onOpenSheet(ToolsMenuSheet.Settings) },
                     onNavigate = { route ->
                         close()
-                        onNavigate(route)
+                        navController.openTool(route)
                     },
                 )
             ToolsMenuSheet.History ->
                 HistorySheetContent(
                     onReuseExpression = { expr ->
-                        onReuseExpression(expr)
+                        calculator.onEvent(BasicCalculatorEvent.Reuse(expr))
                         close()
+                        navController.openTool(BasicCalculatorRoute)
                     },
                     onClose = close,
                 )
             ToolsMenuSheet.Settings ->
-                SettingsSheetContent(onClose = close)
+                SettingsSheetContent(onLaunchFloating = launchFloating)
         }
     }
 }
@@ -190,23 +143,27 @@ fun ToolsMenuOverlay(
 /**
  * Tile grid for the Tools sub-sheet.
  *
- * Home is always first. Advanced appears only on the basic calculator
- * page (its action is "toggle scientific mode", which doesn't apply
- * outside that screen). Tiles for the currently-displayed page are
- * marked selected; tapping the current tile is a no-op (it just closes
- * the sheet via the surrounding overlay).
+ * Home and Advanced open the basic calculator in basic or scientific
+ * mode. The tile for the page on screen is marked selected; tapping it
+ * just closes the sheet.
+ *
+ * @param current Destination on screen, used to mark the selected tile.
+ * @param scientific Whether the basic calculator is in scientific mode.
+ * @param onOpenCalculator Opens the basic calculator in the given mode.
  */
 @Composable
-@Suppress("LongParameterList", "LongMethod")
+@Suppress("LongMethod")
 private fun ToolsGrid(
-    currentRoute: Any,
-    isOnBasicCalc: Boolean,
+    current: NavDestination?,
     scientific: Boolean,
-    onToggleScientific: () -> Unit,
+    onOpenCalculator: (scientific: Boolean) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
     onNavigate: (Any) -> Unit,
 ) {
+    val onCalculator = current?.hasRoute(BasicCalculatorRoute::class) == true
+
+    fun isCurrent(route: Any) = current?.hasRoute(route::class) == true
     Column(
         modifier =
             Modifier
@@ -214,48 +171,27 @@ private fun ToolsGrid(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         val tiles = buildList {
-            // Home (basic calculator). Selected when we're on basic-calc
-            // in non-scientific mode; tapping it from a tool page goes
-            // back to the basic calculator.
             add(
                 ToolTile(
                     icon = Icons.Filled.Calculate,
                     label = stringResource(R.string.tool_basic),
-                    selected = isOnBasicCalc && !scientific,
-                    onTap = {
-                        if (isOnBasicCalc) {
-                            if (scientific) onToggleScientific()
-                            onNavigate(BasicCalculatorRoute)
-                        } else {
-                            // Stash desired mode for the basic calc to
-                            // pick up on init, then navigate home.
-                            PendingExpressionHolder.scientificMode = false
-                            onNavigate(BasicCalculatorRoute)
-                        }
-                    },
+                    selected = onCalculator && !scientific,
+                    onTap = { onOpenCalculator(false) },
                 ),
             )
             add(
                 ToolTile(
                     icon = Icons.Filled.Functions,
                     label = stringResource(R.string.tool_advanced),
-                    selected = isOnBasicCalc && scientific,
-                    onTap = {
-                        if (isOnBasicCalc) {
-                            if (!scientific) onToggleScientific()
-                            onNavigate(BasicCalculatorRoute)
-                        } else {
-                            PendingExpressionHolder.scientificMode = true
-                            onNavigate(BasicCalculatorRoute)
-                        }
-                    },
+                    selected = onCalculator && scientific,
+                    onTap = { onOpenCalculator(true) },
                 ),
             )
             add(
                 ToolTile(
                     icon = Icons.Filled.Straighten,
                     label = stringResource(R.string.tool_units),
-                    selected = currentRoute === UnitConverterRoute,
+                    selected = isCurrent(UnitConverterRoute),
                     onTap = { onNavigate(UnitConverterRoute) },
                 ),
             )
@@ -263,7 +199,7 @@ private fun ToolsGrid(
                 ToolTile(
                     icon = Icons.Filled.AccountBalance,
                     label = stringResource(R.string.tool_loan),
-                    selected = currentRoute === LoanRoute,
+                    selected = isCurrent(LoanRoute),
                     onTap = { onNavigate(LoanRoute) },
                 ),
             )
@@ -271,7 +207,7 @@ private fun ToolsGrid(
                 ToolTile(
                     icon = Icons.Filled.Receipt,
                     label = stringResource(R.string.tool_gst),
-                    selected = currentRoute === GstRoute,
+                    selected = isCurrent(GstRoute),
                     onTap = { onNavigate(GstRoute) },
                 ),
             )
@@ -279,7 +215,7 @@ private fun ToolsGrid(
                 ToolTile(
                     icon = Icons.Filled.LocalOffer,
                     label = stringResource(R.string.tool_discount),
-                    selected = currentRoute === DiscountRoute,
+                    selected = isCurrent(DiscountRoute),
                     onTap = { onNavigate(DiscountRoute) },
                 ),
             )
@@ -287,7 +223,7 @@ private fun ToolsGrid(
                 ToolTile(
                     icon = Icons.Filled.Restaurant,
                     label = stringResource(R.string.tool_tipsplit),
-                    selected = currentRoute === TipSplitRoute,
+                    selected = isCurrent(TipSplitRoute),
                     onTap = { onNavigate(TipSplitRoute) },
                 ),
             )
@@ -295,7 +231,7 @@ private fun ToolsGrid(
                 ToolTile(
                     icon = Icons.Filled.Savings,
                     label = stringResource(R.string.tool_investment),
-                    selected = currentRoute === InvestmentRoute,
+                    selected = isCurrent(InvestmentRoute),
                     onTap = { onNavigate(InvestmentRoute) },
                 ),
             )
@@ -303,7 +239,7 @@ private fun ToolsGrid(
                 ToolTile(
                     icon = Icons.Filled.Percent,
                     label = stringResource(R.string.tool_percent),
-                    selected = currentRoute === PercentRoute,
+                    selected = isCurrent(PercentRoute),
                     onTap = { onNavigate(PercentRoute) },
                 ),
             )
@@ -311,7 +247,7 @@ private fun ToolsGrid(
                 ToolTile(
                     icon = Icons.Filled.Code,
                     label = stringResource(R.string.tool_basecalc),
-                    selected = currentRoute === BaseConverterRoute,
+                    selected = isCurrent(BaseConverterRoute),
                     onTap = { onNavigate(BaseConverterRoute) },
                 ),
             )
@@ -319,7 +255,7 @@ private fun ToolsGrid(
                 ToolTile(
                     icon = Icons.Filled.MonitorWeight,
                     label = stringResource(R.string.tool_bmi),
-                    selected = currentRoute === BmiRoute,
+                    selected = isCurrent(BmiRoute),
                     onTap = { onNavigate(BmiRoute) },
                 ),
             )
@@ -327,7 +263,7 @@ private fun ToolsGrid(
                 ToolTile(
                     icon = Icons.Filled.Cake,
                     label = stringResource(R.string.tool_age),
-                    selected = currentRoute === AgeRoute,
+                    selected = isCurrent(AgeRoute),
                     onTap = { onNavigate(AgeRoute) },
                 ),
             )
@@ -335,7 +271,7 @@ private fun ToolsGrid(
                 ToolTile(
                     icon = Icons.Filled.DateRange,
                     label = stringResource(R.string.tool_date_diff),
-                    selected = currentRoute === DateDiffRoute,
+                    selected = isCurrent(DateDiffRoute),
                     onTap = { onNavigate(DateDiffRoute) },
                 ),
             )
@@ -343,7 +279,7 @@ private fun ToolsGrid(
                 ToolTile(
                     icon = Icons.Filled.Public,
                     label = stringResource(R.string.tool_timezone),
-                    selected = currentRoute === TimezoneRoute,
+                    selected = isCurrent(TimezoneRoute),
                     onTap = { onNavigate(TimezoneRoute) },
                 ),
             )
@@ -351,7 +287,7 @@ private fun ToolsGrid(
                 ToolTile(
                     icon = Icons.Filled.Favorite,
                     label = stringResource(R.string.tool_ovulation),
-                    selected = currentRoute === OvulationRoute,
+                    selected = isCurrent(OvulationRoute),
                     onTap = { onNavigate(OvulationRoute) },
                 ),
             )
@@ -359,7 +295,7 @@ private fun ToolsGrid(
                 ToolTile(
                     icon = Icons.AutoMirrored.Filled.Notes,
                     label = stringResource(R.string.tool_tape),
-                    selected = currentRoute === TapeRoute,
+                    selected = isCurrent(TapeRoute),
                     onTap = { onNavigate(TapeRoute) },
                 ),
             )

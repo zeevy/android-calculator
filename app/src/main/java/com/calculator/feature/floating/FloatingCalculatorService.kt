@@ -21,7 +21,6 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
-import com.calculator.MainActivity
 import com.calculator.R
 import java.math.BigDecimal
 import java.math.MathContext
@@ -311,10 +310,15 @@ class FloatingCalculatorService : Service() {
             nm.createNotificationChannel(channel)
         }
 
+        // Resolves to the app's launcher activity, so this feature does
+        // not depend on the activity class.
         val openAppIntent = PendingIntent.getActivity(
             this,
             0,
-            Intent(this, MainActivity::class.java),
+            Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_LAUNCHER)
+                .setPackage(packageName)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val stopIntent = PendingIntent.getService(

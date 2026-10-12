@@ -55,20 +55,4 @@ class SettingsViewModel
         fun setCrashOptIn(enabled: Boolean) {
             viewModelScope.launch { repository.setCrashOptIn(enabled) }
         }
-
-        fun setGstIntraState(intra: Boolean) {
-            viewModelScope.launch { repository.setGstIntraState(intra) }
-        }
-
-        fun setGstRate(rate: String) {
-            viewModelScope.launch { repository.setGstRate(rate) }
-        }
-
-        fun setBmiHeightImperial(imperial: Boolean) {
-            viewModelScope.launch { repository.setBmiHeightImperial(imperial) }
-        }
-
-        fun setBmiWeightImperial(imperial: Boolean) {
-            viewModelScope.launch { repository.setBmiWeightImperial(imperial) }
-        }
     }

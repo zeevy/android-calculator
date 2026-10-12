@@ -2,12 +2,20 @@ package com.calculator.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.calculator.feature.basic.ui.BasicCalculatorEvent
 import com.calculator.feature.basic.ui.BasicCalculatorScreen
+import com.calculator.feature.basic.ui.BasicCalculatorViewModel
 import com.calculator.feature.converter.base.BaseConverterScreen
 import com.calculator.feature.converter.unit.UnitConverterScreen
 import com.calculator.feature.datetime.age.AgeScreen
@@ -21,8 +29,6 @@ import com.calculator.feature.finance.tipsplit.TipSplitScreen
 import com.calculator.feature.health.bmi.BmiScreen
 import com.calculator.feature.health.ovulation.OvulationScreen
 import com.calculator.feature.math.percent.PercentScreen
-import com.calculator.feature.shortcuts.RecentToolsRegistry
-import com.calculator.feature.shortcuts.ToolShortcutCatalog
 import com.calculator.feature.tape.TapeScreen
 
 /**
@@ -31,13 +37,15 @@ import com.calculator.feature.tape.TapeScreen
  * Single-activity convention: this is the only `NavHost` in the app.
  * Features are registered via `composable<RouteType>` blocks below.
  *
- * Navigation is driven by a single [openTool] helper - every screen
- * receives the same `onNavigate: (Any) -> Unit` lambda from here, and
- * the helper uses `popUpTo(BasicCalculatorRoute)` so the back stack
- * stays flat: the basic calculator is always the only thing under the
- * current tool, regardless of how the user got there. That matches the
- * UI promise that each tool reads as a standalone page reached via the
- * hamburger menu rather than a stack of forward navigations.
+ * This package is the app shell: it is the only place that knows every
+ * feature. Feature screens take an `onOpenMenu` callback and never
+ * import another feature; the one [ToolsMenuOverlay] hosted here does
+ * all navigation through the [openTool] helper. The helper uses
+ * `popUpTo(BasicCalculatorRoute)` so the back stack stays flat: the
+ * basic calculator is always the only thing under the current tool,
+ * regardless of how the user got there. That matches the UI promise
+ * that each tool reads as a standalone page reached via the hamburger
+ * menu rather than a stack of forward navigations.
  *
  * @param startDestinationHint Optional launcher-shortcut hint; if set
  *   to a recognised value ("units"), the corresponding screen is
@@ -47,6 +55,8 @@ import com.calculator.feature.tape.TapeScreen
 @Composable
 fun CalculatorNavHost(startDestinationHint: String? = null) {
     val navController = rememberNavController()
+    var openSheet by rememberSaveable { mutableStateOf<ToolsMenuSheet?>(null) }
+    val openMenu = { openSheet = ToolsMenuSheet.Tools }
 
     // Apply the shortcut destination once, after the nav controller is
     // ready. LaunchedEffect with Unit keys ensures we don't re-navigate
@@ -63,65 +73,92 @@ fun CalculatorNavHost(startDestinationHint: String? = null) {
         startDestination = BasicCalculatorRoute,
     ) {
         composable<BasicCalculatorRoute> {
-            BasicCalculatorScreen(onNavigate = navController::openTool)
+            BasicCalculatorScreen(onOpenMenu = openMenu)
         }
         composable<UnitConverterRoute> {
             TrackVisit(UnitConverterRoute)
-            UnitConverterScreen(onNavigate = navController::openTool)
+            UnitConverterScreen(onOpenMenu = openMenu)
         }
         composable<LoanRoute> {
             TrackVisit(LoanRoute)
-            LoanScreen(onNavigate = navController::openTool)
+            LoanScreen(onOpenMenu = openMenu)
         }
         composable<GstRoute> {
             TrackVisit(GstRoute)
-            GstScreen(onNavigate = navController::openTool)
+            GstScreen(onOpenMenu = openMenu)
         }
         composable<DiscountRoute> {
             TrackVisit(DiscountRoute)
-            DiscountScreen(onNavigate = navController::openTool)
+            DiscountScreen(onOpenMenu = openMenu)
         }
         composable<TipSplitRoute> {
             TrackVisit(TipSplitRoute)
-            TipSplitScreen(onNavigate = navController::openTool)
+            TipSplitScreen(onOpenMenu = openMenu)
         }
         composable<InvestmentRoute> {
             TrackVisit(InvestmentRoute)
-            InvestmentScreen(onNavigate = navController::openTool)
+            InvestmentScreen(onOpenMenu = openMenu)
         }
         composable<PercentRoute> {
             TrackVisit(PercentRoute)
-            PercentScreen(onNavigate = navController::openTool)
+            PercentScreen(onOpenMenu = openMenu)
         }
         composable<BaseConverterRoute> {
             TrackVisit(BaseConverterRoute)
-            BaseConverterScreen(onNavigate = navController::openTool)
+            BaseConverterScreen(onOpenMenu = openMenu)
         }
         composable<TapeRoute> {
             TrackVisit(TapeRoute)
-            TapeScreen(onNavigate = navController::openTool)
+            val calculator = rememberBasicCalculatorViewModel(navController)
+            TapeScreen(
+                onOpenMenu = openMenu,
+                onReuseExpression = { expr ->
+                    calculator.onEvent(BasicCalculatorEvent.Reuse(expr))
+                    navController.openTool(BasicCalculatorRoute)
+                },
+            )
         }
         composable<BmiRoute> {
             TrackVisit(BmiRoute)
-            BmiScreen(onNavigate = navController::openTool)
+            BmiScreen(onOpenMenu = openMenu)
         }
         composable<AgeRoute> {
             TrackVisit(AgeRoute)
-            AgeScreen(onNavigate = navController::openTool)
+            AgeScreen(onOpenMenu = openMenu)
         }
         composable<DateDiffRoute> {
             TrackVisit(DateDiffRoute)
-            DateDiffScreen(onNavigate = navController::openTool)
+            DateDiffScreen(onOpenMenu = openMenu)
         }
         composable<TimezoneRoute> {
             TrackVisit(TimezoneRoute)
-            TimezoneScreen(onNavigate = navController::openTool)
+            TimezoneScreen(onOpenMenu = openMenu)
         }
         composable<OvulationRoute> {
             TrackVisit(OvulationRoute)
-            OvulationScreen(onNavigate = navController::openTool)
+            OvulationScreen(onOpenMenu = openMenu)
         }
     }
+
+    ToolsMenuOverlay(
+        openSheet = openSheet,
+        onOpenSheet = { openSheet = it },
+        onDismiss = { openSheet = null },
+        navController = navController,
+    )
+}
+
+/**
+ * The basic calculator's ViewModel, taken from its back stack entry.
+ *
+ * [BasicCalculatorRoute] is the start destination and [openTool] never
+ * pops it, so the entry is always on the back stack. Tool pages use this
+ * to hand an expression or a mode change to the calculator directly.
+ */
+@Composable
+internal fun rememberBasicCalculatorViewModel(navController: NavController): BasicCalculatorViewModel {
+    val entry = remember(navController) { navController.getBackStackEntry<BasicCalculatorRoute>() }
+    return hiltViewModel(entry)
 }
 
 /**

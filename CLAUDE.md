@@ -42,32 +42,30 @@ Everything ships from a **single Gradle module (`:app`)**. The `feature/` and `c
 ```
 app/
   src/main/java/com/calculator/
-    feature/            # User-facing features (each owns ui/, domain/, data/)
+    feature/            # User-facing features: screens and their ViewModels
       basic/            # Basic calculator (ui/)
       math/             # percent/ - percentage calculator
       converter/        # unit/ converter + base/ (number-base) converter
       finance/          # loan/, gst/, discount/, investment/, tipsplit/
       health/           # bmi/, ovulation/
       datetime/         # age/, datediff/, timezone/
-      lifecalc/         # life-calculator hub/landing
-      history/          # calculation history screen
+      history/          # calculation history sheet
       tape/             # running tape/paper-roll view
-      shortcuts/        # app-shortcut entry points
       floating/         # floating overlay calculator (foreground service)
-      settings/         # settings + about
+      settings/         # settings + about sheet
     core/
       math/             # Expression parser + evaluator (pure Kotlin, no Android deps); di/
-      data/             # Room DB, DAOs, DataStore (history/, converter/, settings/, db/, di/)
-      domain/           # Cross-feature use-cases, pure Kotlin (converter/, datetime/, health/, math/, finance/)
-      designsystem/     # theme/ - colors, typography, shared Compose components
-      common/           # format/ - utilities, formatters, locale helpers
-      widget/           # Glance home-screen widget
-    navigation/         # CalculatorNavHost.kt + Destinations.kt (type-safe routes)
+      data/             # Room DB, DAOs, DataStore (history/, converter/, settings/, tape/, db/, di/)
+      domain/           # Pure Kotlin calculators (converter/, datetime/, health/, math/, finance/)
+      designsystem/     # theme/ (colors, typography) + component/ (scaffold, cards, fields, date picker)
+      common/           # format/ and clipboard/ helpers
+      widget/           # Glance home-screen widget + Quick Settings tile
+    navigation/         # App shell: CalculatorNavHost, routes, tools menu, launcher shortcuts
     CalculatorApplication.kt
     MainActivity.kt
 ```
 
-Keep features self-contained. **A `feature/` package never imports another `feature/` package** - share via `core/`. Scientific functions route through `core/math`; there is no separate scientific feature package.
+Keep features self-contained. **A `feature/` package imports only `core/`** - never another feature, never `navigation/` and never `MainActivity`. Shared UI goes to `core/designsystem/component`. `navigation/` is the app shell: it is the only package that knows every feature, hosts the one tools menu, and wires features together through callbacks (screens take `onOpenMenu`). CI fails a feature that breaks this rule. Scientific functions route through `core/math`; there is no separate scientific feature package.
 
 ## Coding style and conventions
 

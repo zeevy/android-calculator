@@ -52,6 +52,20 @@ jobs:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
       - name: Run ktlint
         run: ./gradlew ktlintCheck --stacktrace
+      # CLAUDE.md: a feature package uses only core/ (and its own code).
+      # The app shell in navigation/ is the only place that knows features.
+      - name: Check feature package boundaries
+        run: |
+          fail=0
+          for dir in app/src/main/java/com/calculator/feature/*/; do
+            name=$(basename "$dir")
+            if grep -rnE "com\.calculator\.(navigation|MainActivity|feature\.)" "$dir" \
+              | grep -vE "com\.calculator\.feature\.$name([^A-Za-z0-9_]|$)"; then
+              echo "::error::feature/$name uses another feature or the app shell."
+              fail=1
+            fi
+          done
+          exit $fail
       - name: Upload ktlint report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v7

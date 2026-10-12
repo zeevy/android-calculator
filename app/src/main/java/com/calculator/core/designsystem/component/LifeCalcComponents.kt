@@ -1,4 +1,4 @@
-package com.calculator.feature.lifecalc
+package com.calculator.core.designsystem.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,10 +25,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,47 +37,32 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.calculator.R
-import com.calculator.navigation.BasicCalculatorRoute
 
 /**
- * Reusable shell for every life-calculator screen.
+ * Shared page shell for every tool screen: themed canvas, a title row
+ * with the menu button on the right, and a body column.
  *
- * The seven calculators share the same visual chrome - themed canvas,
- * hamburger menu + screen title, a column of inputs, a card with outputs -
- * so we lift it into one composable and let each feature plug in only
- * what differs.
+ * The menu itself is hosted once by the app shell; this composable only
+ * draws the button and reports the tap through [onOpenMenu]. The button
+ * sits at the same spot as on the basic calculator, so it does not jump
+ * when the user moves between pages.
  *
- * Each feature module then composes:
- *   LifeCalculatorScaffold(
- *       title = "BMI",
- *       currentRoute = BmiRoute,
- *       onNavigate = onNavigate,
- *   ) {
- *       InputCard { ... }
- *       OutputCard { ... }
- *   }
- *
- * The top-left hamburger opens a shared [ToolsMenuOverlay] so the user
- * can jump to any other tool (or back to the basic calculator via Home)
- * without going through a back arrow - every tool reads as a standalone
- * page.
- *
- * @param title Screen title shown next to the hamburger.
- * @param currentRoute The destination this scaffold is rendering - used
- *   to highlight the matching tile in the menu sheet.
- * @param onNavigate Invoked with a destination route when the user picks
- *   a tile from the menu. The host translates this to a real nav action.
- * @param content Vertical body of the screen, scrollable. Receives a
- *   [ColumnScope] so cards can use `Modifier.weight` if they need to.
+ * @param title Screen title shown left of the menu button.
+ * @param onOpenMenu Invoked when the menu button is tapped.
+ * @param actions Extra icon buttons shown before the menu button.
+ * @param scrollable True to scroll the body as one column. Pass false
+ *   when the body has its own lazy list or fills the height itself.
+ * @param content Body of the screen. Receives a [ColumnScope] so cards
+ *   can use `Modifier.weight` if they need to.
  */
 @Composable
 fun LifeCalculatorScaffold(
     title: String,
-    currentRoute: Any,
-    onNavigate: (Any) -> Unit,
+    onOpenMenu: () -> Unit,
+    actions: @Composable RowScope.() -> Unit = {},
+    scrollable: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    var openSheet by remember { mutableStateOf<ToolsMenuSheet?>(null) }
     val scheme = MaterialTheme.colorScheme
     Column(
         modifier =
@@ -104,7 +86,8 @@ fun LifeCalculatorScaffold(
                 color = scheme.onBackground,
                 modifier = Modifier.weight(1f).padding(start = 8.dp),
             )
-            IconButton(onClick = { openSheet = ToolsMenuSheet.Tools }) {
+            actions()
+            IconButton(onClick = onOpenMenu) {
                 Icon(
                     imageVector = Icons.Filled.Menu,
                     contentDescription = stringResource(R.string.basic_open_menu),
@@ -112,36 +95,21 @@ fun LifeCalculatorScaffold(
                 )
             }
         }
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            content()
-            Spacer(Modifier.size(24.dp))
+        if (scrollable) {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                content()
+                Spacer(Modifier.size(24.dp))
+            }
+        } else {
+            Column(modifier = Modifier.fillMaxSize()) { content() }
         }
     }
-
-    ToolsMenuOverlay(
-        openSheet = openSheet,
-        onDismiss = { openSheet = null },
-        currentRoute = currentRoute,
-        isOnBasicCalc = false,
-        scientific = false,
-        onToggleScientific = {},
-        onOpenHistory = { openSheet = ToolsMenuSheet.History },
-        onOpenSettings = { openSheet = ToolsMenuSheet.Settings },
-        onNavigate = onNavigate,
-        onReuseExpression = { expr ->
-            // Tool pages can't apply an expression locally - stash it for
-            // the basic calculator to consume on next composition and
-            // jump home.
-            PendingExpressionHolder.expression = expr
-            onNavigate(BasicCalculatorRoute)
-        },
-    )
 }
 
 /** A bordered "card" container; use for grouping inputs or outputs. */

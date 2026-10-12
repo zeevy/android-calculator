@@ -20,17 +20,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.R
 import com.calculator.core.common.format.NumberFormatter
+import com.calculator.core.designsystem.component.LifeCalcCard
+import com.calculator.core.designsystem.component.LifeCalcNumberField
+import com.calculator.core.designsystem.component.LifeCalcOutputRow
+import com.calculator.core.designsystem.component.LifeCalcSectionLabel
+import com.calculator.core.designsystem.component.LifeCalcSegmented
+import com.calculator.core.designsystem.component.LifeCalculatorScaffold
 import com.calculator.core.domain.finance.GstCalculator
-import com.calculator.feature.lifecalc.LifeCalcCard
-import com.calculator.feature.lifecalc.LifeCalcNumberField
-import com.calculator.feature.lifecalc.LifeCalcOutputRow
-import com.calculator.feature.lifecalc.LifeCalcSectionLabel
-import com.calculator.feature.lifecalc.LifeCalcSegmented
-import com.calculator.feature.lifecalc.LifeCalculatorScaffold
-import com.calculator.navigation.GstRoute
 import java.util.Locale
 
 /**
@@ -48,11 +48,14 @@ import java.util.Locale
  *    IGST (collected by the Centre, settled later). CGST and SGST are
  *    zero.
  *
- * @param onNavigate Jump to another tool / home. Wired to the scaffold's
- *   hamburger menu.
+ * @param onOpenMenu Opens the app's tools menu.
+ * @param viewModel Remembers the last intra/inter choice and rate.
  */
 @Composable
-fun GstScreen(onNavigate: (Any) -> Unit) {
+fun GstScreen(
+    onOpenMenu: () -> Unit,
+    viewModel: GstViewModel = hiltViewModel(),
+) {
     // Bidirectional inputs: both net and gross are editable. Whichever
     // the user typed into last is the source; the OTHER is recomputed
     // on every keystroke. Replaces the old forward/reverse mode toggle -
@@ -60,13 +63,9 @@ fun GstScreen(onNavigate: (Any) -> Unit) {
     // the bidirectional model collapses that decision into the data.
     // Read persisted preferences (intra/inter, rate) so the user lands
     // on whatever they last picked instead of the hard-coded default.
-    // collectAsState is fine here - GstScreen is small and the
-    // initial-recomposition default of "18% / intra" matches the
-    // first-launch fallback anyway, so no visible flash.
-    val settingsViewModel: com.calculator.feature.settings.SettingsViewModel =
-        androidx.hilt.lifecycle.viewmodel.compose
-            .hiltViewModel()
-    val userSettings by settingsViewModel.settings.collectAsStateWithLifecycle()
+    // The initial default of "18% / intra" matches the first-launch
+    // fallback, so there is no visible flash.
+    val userSettings by viewModel.settings.collectAsStateWithLifecycle()
 
     var netText by remember { mutableStateOf("1000") }
     var grossText by remember { mutableStateOf("1180") }
@@ -111,8 +110,7 @@ fun GstScreen(onNavigate: (Any) -> Unit) {
 
     LifeCalculatorScaffold(
         title = stringResource(R.string.gst_title),
-        currentRoute = GstRoute,
-        onNavigate = onNavigate,
+        onOpenMenu = onOpenMenu,
     ) {
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.gst_section_direction))
@@ -124,7 +122,7 @@ fun GstScreen(onNavigate: (Any) -> Unit) {
                 selectedIndex = intraStateIdx,
                 onSelect = {
                     intraStateIdx = it
-                    settingsViewModel.setGstIntraState(it == 0)
+                    viewModel.setIntraState(it == 0)
                 },
             )
             LifeCalcNumberField(
@@ -147,7 +145,7 @@ fun GstScreen(onNavigate: (Any) -> Unit) {
                 selected = ratePercent,
                 onSelect = {
                     ratePercent = it
-                    settingsViewModel.setGstRate(it)
+                    viewModel.setRate(it)
                 },
             )
             LifeCalcNumberField(
@@ -155,7 +153,7 @@ fun GstScreen(onNavigate: (Any) -> Unit) {
                 value = ratePercent,
                 onValueChange = {
                     ratePercent = it
-                    settingsViewModel.setGstRate(it)
+                    viewModel.setRate(it)
                 },
                 suffix = stringResource(R.string.gst_rate_suffix),
             )
