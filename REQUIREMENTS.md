@@ -180,7 +180,7 @@ app/
 
 - **Math precision for transcendentals** - `BigDecimal` has no native sin/cos/log. Decision: arithmetic on `BigDecimal`; transcendental ops on bounded `Double` with rounding. Revisit (BigMath / mpmath-style) if user-reported precision bugs appear.
 - **Locale decimal separator** (`,` vs `.`) - must parse and render per-locale without breaking the engine. Date pickers must also be locale-aware.
-- **Regional features** (GST is India-only) - hide/show based on locale or expose as an opt-in tool.
+- **Regional features** (GST is India-only) - shown only when the device locale country is IN or the time zone is India's (many Indian phones run English (United States), so the locale alone is not enough). The rule lives in `navigation/Tools.kt` (`isIndia`).
 - **Play policy compliance** - the "loan" calculator must use neutral language (no implication that the app is a lender) per Google's personal-loans policy.
 - **Crash-free metric vs no-analytics stance** - resolved by making crash reporting strictly opt-in; pre-launch we'll rely on internal testing instead of telemetry.
 - **Solo-dev velocity** - the 8-week plan assumes no major blockers; the Glance widget has a learning-curve tail that may push M5/M6.

@@ -65,6 +65,7 @@ This project ships under the Apache License 2.0 and is intended to be read by co
 - No `runBlocking` in production code. Tests may use `runTest`.
 - ViewModels expose `StateFlow<UiState>`; UI collects with `collectAsStateWithLifecycle`.
 - Single-activity architecture; new screens are `composable<RouteType> { }` blocks in `CalculatorNavHost`.
+- To add a tool page: a route in `navigation/Destinations.kt`, one `Tool` entry in `navigation/Tools.kt` (menu tile and launcher shortcut come from it), one `composable` line in `CalculatorNavHost`, and its strings in English and Hindi.
 - Features under `feature/<name>/` never import another feature. Share via `core/`.
 
 ### Punctuation in source files

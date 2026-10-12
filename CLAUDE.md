@@ -152,7 +152,7 @@ These come from the user's global preferences and apply to every commit, file, a
 
 ## Things to know (gotchas)
 
-- **GST calculator is India-specific.** Hide or expose by locale, never hardcode it as universally available.
+- **GST calculator is India-specific.** It is offered only when the locale country is IN or the time zone is India's (`isIndia` in `navigation/Tools.kt`, the one tool list for the menu and launcher shortcuts). Never hardcode it as universally available; new India-only tools use the same check.
 - **Loan/EMI calculator: use neutral language.** Google Play's personal-loans policy bans wording that implies the app is a lender. Strings must read as a calculator, not a lending tool.
 - **No network calls.** The app is fully offline. The currency converter (the only previous network caller) was removed; don't add Retrofit / OkHttp / INTERNET back without an explicit conversation about the trade-off - the offline story is still part of the app's positioning.
 - **Permissions declared** (the manifest is no longer zero-permissions; the floating-calculator feature pulls these in):

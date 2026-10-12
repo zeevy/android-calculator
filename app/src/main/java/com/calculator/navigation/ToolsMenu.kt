@@ -13,24 +13,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Notes
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Functions
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.LocalOffer
-import androidx.compose.material.icons.filled.MonitorWeight
-import androidx.compose.material.icons.filled.Percent
-import androidx.compose.material.icons.filled.Public
-import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -45,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -58,6 +45,7 @@ import com.calculator.feature.floating.rememberFloatingCalculatorLauncher
 import com.calculator.feature.history.HistorySheetContent
 import com.calculator.feature.settings.SettingsSheetContent
 import kotlinx.coroutines.launch
+import java.time.ZoneId
 
 /**
  * Which sub-sheet the menu host should display.
@@ -101,6 +89,7 @@ fun ToolsMenuOverlay(
     val calculatorState by calculator.state.collectAsStateWithLifecycle()
     val currentEntry by navController.currentBackStackEntryAsState()
     val launchFloating = rememberFloatingCalculatorLauncher()
+    val locale = LocalConfiguration.current.locales[0]
     ModalBottomSheet(
         sheetState = sheetState,
         onDismissRequest = onDismiss,
@@ -111,6 +100,7 @@ fun ToolsMenuOverlay(
         when (openSheet) {
             ToolsMenuSheet.Tools ->
                 ToolsGrid(
+                    tools = availableTools(locale, ZoneId.systemDefault()),
                     current = currentEntry?.destination,
                     scientific = calculatorState.scientific,
                     onOpenCalculator = { scientific ->
@@ -118,8 +108,7 @@ fun ToolsMenuOverlay(
                         close()
                         navController.openTool(BasicCalculatorRoute)
                     },
-                    onOpenHistory = { onOpenSheet(ToolsMenuSheet.History) },
-                    onOpenSettings = { onOpenSheet(ToolsMenuSheet.Settings) },
+                    onOpenSheet = onOpenSheet,
                     onNavigate = { route ->
                         close()
                         navController.openTool(route)
@@ -141,182 +130,59 @@ fun ToolsMenuOverlay(
 }
 
 /**
- * Tile grid for the Tools sub-sheet.
+ * Tile grid for the Tools sub-sheet: Home and Advanced, then every tool
+ * in [tools], then History and Settings.
  *
  * Home and Advanced open the basic calculator in basic or scientific
  * mode. The tile for the page on screen is marked selected; tapping it
  * just closes the sheet.
  *
+ * @param tools Tool pages to show, already filtered for the device.
  * @param current Destination on screen, used to mark the selected tile.
  * @param scientific Whether the basic calculator is in scientific mode.
  * @param onOpenCalculator Opens the basic calculator in the given mode.
+ * @param onOpenSheet Switches to the History or Settings sheet.
+ * @param onNavigate Opens a tool page.
  */
 @Composable
-@Suppress("LongMethod")
-private fun ToolsGrid(
+internal fun ToolsGrid(
+    tools: List<Tool>,
     current: NavDestination?,
     scientific: Boolean,
     onOpenCalculator: (scientific: Boolean) -> Unit,
-    onOpenHistory: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onNavigate: (Any) -> Unit,
+    onOpenSheet: (ToolsMenuSheet) -> Unit,
+    onNavigate: (ToolRoute) -> Unit,
 ) {
     val onCalculator = current?.hasRoute(BasicCalculatorRoute::class) == true
-
-    fun isCurrent(route: Any) = current?.hasRoute(route::class) == true
+    val tiles =
+        buildList {
+            add(
+                ToolTile(
+                    Icons.Filled.Calculate,
+                    stringResource(R.string.tool_basic),
+                    onCalculator && !scientific,
+                ) { onOpenCalculator(false) },
+            )
+            add(
+                ToolTile(
+                    Icons.Filled.Functions,
+                    stringResource(R.string.tool_advanced),
+                    onCalculator && scientific,
+                ) { onOpenCalculator(true) },
+            )
+            tools.forEach { tool ->
+                val selected = current?.hasRoute(tool.route::class) == true
+                add(ToolTile(tool.icon, stringResource(tool.label), selected) { onNavigate(tool.route) })
+            }
+            add(ToolTile(Icons.Filled.History, stringResource(R.string.tool_history), false) { onOpenSheet(ToolsMenuSheet.History) })
+            add(ToolTile(Icons.Filled.Settings, stringResource(R.string.tool_settings), false) { onOpenSheet(ToolsMenuSheet.Settings) })
+        }
     Column(
         modifier =
             Modifier
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
-        val tiles = buildList {
-            add(
-                ToolTile(
-                    icon = Icons.Filled.Calculate,
-                    label = stringResource(R.string.tool_basic),
-                    selected = onCalculator && !scientific,
-                    onTap = { onOpenCalculator(false) },
-                ),
-            )
-            add(
-                ToolTile(
-                    icon = Icons.Filled.Functions,
-                    label = stringResource(R.string.tool_advanced),
-                    selected = onCalculator && scientific,
-                    onTap = { onOpenCalculator(true) },
-                ),
-            )
-            add(
-                ToolTile(
-                    icon = Icons.Filled.Straighten,
-                    label = stringResource(R.string.tool_units),
-                    selected = isCurrent(UnitConverterRoute),
-                    onTap = { onNavigate(UnitConverterRoute) },
-                ),
-            )
-            add(
-                ToolTile(
-                    icon = Icons.Filled.AccountBalance,
-                    label = stringResource(R.string.tool_loan),
-                    selected = isCurrent(LoanRoute),
-                    onTap = { onNavigate(LoanRoute) },
-                ),
-            )
-            add(
-                ToolTile(
-                    icon = Icons.Filled.Receipt,
-                    label = stringResource(R.string.tool_gst),
-                    selected = isCurrent(GstRoute),
-                    onTap = { onNavigate(GstRoute) },
-                ),
-            )
-            add(
-                ToolTile(
-                    icon = Icons.Filled.LocalOffer,
-                    label = stringResource(R.string.tool_discount),
-                    selected = isCurrent(DiscountRoute),
-                    onTap = { onNavigate(DiscountRoute) },
-                ),
-            )
-            add(
-                ToolTile(
-                    icon = Icons.Filled.Restaurant,
-                    label = stringResource(R.string.tool_tipsplit),
-                    selected = isCurrent(TipSplitRoute),
-                    onTap = { onNavigate(TipSplitRoute) },
-                ),
-            )
-            add(
-                ToolTile(
-                    icon = Icons.Filled.Savings,
-                    label = stringResource(R.string.tool_investment),
-                    selected = isCurrent(InvestmentRoute),
-                    onTap = { onNavigate(InvestmentRoute) },
-                ),
-            )
-            add(
-                ToolTile(
-                    icon = Icons.Filled.Percent,
-                    label = stringResource(R.string.tool_percent),
-                    selected = isCurrent(PercentRoute),
-                    onTap = { onNavigate(PercentRoute) },
-                ),
-            )
-            add(
-                ToolTile(
-                    icon = Icons.Filled.Code,
-                    label = stringResource(R.string.tool_basecalc),
-                    selected = isCurrent(BaseConverterRoute),
-                    onTap = { onNavigate(BaseConverterRoute) },
-                ),
-            )
-            add(
-                ToolTile(
-                    icon = Icons.Filled.MonitorWeight,
-                    label = stringResource(R.string.tool_bmi),
-                    selected = isCurrent(BmiRoute),
-                    onTap = { onNavigate(BmiRoute) },
-                ),
-            )
-            add(
-                ToolTile(
-                    icon = Icons.Filled.Cake,
-                    label = stringResource(R.string.tool_age),
-                    selected = isCurrent(AgeRoute),
-                    onTap = { onNavigate(AgeRoute) },
-                ),
-            )
-            add(
-                ToolTile(
-                    icon = Icons.Filled.DateRange,
-                    label = stringResource(R.string.tool_date_diff),
-                    selected = isCurrent(DateDiffRoute),
-                    onTap = { onNavigate(DateDiffRoute) },
-                ),
-            )
-            add(
-                ToolTile(
-                    icon = Icons.Filled.Public,
-                    label = stringResource(R.string.tool_timezone),
-                    selected = isCurrent(TimezoneRoute),
-                    onTap = { onNavigate(TimezoneRoute) },
-                ),
-            )
-            add(
-                ToolTile(
-                    icon = Icons.Filled.Favorite,
-                    label = stringResource(R.string.tool_ovulation),
-                    selected = isCurrent(OvulationRoute),
-                    onTap = { onNavigate(OvulationRoute) },
-                ),
-            )
-            add(
-                ToolTile(
-                    icon = Icons.AutoMirrored.Filled.Notes,
-                    label = stringResource(R.string.tool_tape),
-                    selected = isCurrent(TapeRoute),
-                    onTap = { onNavigate(TapeRoute) },
-                ),
-            )
-            add(
-                ToolTile(
-                    icon = Icons.Filled.History,
-                    label = stringResource(R.string.tool_history),
-                    selected = false,
-                    onTap = onOpenHistory,
-                ),
-            )
-            add(
-                ToolTile(
-                    icon = Icons.Filled.Settings,
-                    label = stringResource(R.string.tool_settings),
-                    selected = false,
-                    onTap = onOpenSettings,
-                ),
-            )
-        }
-
         tiles.chunked(TOOL_TILE_COLUMNS).forEach { rowTiles ->
             Row(
                 modifier = Modifier.fillMaxWidth(),

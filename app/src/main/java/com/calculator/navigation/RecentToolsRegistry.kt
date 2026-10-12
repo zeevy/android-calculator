@@ -8,6 +8,8 @@ import androidx.core.graphics.drawable.IconCompat
 import com.calculator.MainActivity
 import com.calculator.R
 import com.calculator.feature.floating.FloatingShortcutActivity
+import java.time.ZoneId
+import java.util.Locale
 
 /**
  * Tracks recently-used tools and republishes the long-press launcher
@@ -30,13 +32,10 @@ internal object RecentToolsRegistry {
     private const val FLOAT_SHORTCUT_ID = "floating_calculator"
 
     /**
-     * Records that the user navigated to [route] and rebuilds the
-     * dynamic shortcut list. Routes not in [ToolShortcutCatalog]
-     * (BasicCalculatorRoute, the trampoline activity, etc.) are
-     * silently ignored.
+     * Records that the user opened the tool with this [Tool.id] and
+     * rebuilds the dynamic shortcut list.
      */
-    fun record(context: Context, route: Any) {
-        val id = ToolShortcutCatalog.idOf(route) ?: return
+    fun record(context: Context, id: String) {
         val app = context.applicationContext
         val prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val current = readRecents(prefs)
@@ -92,14 +91,15 @@ internal object RecentToolsRegistry {
     }
 
     private fun buildRecentShortcut(context: Context, toolId: String): ShortcutInfoCompat? {
-        val entry = ToolShortcutCatalog.byId(toolId) ?: return null
+        // A tool not offered on this device (GST outside India) gets no shortcut.
+        val entry = availableToolById(toolId, Locale.getDefault(), ZoneId.systemDefault()) ?: return null
         val intent = Intent(Intent.ACTION_VIEW)
             .setClassName(context, MainActivity::class.java.name)
             .putExtra(MainActivity.SHORTCUT_DESTINATION, toolId)
         return ShortcutInfoCompat
             .Builder(context, "recent_$toolId")
-            .setShortLabel(context.getString(entry.shortLabelRes))
-            .setLongLabel(context.getString(entry.longLabelRes))
+            .setShortLabel(context.getString(entry.label))
+            .setLongLabel(context.getString(entry.longLabel))
             .setIcon(IconCompat.createWithResource(context, R.mipmap.ic_launcher_round))
             .setIntent(intent)
             .build()
