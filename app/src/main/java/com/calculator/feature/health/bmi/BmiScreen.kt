@@ -12,6 +12,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.R
+import com.calculator.core.common.format.NumberFormatter
 import com.calculator.core.designsystem.component.LifeCalcCard
 import com.calculator.core.designsystem.component.LifeCalcNumberField
 import com.calculator.core.designsystem.component.LifeCalcOutputRow
@@ -136,16 +137,18 @@ fun BmiScreen(
             runCatching {
                 val heightCmResolved =
                     if (heightUnitIdx == 0) {
-                        heightCm.toDouble()
+                        requireNotNull(NumberFormatter.parseNumberInput(heightCm))
                     } else {
-                        val totalInches = heightFt.toInt() * INCHES_PER_FOOT + heightIn.toDouble()
+                        val totalInches =
+                            requireNotNull(NumberFormatter.parseWholeNumberInput(heightFt)) * INCHES_PER_FOOT +
+                                requireNotNull(NumberFormatter.parseNumberInput(heightIn))
                         totalInches * CM_PER_INCH
                     }
                 val weightKgResolved =
                     if (weightUnitIdx == 0) {
-                        weightKg.toDouble()
+                        requireNotNull(NumberFormatter.parseNumberInput(weightKg))
                     } else {
-                        weightLb.toDouble() * KG_PER_POUND
+                        requireNotNull(NumberFormatter.parseNumberInput(weightLb)) * KG_PER_POUND
                     }
                 BmiCalculator.metric(heightCmResolved, weightKgResolved)
             }.getOrNull()
@@ -161,7 +164,7 @@ fun BmiScreen(
             } else {
                 LifeCalcOutputRow(
                     label = stringResource(R.string.bmi_label_bmi),
-                    value = "%.2f".format(result.bmi),
+                    value = NumberFormatter.format(result.bmi, minFractionDigits = 2, maxFractionDigits = 2),
                     accent = true,
                 )
                 LifeCalcOutputRow(

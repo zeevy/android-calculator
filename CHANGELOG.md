@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Number fields accept the decimal separator of the phone's language, so `10,5` works in German or French. A number with misplaced group separators (such as `10.5` in German) shows an error instead of being read as 105.
+- Money amounts use lakh and crore grouping (`12,34,567.89`) on phones set to English (India) or Hindi, in every tool.
+- The unit converter keeps the exact value when you swap units, also for results of 1,000 or more; before, swap blanked the result or read `1.000` as 1 in German.
+- Pasting a number into the calculator reads it in the phone's language (`1.234,50` in German is 1234.5).
+- A loan or investment term long enough to overflow now shows an error instead of `NaN`.
 - A damaged settings file no longer crashes the app on every launch; the settings go back to their defaults and save normally again.
 - On a cold start the app no longer shows one frame in the wrong theme when the chosen theme differs from the system theme.
 - On Android 13 and later, starting the floating calculator from Settings now asks for the notification permission, so its notification and Stop action show in the shade.

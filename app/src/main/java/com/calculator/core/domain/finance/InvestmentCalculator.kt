@@ -46,7 +46,11 @@ object InvestmentCalculator {
                     (1.0 + monthlyRate)
             }
         val invested = monthlyAmount * months
-        return InvestmentResult(maturity = maturity, invested = invested, gains = maturity - invested)
+        return InvestmentResult(
+            maturity = maturity.requireFinite(),
+            invested = invested.requireFinite(),
+            gains = maturity - invested,
+        )
     }
 
     fun lumpSum(
@@ -61,7 +65,7 @@ object InvestmentCalculator {
         require(timesPerYear >= 1) { "timesPerYear must be >= 1" }
 
         val rate = annualRatePercent / PERCENT_BASE
-        val maturity = principal * (1.0 + rate / timesPerYear).pow(timesPerYear * years)
+        val maturity = (principal * (1.0 + rate / timesPerYear).pow(timesPerYear * years)).requireFinite()
         return InvestmentResult(
             maturity = maturity,
             invested = principal,

@@ -46,8 +46,8 @@ fun PercentScreen(onOpenMenu: () -> Unit) {
     // throwing IllegalArgumentException), surfaced via a null result.
     val result =
         runCatching {
-            val x = a.toDouble()
-            val y = b.toDouble()
+            val x = requireNotNull(NumberFormatter.parseNumberInput(a))
+            val y = requireNotNull(NumberFormatter.parseNumberInput(b))
             when (mode) {
                 0 -> PercentCalculator.percentOf(x, y)
                 1 -> PercentCalculator.whatPercent(x, y)

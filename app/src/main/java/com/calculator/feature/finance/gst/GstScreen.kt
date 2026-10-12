@@ -31,7 +31,6 @@ import com.calculator.core.designsystem.component.LifeCalcSectionLabel
 import com.calculator.core.designsystem.component.LifeCalcSegmented
 import com.calculator.core.designsystem.component.LifeCalculatorScaffold
 import com.calculator.core.domain.finance.GstCalculator
-import java.util.Locale
 
 /**
  * Indian GST calculator. Splits CGST/SGST/IGST based on intra- vs
@@ -87,24 +86,24 @@ fun GstScreen(
     // simple derivation rather than inside an effect because the two
     // text fields are local state - we can just compute fresh each
     // recomposition based on lastEdited.
-    val rate = ratePercent.toDoubleOrNull()
+    val rate = NumberFormatter.parseNumberInput(ratePercent)
     val intra = intraStateIdx == 0
     val result: com.calculator.core.domain.finance.GstResult? =
         runCatching {
             requireNotNull(rate)
             if (lastEdited == 0) {
-                val net = netText.toDouble()
+                val net = requireNotNull(NumberFormatter.parseNumberInput(netText))
                 GstCalculator.forward(net, rate, intra)
             } else {
-                val gross = grossText.toDouble()
+                val gross = requireNotNull(NumberFormatter.parseNumberInput(grossText))
                 GstCalculator.reverse(gross, rate, intra)
             }
         }.getOrNull()
     // Mirror the recomputed side into the OTHER text field so its
     // BasicTextField shows the formatted value (until the user types
     // into it, at which point lastEdited flips and the roles swap).
-    val derivedNetText = result?.net?.let { plain(it) } ?: netText
-    val derivedGrossText = result?.gross?.let { plain(it) } ?: grossText
+    val derivedNetText = result?.net?.let { NumberFormatter.formatForInput(it) } ?: netText
+    val derivedGrossText = result?.gross?.let { NumberFormatter.formatForInput(it) } ?: grossText
     val netDisplay = if (lastEdited == 0) netText else derivedNetText
     val grossDisplay = if (lastEdited == 1) grossText else derivedGrossText
 
@@ -168,36 +167,20 @@ fun GstScreen(
                     color = scheme.error,
                 )
             } else {
-                LifeCalcOutputRow(stringResource(R.string.gst_label_net), money(result.net))
+                LifeCalcOutputRow(stringResource(R.string.gst_label_net), NumberFormatter.money(result.net))
                 if (intraStateIdx == 0) {
-                    LifeCalcOutputRow(stringResource(R.string.gst_label_cgst), money(result.cgst))
-                    LifeCalcOutputRow(stringResource(R.string.gst_label_sgst), money(result.sgst))
+                    LifeCalcOutputRow(stringResource(R.string.gst_label_cgst), NumberFormatter.money(result.cgst))
+                    LifeCalcOutputRow(stringResource(R.string.gst_label_sgst), NumberFormatter.money(result.sgst))
                 } else {
-                    LifeCalcOutputRow(stringResource(R.string.gst_label_igst), money(result.igst))
+                    LifeCalcOutputRow(stringResource(R.string.gst_label_igst), NumberFormatter.money(result.igst))
                 }
                 LifeCalcOutputRow(
                     label = stringResource(R.string.gst_label_gross),
-                    value = money(result.gross),
+                    value = NumberFormatter.money(result.gross),
                     accent = true,
                 )
             }
         }
-    }
-}
-
-// Lightweight plain-number formatter for the editable fields - we don't
-// want grouping separators in the BasicTextField (they trip the
-// permissive toDouble parse on the next keystroke). The pretty
-// currency-formatted display lives in the result card below.
-private fun plain(value: Double): String {
-    val rounded = kotlin.math.round(value * 100) / 100
-    return if (rounded == rounded.toLong().toDouble()) {
-        rounded.toLong().toString()
-    } else {
-        // %.2f keeps the same number of decimals across locales; the
-        // engine accepts both "." and "," via the permissive parse so
-        // we don't need a locale-aware separator here.
-        String.format(Locale.US, "%.2f", rounded)
     }
 }
 
@@ -237,9 +220,3 @@ private fun RatePresets(selected: String, onSelect: (String) -> Unit) {
         }
     }
 }
-
-// Money formatter routes through [NumberFormatter.money] so the
-// running locale picks the right grouping (en-IN lakh, de-DE swapped
-// separators, etc.).
-private fun money(value: Double): String =
-    NumberFormatter.money(value, Locale.getDefault())

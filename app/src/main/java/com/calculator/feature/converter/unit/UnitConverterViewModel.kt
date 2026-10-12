@@ -158,8 +158,9 @@ class UnitConverterViewModel
          * mid-conversion.
          */
         fun swap() {
+            val carried = _state.value.lastResult
             _state.update {
-                val previousResult =
+                val previousResultText =
                     when (it.lastEdited) {
                         UnitConverterUiState.PickerSide.From -> it.toText
                         UnitConverterUiState.PickerSide.To -> it.fromText
@@ -167,13 +168,13 @@ class UnitConverterViewModel
                 it.copy(
                     fromUnit = it.toUnit,
                     toUnit = it.fromUnit,
-                    fromText = previousResult,
+                    fromText = previousResultText,
                     toText = "",
                     lastEdited = UnitConverterUiState.PickerSide.From,
                 )
             }
             recordRecent()
-            recompute()
+            recompute(sourceValue = carried)
         }
 
         fun openPicker(side: UnitConverterUiState.PickerSide) {
@@ -201,12 +202,15 @@ class UnitConverterViewModel
          * Bails to an empty target field when:
          *  - Either unit hasn't been resolved yet (transient state
          *    between `selectCategory` and the next emission).
-         *  - The source text doesn't parse as a Double (empty, "-",
-         *    "1.", etc.) - we keep the source field exactly as the
-         *    user typed it but blank the target rather than rendering
-         *    "NaN".
+         *  - The source text doesn't parse as a number in the device
+         *    locale (empty, "-", "10.5" in de-DE, etc.) - we keep the
+         *    source field exactly as the user typed it but blank the
+         *    target rather than rendering "NaN".
+         *
+         * @param sourceValue The source number when it is already known
+         *   (after swap), so its formatted text is not parsed back.
          */
-        private fun recompute() {
+        private fun recompute(sourceValue: Double? = null) {
             _state.update { current ->
                 val from = current.fromUnit
                 val to = current.toUnit
@@ -218,30 +222,24 @@ class UnitConverterViewModel
                 }
                 when (current.lastEdited) {
                     UnitConverterUiState.PickerSide.From -> {
-                        val value = current.fromText.toDoubleOrNullPermissive()
-                            ?: return@update current.copy(toText = "")
+                        val value = sourceValue ?: NumberFormatter.parseNumberInput(current.fromText)
+                            ?: return@update current.copy(toText = "", lastResult = null)
                         val raw = Converter.convert(value, from, to)
-                        current.copy(toText = formatResult(raw, current.precision))
+                        current.copy(toText = formatResult(raw, current.precision), lastResult = raw)
                     }
                     UnitConverterUiState.PickerSide.To -> {
-                        val value = current.toText.toDoubleOrNullPermissive()
-                            ?: return@update current.copy(fromText = "")
+                        val value = NumberFormatter.parseNumberInput(current.toText)
+                            ?: return@update current.copy(fromText = "", lastResult = null)
                         // Reverse direction: input now lives in `to` units,
                         // result lives in `from` units. Converter is
                         // symmetric, just swap the argument order.
                         val raw = Converter.convert(value, to, from)
-                        current.copy(fromText = formatResult(raw, current.precision))
+                        current.copy(fromText = formatResult(raw, current.precision), lastResult = raw)
                     }
                 }
             }
         }
     }
-
-/** "1.", "-", and "" all parse to null without raising. */
-private fun String.toDoubleOrNullPermissive(): Double? {
-    if (isBlank() || this == "-" || this == "." || this == "-.") return null
-    return toDoubleOrNull()
-}
 
 /**
  * Renders [value] to a string with [significantFigures] precision,

@@ -20,7 +20,6 @@ import com.calculator.core.designsystem.component.LifeCalcOutputRow
 import com.calculator.core.designsystem.component.LifeCalcSectionLabel
 import com.calculator.core.designsystem.component.LifeCalculatorScaffold
 import com.calculator.core.domain.finance.EmiCalculator
-import java.util.Locale
 
 /**
  * Loan/EMI **estimator**. Strict wording: this is not a lending tool.
@@ -77,16 +76,16 @@ fun LoanScreen(onOpenMenu: () -> Unit) {
         // Re-evaluate on every recomposition. The math is microseconds
         // for any realistic tenure, so caching it behind `remember`
         // would cost more in correctness (forgetting a key) than it
-        // saves. `runCatching` swallows the NumberFormatException raised
-        // when a field is mid-edit (e.g. "" or "1.") and the require()
+        // saves. `runCatching` swallows the missing value of a field that
+        // is mid-edit (e.g. "" or "-") and the require()
         // inside `emi()` for non-positive values - both render as
         // "enter values" rather than an exception.
         val result =
             runCatching {
                 EmiCalculator.emi(
-                    principal = principal.toDouble(),
-                    annualRatePercent = rate.toDouble(),
-                    months = months.toInt(),
+                    principal = requireNotNull(NumberFormatter.parseNumberInput(principal)),
+                    annualRatePercent = requireNotNull(NumberFormatter.parseNumberInput(rate)),
+                    months = requireNotNull(NumberFormatter.parseWholeNumberInput(months)),
                 )
             }.getOrNull()
 
@@ -95,16 +94,16 @@ fun LoanScreen(onOpenMenu: () -> Unit) {
                 LifeCalcSectionLabel(stringResource(R.string.loan_section_result))
                 LifeCalcOutputRow(
                     label = stringResource(R.string.loan_monthly_emi),
-                    value = money(result.emi),
+                    value = NumberFormatter.money(result.emi),
                     accent = true,
                 )
                 LifeCalcOutputRow(
                     label = stringResource(R.string.loan_total_interest),
-                    value = money(result.totalInterest),
+                    value = NumberFormatter.money(result.totalInterest),
                 )
                 LifeCalcOutputRow(
                     label = stringResource(R.string.loan_total_paid),
-                    value = money(result.totalPayment),
+                    value = NumberFormatter.money(result.totalPayment),
                 )
             }
             Spacer(Modifier.size(4.dp))
@@ -126,14 +125,6 @@ fun LoanScreen(onOpenMenu: () -> Unit) {
         }
     }
 }
-
-// Money formatting routes through [NumberFormatter.money] so a user
-// running the app in en-IN sees lakh/crore grouping ("1,23,456.78"),
-// en-US sees thousands grouping ("123,456.78"), de-DE sees swapped
-// separators ("123.456,78"). Currency symbols are deliberately
-// omitted - the EMI value is unitless until the user picks a locale.
-private fun money(value: Double): String =
-    NumberFormatter.money(value, Locale.getDefault())
 
 // No-op extension to keep the Compose padding import valid without
 // applying any extra padding. The footnote Text composable references

@@ -53,4 +53,11 @@ class EmiCalculatorTest {
             EmiCalculator.emi(1_000.0, 10.0, 0)
         }
     }
+
+    @Test
+    fun `a tenure that overflows the EMI is reported as too large, not NaN`() {
+        assertThrows(ResultTooLargeException::class.java) {
+            EmiCalculator.emi(principal = 100_000.0, annualRatePercent = 10.0, months = 1_000_000)
+        }
+    }
 }

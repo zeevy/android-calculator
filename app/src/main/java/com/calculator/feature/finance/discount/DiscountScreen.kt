@@ -17,7 +17,6 @@ import com.calculator.core.designsystem.component.LifeCalcOutputRow
 import com.calculator.core.designsystem.component.LifeCalcSectionLabel
 import com.calculator.core.designsystem.component.LifeCalculatorScaffold
 import com.calculator.core.domain.finance.DiscountCalculator
-import java.util.Locale
 
 /**
  * Discount calculator with three editable fields.
@@ -49,11 +48,11 @@ fun DiscountScreen(onOpenMenu: () -> Unit) {
 
     val result =
         runCatching {
-            val mrpValue = mrp.toDouble()
+            val mrpValue = requireNotNull(NumberFormatter.parseNumberInput(mrp))
             if (lastEdited == 0) {
-                DiscountCalculator.forward(mrpValue, percentOff.toDouble())
+                DiscountCalculator.forward(mrpValue, requireNotNull(NumberFormatter.parseNumberInput(percentOff)))
             } else {
-                DiscountCalculator.reverse(mrpValue, finalPrice.toDouble())
+                DiscountCalculator.reverse(mrpValue, requireNotNull(NumberFormatter.parseNumberInput(finalPrice)))
             }
         }.getOrNull()
 
@@ -61,9 +60,9 @@ fun DiscountScreen(onOpenMenu: () -> Unit) {
     // sees the formatted value (until they tap into that field, at
     // which point lastEdited flips and the roles swap).
     val percentDisplay =
-        if (lastEdited == 0) percentOff else result?.percentOff?.let { plain(it) } ?: percentOff
+        if (lastEdited == 0) percentOff else result?.percentOff?.let { NumberFormatter.formatForInput(it) } ?: percentOff
     val finalDisplay =
-        if (lastEdited == 1) finalPrice else result?.finalPrice?.let { plain(it) } ?: finalPrice
+        if (lastEdited == 1) finalPrice else result?.finalPrice?.let { NumberFormatter.formatForInput(it) } ?: finalPrice
 
     LifeCalculatorScaffold(
         title = stringResource(R.string.discount_title),
@@ -106,28 +105,10 @@ fun DiscountScreen(onOpenMenu: () -> Unit) {
             } else {
                 LifeCalcOutputRow(
                     label = stringResource(R.string.discount_savings),
-                    value = money(result.savings),
+                    value = NumberFormatter.money(result.savings),
                     accent = true,
                 )
             }
         }
     }
 }
-
-// Plain-number formatter for the editable fields - no grouping
-// separators (which would break the permissive toDouble parse on the
-// next keystroke). Rounds to 2dp for prices / percents; whole values
-// render without a trailing ".0".
-private fun plain(value: Double): String {
-    val rounded = kotlin.math.round(value * 100) / 100
-    return if (rounded == rounded.toLong().toDouble()) {
-        rounded.toLong().toString()
-    } else {
-        String.format(Locale.US, "%.2f", rounded)
-    }
-}
-
-// Money formatter routes through [NumberFormatter.money] for locale-
-// aware grouping (en-IN lakh, de-DE swapped separators, etc.).
-private fun money(value: Double): String =
-    NumberFormatter.money(value, Locale.getDefault())

@@ -26,6 +26,8 @@ object EmiCalculator {
      * @param annualRatePercent Annual interest rate as a percentage
      *   (e.g. `10.5` for 10.5%, not `0.105`).
      * @param months Tenure in months.
+     * @throws IllegalArgumentException for a non-positive principal or tenure, or a negative rate.
+     * @throws ResultTooLargeException when the EMI overflows a Double.
      */
     fun emi(principal: Double, annualRatePercent: Double, months: Int): EmiResult {
         require(principal > 0) { "principal must be > 0" }
@@ -42,7 +44,7 @@ object EmiCalculator {
         }
         val r = annualRatePercent / 100.0 / MONTHS_PER_YEAR
         val pow = (1.0 + r).pow(months)
-        val emi = principal * r * pow / (pow - 1.0)
+        val emi = (principal * r * pow / (pow - 1.0)).requireFinite()
         return EmiResult(
             emi = emi,
             totalInterest = emi * months - principal,

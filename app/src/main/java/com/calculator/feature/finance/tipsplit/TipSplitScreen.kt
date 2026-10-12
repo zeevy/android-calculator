@@ -32,7 +32,6 @@ import com.calculator.core.designsystem.component.LifeCalcOutputRow
 import com.calculator.core.designsystem.component.LifeCalcSectionLabel
 import com.calculator.core.designsystem.component.LifeCalculatorScaffold
 import com.calculator.core.domain.finance.TipSplitCalculator
-import java.util.Locale
 
 /**
  * Tip + bill-split calculator.
@@ -57,8 +56,8 @@ fun TipSplitScreen(onOpenMenu: () -> Unit) {
     val result =
         runCatching {
             TipSplitCalculator.compute(
-                bill = bill.toDouble(),
-                tipAmount = tipAmount.toDouble(),
+                bill = requireNotNull(NumberFormatter.parseNumberInput(bill)),
+                tipAmount = requireNotNull(NumberFormatter.parseNumberInput(tipAmount)),
                 people = people,
                 roundUpPerPerson = roundUp,
             )
@@ -98,15 +97,15 @@ fun TipSplitScreen(onOpenMenu: () -> Unit) {
             } else {
                 LifeCalcOutputRow(
                     label = stringResource(R.string.tipsplit_tip_amount),
-                    value = money(result.tip),
+                    value = NumberFormatter.money(result.tip),
                 )
                 LifeCalcOutputRow(
                     label = stringResource(R.string.tipsplit_total),
-                    value = money(result.total),
+                    value = NumberFormatter.money(result.total),
                 )
                 LifeCalcOutputRow(
                     label = stringResource(R.string.tipsplit_per_person),
-                    value = money(result.perPerson),
+                    value = NumberFormatter.money(result.perPerson),
                     accent = true,
                 )
             }
@@ -187,9 +186,6 @@ private fun RoundUpRow(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
         )
     }
 }
-
-private fun money(value: Double): String =
-    NumberFormatter.money(value, Locale.getDefault())
 
 // Visual dim for the disabled stepper button (can't go below 1 person).
 private const val DISABLED_ALPHA = 0.3f

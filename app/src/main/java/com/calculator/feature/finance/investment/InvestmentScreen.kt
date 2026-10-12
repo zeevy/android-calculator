@@ -18,7 +18,6 @@ import com.calculator.core.designsystem.component.LifeCalcSectionLabel
 import com.calculator.core.designsystem.component.LifeCalcSegmented
 import com.calculator.core.designsystem.component.LifeCalculatorScaffold
 import com.calculator.core.domain.finance.InvestmentCalculator
-import java.util.Locale
 
 /**
  * Returns calculator for both SIP (monthly contribution) and lump-sum
@@ -43,9 +42,9 @@ fun InvestmentScreen(onOpenMenu: () -> Unit) {
 
     val result =
         runCatching {
-            val a = amount.toDouble()
-            val r = rate.toDouble()
-            val y = years.toDouble()
+            val a = requireNotNull(NumberFormatter.parseNumberInput(amount))
+            val r = requireNotNull(NumberFormatter.parseNumberInput(rate))
+            val y = requireNotNull(NumberFormatter.parseNumberInput(years))
             if (mode == 0) {
                 InvestmentCalculator.sip(a, r, y)
             } else {
@@ -99,21 +98,18 @@ fun InvestmentScreen(onOpenMenu: () -> Unit) {
             } else {
                 LifeCalcOutputRow(
                     label = stringResource(R.string.investment_invested),
-                    value = money(result.invested),
+                    value = NumberFormatter.money(result.invested),
                 )
                 LifeCalcOutputRow(
                     label = stringResource(R.string.investment_gains),
-                    value = money(result.gains),
+                    value = NumberFormatter.money(result.gains),
                 )
                 LifeCalcOutputRow(
                     label = stringResource(R.string.investment_maturity),
-                    value = money(result.maturity),
+                    value = NumberFormatter.money(result.maturity),
                     accent = true,
                 )
             }
         }
     }
 }
-
-private fun money(value: Double): String =
-    NumberFormatter.money(value, Locale.getDefault())

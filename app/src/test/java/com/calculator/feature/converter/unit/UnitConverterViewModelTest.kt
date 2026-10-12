@@ -17,6 +17,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
+import java.util.Locale
 
 /**
  * Tests the conversion + UI-state semantics: typing into "from", picking
@@ -95,6 +98,54 @@ class UnitConverterViewModelTest {
             // locale adds grouping ("1,000" in en-US, "1.000" in de-DE).
             // Test JVM defaults to en-US; expect the comma-grouped form.
             assertEquals("1,000", viewModel.state.value.toText)
+        }
+
+    @ParameterizedTest
+    @CsvSource(
+        "en-US, '1,000,000', '1,000', '1,000,000'",
+        "de-DE, '1.000.000', '1.000', '1.000.000'",
+        "en-IN, '10,00,000', '1,000', '10,00,000'",
+    )
+    fun `swap with a grouped result keeps the exact number`(
+        tag: String,
+        typedMetres: String,
+        kilometres: String,
+        metresBack: String,
+    ) = runTest(dispatcher) {
+        val saved = Locale.getDefault()
+        Locale.setDefault(Locale.forLanguageTag(tag))
+        try {
+            advanceUntilIdle()
+            viewModel.selectCategory(UnitCategory.Length)
+            advanceUntilIdle()
+            viewModel.setFromInput(typedMetres)
+            advanceUntilIdle()
+            assertEquals(kilometres, viewModel.state.value.toText)
+
+            viewModel.swap()
+            advanceUntilIdle()
+            assertEquals(kilometres, viewModel.state.value.fromText)
+            assertEquals(metresBack, viewModel.state.value.toText)
+        } finally {
+            Locale.setDefault(saved)
+        }
+    }
+
+    @Test
+    fun `a decimal comma reads as a decimal in de-DE`() =
+        runTest(dispatcher) {
+            val saved = Locale.getDefault()
+            Locale.setDefault(Locale.GERMANY)
+            try {
+                advanceUntilIdle()
+                viewModel.selectCategory(UnitCategory.Length)
+                advanceUntilIdle()
+                viewModel.setFromInput("1500,5")
+                advanceUntilIdle()
+                assertEquals("1,5005", viewModel.state.value.toText)
+            } finally {
+                Locale.setDefault(saved)
+            }
         }
 
     @Test

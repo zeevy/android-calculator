@@ -16,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.calculator.R
+import com.calculator.core.common.format.NumberFormatter
 import com.calculator.core.designsystem.component.DateField
 import com.calculator.core.designsystem.component.LifeCalcCard
 import com.calculator.core.designsystem.component.LifeCalcNumberField
@@ -112,7 +113,7 @@ fun DateDiffScreen(onOpenMenu: () -> Unit) {
             } else {
                 val result =
                     runCatching {
-                        DateDiffCalculator.addOffset(dateA, offsetDays.toInt())
+                        DateDiffCalculator.addOffset(dateA, requireNotNull(NumberFormatter.parseWholeNumberInput(offsetDays)))
                     }.getOrNull()
                 if (result == null) {
                     Text(

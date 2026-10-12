@@ -74,6 +74,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.R
 import com.calculator.core.common.clipboard.plainTextClipEntry
 import com.calculator.core.common.clipboard.readPlainText
+import com.calculator.core.common.format.NumberFormatter
 import com.calculator.core.data.tape.TapeEntry
 import com.calculator.core.designsystem.theme.CalculatorTheme
 import com.calculator.core.math.AngleMode
@@ -243,7 +244,7 @@ private fun DisplaySection(
                 onPasteRequested = {
                     clipboardScope.launch {
                         val pasted = clipboard.getClipEntry().readPlainText(context)
-                        val number = extractLeadingNumber(pasted)
+                        val number = NumberFormatter.extractPastedNumber(pasted)
                         if (number != null) {
                             onEvent(BasicCalculatorEvent.Append(number))
                         } else {
@@ -1231,23 +1232,6 @@ private const val BUTTON_ASPECT_RATIO_COMPACT = 2.2f
 // the calculator reads as a single visual system. Literal colors rather
 // than theme roles because the iOS feel is recognisable specifically by
 // these hexes; M3 dynamic-color would dilute it.
-
-/**
- * Pull the first plausibly-numeric token out of a pasted string.
- *
- * Accepts optional leading minus, digit groups (commas / spaces / Indian
- * grouping), and an optional decimal point. Currency symbols and unit
- * suffixes are skipped silently so pasting "₹1,234.50" yields "1234.50".
- * Returns null if nothing numeric is found.
- */
-internal fun extractLeadingNumber(text: String): String? {
-    val pattern = Regex("""-?\d[\d,\s]*(?:\.\d+)?""")
-    val match = pattern.find(text) ?: return null
-    val cleaned = match.value.replace(",", "").replace(" ", "")
-    // Reject if it's just "-" or empty after cleanup (regex shouldn't
-    // produce this but the explicit guard makes the intent obvious).
-    return cleaned.takeIf { it.toDoubleOrNull() != null }
-}
 
 // ----- Previews -----
 
