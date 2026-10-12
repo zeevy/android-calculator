@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The floating calculator and the home-screen widget follow the same rules as the app: `2 + 3 × 4 =` gives 14 everywhere (the floating calculator gave 20), the widget no longer accepts `5++` or `1..2`, and both use the precision from Settings. The floating calculator shows the whole expression while you type and a readable error message.
 - Number fields accept the decimal separator of the phone's language, so `10,5` works in German or French. A number with misplaced group separators (such as `10.5` in German) shows an error instead of being read as 105.
 - Money amounts use lakh and crore grouping (`12,34,567.89`) on phones set to English (India) or Hindi, in every tool.
 - The unit converter keeps the exact value when you swap units, also for results of 1,000 or more; before, swap blanked the result or read `1.000` as 1 in German.

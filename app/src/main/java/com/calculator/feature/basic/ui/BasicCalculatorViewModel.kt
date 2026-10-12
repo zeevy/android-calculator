@@ -12,6 +12,7 @@ import com.calculator.core.data.tape.TapeStore
 import com.calculator.core.math.AngleMode
 import com.calculator.core.math.EvaluationResult
 import com.calculator.core.math.Evaluator
+import com.calculator.core.math.ExpressionEditor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -39,15 +40,9 @@ import javax.inject.Inject
  *  - The evaluation engine is synchronous and microsecond-fast for any
  *    realistic expression length, so no coroutine dispatch is needed.
  *
- * UX rules baked in (match common physical/iOS-style calculators):
- *  - Consecutive operators collapse: typing `1 + + ×` ends up as `1×`.
- *  - Leading `+`, `×`, `÷` are ignored; leading `-` is allowed (negation).
- *  - Only one decimal point per number segment.
- *  - A leading `.` is auto-prefixed with `0`, so `.5` reads as `0.5`.
- *  - Pressing a digit right after `=` starts a fresh expression.
- *  - Pressing an operator right after `=` chains on the result.
- *  - Pressing `=` with a trailing operator auto-completes the missing
- *    operand from the last typed number (`1 + =` → `1 + 1 = 2`).
+ * Input rules (operator collapse, decimals, leading zero, sign flip,
+ * `=` completion) live in [ExpressionEditor], shared with the widget and
+ * the floating calculator. On top of them this ViewModel adds:
  *  - Pressing `=` repeatedly re-applies the last `op + operand`.
  *  - Memory keys M+, M-, MR, MC operate on a single stored value.
  *
@@ -178,7 +173,7 @@ class BasicCalculatorViewModel
 
         private fun append(symbol: String) =
             _state.update { current ->
-                val next = nextExpressionAfterAppend(current, symbol)
+                val next = ExpressionEditor.append(current.expression, symbol, afterEquals = current.pendingRepeat != null)
                 val newPreview = preview(next, current.angleMode)
                 current
                     .copy(
@@ -201,51 +196,6 @@ class BasicCalculatorViewModel
                         lastValidPreview = holdPreview(next, newPreview, current.lastValidPreview),
                     ).also(::persist)
             }
-
-        private fun nextExpressionAfterAppend(current: BasicCalculatorUiState, symbol: String): String {
-            current.pendingRepeat?.let { return appendAfterEquals(current.expression, symbol) }
-            return appendDuringEdit(current.expression, symbol)
-        }
-
-        private fun appendAfterEquals(expr: String, symbol: String): String {
-            // After `=`, a number/decimal starts fresh; an operator or a
-            // function name chains on the result.
-            val isOperator = symbol.length == 1 && symbol[0] in ArithmeticOperators
-            val startsFunction = symbol.length > 1 && symbol.last() == '('
-            return when {
-                isOperator -> expr + symbol
-                startsFunction -> symbol
-                symbol == "." -> "0."
-                else -> symbol
-            }
-        }
-
-        private fun appendDuringEdit(expr: String, symbol: String): String {
-            val isOperator = symbol.length == 1 && symbol[0] in ArithmeticOperators
-            return when {
-                // Replace the trailing operator instead of stacking another.
-                isOperator && expr.isNotEmpty() && expr.last() in ArithmeticOperators ->
-                    expr.dropLast(1) + symbol
-
-                // Drop a stray leading `+`, `×`, `÷`, `^` (but allow leading `-` for negation).
-                isOperator && expr.isEmpty() && symbol != "-" -> expr
-
-                // Decimal-point rules.
-                symbol == "." -> appendDecimal(expr)
-
-                // Leading-zero trim: replace a lone `0` segment with the typed digit.
-                symbol.length == 1 && symbol[0].isDigit() && currentNumberIsLoneZero(expr) ->
-                    expr.dropLast(1) + symbol
-
-                else -> expr + symbol
-            }
-        }
-
-        private fun appendDecimal(expr: String): String {
-            if (currentNumberHasDot(expr)) return expr
-            val needsZeroPrefix = expr.isEmpty() || expr.last() in ArithmeticOperators || expr.last() == '('
-            return if (needsZeroPrefix) "$expr${"0."}" else "$expr."
-        }
 
         private fun backspace() =
             _state.update { current ->
@@ -286,7 +236,7 @@ class BasicCalculatorViewModel
 
                 when (val result = evaluatorFor(current.angleMode).evaluate(toEvaluate)) {
                     is EvaluationResult.Success -> {
-                        val canonicalResult = result.value.stripTrailingZeros().toPlainString()
+                        val canonicalResult = ExpressionEditor.resultText(result.value)
                         // An identity commit computed nothing, so it earns no
                         // line in either sink. This is what `=` does on a bare
                         // number: `5+6 =` leaves `11` on the display, and every
@@ -419,12 +369,12 @@ class BasicCalculatorViewModel
                 // as a no-op instead so MR is harmless before any value
                 // is stored.
                 if (current.memory.signum() == 0) return@update current
-                val mem = current.memory.stripTrailingZeros().toPlainString()
+                val mem = ExpressionEditor.resultText(current.memory)
                 val next =
                     when {
                         current.pendingRepeat != null -> mem
                         current.expression.isEmpty() -> mem
-                        current.expression.last() in ArithmeticOperators ||
+                        current.expression.last() in ExpressionEditor.ArithmeticOperators ||
                             current.expression.last() == '(' -> current.expression + mem
                         else -> current.expression + "×" + mem
                     }
@@ -465,7 +415,7 @@ class BasicCalculatorViewModel
          */
         private fun signFlip() =
             _state.update { current ->
-                val flipped = flipSignOfTrailingOperand(current.expression)
+                val flipped = ExpressionEditor.flipSign(current.expression)
                 val newPreview = preview(flipped, current.angleMode)
                 current
                     .copy(
@@ -495,33 +445,7 @@ class BasicCalculatorViewModel
                 return (current.expression + repeat) to repeat
             }
 
-            // Auto-close unbalanced opens before any other transformation.
-            // `(1+2` evaluates as `(1+2)` and `((5+1` as `((5+1))`.
-            val expr = autoCloseParens(current.expression)
-
-            // Trailing operator: auto-complete with the operand the user just
-            // typed (the number immediately before that operator). So `1+=`
-            // resolves as `1+1=2`, `10-3×=` as `10-3×3=1`, and so on. This
-            // is the *only* path that arms a repeat-equals token: pressing
-            // `=` again replays the auto-completed `+1`, `×3`, etc.
-            if (expr.last() in ArithmeticOperators) {
-                val precedingNumber = PrecedingNumberRegex.find(expr)?.groupValues?.getOrNull(1)
-                return if (precedingNumber != null) {
-                    val repeat = expr.last() + precedingNumber
-                    (expr + precedingNumber) to repeat
-                } else {
-                    // Just an operator (e.g. `-`); let the evaluator surface the error.
-                    expr to null
-                }
-            }
-
-            // Normal path: a complete expression like `2+3`. We arm an
-            // empty-string repeat token: it does NOT add anything on
-            // subsequent `=` presses (the user has to type a dangling
-            // operator to opt into the repeat chain) but it still signals
-            // "we just completed an equals" so digit/decimal presses
-            // correctly start a fresh expression (see [appendAfterEquals]).
-            return expr to ""
+            return ExpressionEditor.completeForEquals(current.expression)
         }
 
         /**
@@ -534,7 +458,7 @@ class BasicCalculatorViewModel
         private fun preview(expression: String, angleMode: AngleMode): String? {
             if (expression.isBlank()) return null
             return when (val result = evaluatorFor(angleMode).evaluate(expression)) {
-                is EvaluationResult.Success -> result.value.stripTrailingZeros().toPlainString()
+                is EvaluationResult.Success -> ExpressionEditor.resultText(result.value)
                 is EvaluationResult.Error -> null
             }
         }
@@ -618,88 +542,6 @@ class BasicCalculatorViewModel
             else -> "Math out of domain"
         }
 
-        /**
-         * Walk back through the current number segment; return true if a `.`
-         * already exists before any operator or paren is hit.
-         */
-        private fun currentNumberHasDot(expr: String): Boolean {
-            for (i in expr.length - 1 downTo 0) {
-                val c = expr[i]
-                if (c in ArithmeticOperators || c == '(' || c == ')') return false
-                if (c == '.') return true
-            }
-            return false
-        }
-
-        /**
-         * Return true if the current number segment is exactly `"0"`
-         * (i.e. ends in `0`, and the character before it - if any - is an
-         * operator or open paren). Used to power leading-zero trimming.
-         */
-        private fun currentNumberIsLoneZero(expr: String): Boolean {
-            if (expr.isEmpty() || expr.last() != '0') return false
-            val prev = expr.getOrNull(expr.length - 2) ?: return true
-            return prev in ArithmeticOperators || prev == '('
-        }
-
-        /**
-         * Append the matching `)` for every unbalanced `(` so `(1+2` reads
-         * as `(1+2)` when `=` fires. A naive paren count is enough: the
-         * tokenizer is the source of truth on mismatch, so this is just a
-         * convenience the user expects from a calculator.
-         */
-        private fun autoCloseParens(expr: String): String {
-            val opens = expr.count { it == '(' }
-            val closes = expr.count { it == ')' }
-            return if (opens > closes) expr + ")".repeat(opens - closes) else expr
-        }
-
-        /**
-         * Toggle the leading `-` of the rightmost numeric operand.
-         *
-         * "Operand" here is whatever the cursor is on - the trailing
-         * digits/dot string, optionally preceded by a unary `-`. If that
-         * unary `-` is present we remove it; otherwise we insert one.
-         *
-         * Three edge cases handled at the boundary:
-         *  - Empty expression: there's nothing to flip, but the user
-         *    pressing `±` first wants to start a negative number - so
-         *    we return `"-"` so the next digit appends to it.
-         *  - Expression ends with an operator (`10+`): no operand yet;
-         *    insert `-` after the operator (`10+-`) so the next digit
-         *    becomes the negative operand.
-         *  - Expression ends with `)` or `!`: don't try to flip; the
-         *    operand isn't a single numeric token.
-         *
-         * Each early return guards a distinct edge case; merging them
-         * into a single return point would only nest the logic and hide
-         * intent, hence the [ReturnCount] suppression.
-         */
-        @Suppress("ReturnCount")
-        private fun flipSignOfTrailingOperand(expr: String): String {
-            if (expr.isEmpty()) return "-"
-            val last = expr.last()
-            if (last in ArithmeticOperators || last == '(') {
-                // Arm a unary minus for the next digit.
-                return expr + "-"
-            }
-            if (last == ')' || last == '!') return expr // operand isn't a flat number
-            val match = TrailingNumberRegex.find(expr) ?: return expr
-            val numStart = match.range.first
-            // Is there a leading `-` directly before the number that we should
-            // remove? It counts as unary if it sits at the start of input, or
-            // right after an operator/`(`.
-            val minusPos = numStart - 1
-            if (minusPos >= 0 && expr[minusPos] == '-') {
-                val priorPos = minusPos - 1
-                val isUnary = priorPos < 0 || expr[priorPos] in "+-×÷*/^("
-                if (isUnary) {
-                    return expr.removeRange(minusPos, minusPos + 1)
-                }
-            }
-            return expr.substring(0, numStart) + "-" + expr.substring(numStart)
-        }
-
         private companion object {
             const val KEY_EXPRESSION = "calculator.expression"
             const val KEY_ERROR = "calculator.error"
@@ -709,21 +551,5 @@ class BasicCalculatorViewModel
             const val KEY_MEMORY = "calculator.memory"
             const val KEY_LAST_COMMITTED = "calculator.lastCommittedExpression"
             const val KEY_LAST_PREVIEW = "calculator.lastValidPreview"
-
-            /** Characters the keypad treats as binary arithmetic operators. */
-            val ArithmeticOperators = setOf('+', '-', '×', '÷', '*', '/', '^')
-
-            /** Trailing `op + operand` for repeat-equals. */
-            val TrailingOpRegex = Regex("([+\\-×÷*/^])(\\d+(?:\\.\\d+)?)$")
-
-            /**
-             * The numeric literal sitting immediately before a trailing
-             * operator. Used to auto-complete an incomplete expression on
-             * `=` (e.g. `10-3×` → use `3`, the operand just entered).
-             */
-            val PrecedingNumberRegex = Regex("(\\d+(?:\\.\\d+)?)[+\\-×÷*/^]$")
-
-            /** The trailing numeric literal of the expression. Used by [flipSignOfTrailingOperand]. */
-            val TrailingNumberRegex = Regex("(\\d+(?:\\.\\d+)?|\\.\\d+)$")
         }
     }
