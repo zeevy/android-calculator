@@ -4,12 +4,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.core.data.settings.UserSettings
 import com.calculator.core.designsystem.theme.CalculatorTheme
 import com.calculator.feature.settings.SettingsViewModel
@@ -32,10 +31,13 @@ import dagger.hilt.android.AndroidEntryPoint
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val settingsViewModel: SettingsViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Must be called before super.onCreate. The platform splash will
-        // remain visible until the first Compose frame draws.
-        installSplashScreen()
+        // Must be called before super.onCreate. The splash stays up until
+        // the saved settings are read, so the first frame already uses
+        // the saved theme (no light flash for a user who chose Dark).
+        installSplashScreen().setKeepOnScreenCondition { settingsViewModel.settings.value == null }
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -47,7 +49,7 @@ class MainActivity : ComponentActivity() {
         val shortcut = intent?.getStringExtra(SHORTCUT_DESTINATION)
 
         setContent {
-            ThemedCalculatorRoot(startDestinationHint = shortcut)
+            ThemedCalculatorRoot(startDestinationHint = shortcut, viewModel = settingsViewModel)
         }
     }
 
@@ -59,15 +61,14 @@ class MainActivity : ComponentActivity() {
 /**
  * Reads [SettingsViewModel] for the persisted theme + dynamicColor
  * choices, then wraps the nav host in a configured [CalculatorTheme].
- * Lives inside the Activity so hiltViewModel() resolves against the
- * ComponentActivity's ViewModelStoreOwner.
  */
 @Composable
 private fun ThemedCalculatorRoot(
-    startDestinationHint: String? = null,
-    viewModel: SettingsViewModel = hiltViewModel(),
+    startDestinationHint: String?,
+    viewModel: SettingsViewModel,
 ) {
-    val settings by viewModel.settings.collectAsState()
+    // Nothing is drawn until the settings load; the splash covers it.
+    val settings = viewModel.settings.collectAsStateWithLifecycle().value ?: return
     val darkTheme =
         when (settings.theme) {
             UserSettings.ThemeOption.System -> isSystemInDarkTheme()

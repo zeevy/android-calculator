@@ -1,13 +1,18 @@
 package com.calculator.core.data.settings
 
+import android.util.Log
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -43,9 +48,11 @@ interface SettingsRepository {
 
     suspend fun setBmiWeightImperial(imperial: Boolean)
 
-    suspend fun setLastTzFromZone(zone: String)
-
-    suspend fun setLastTzToZone(zone: String)
+    /** Saves the timezone converter's zone pair in one write, so it is never half saved. */
+    suspend fun setLastTzPair(
+        from: String,
+        to: String,
+    )
 }
 
 @Singleton
@@ -55,77 +62,98 @@ class DataStoreSettingsRepository
         private val dataStore: DataStore<Preferences>,
     ) : SettingsRepository {
         override val settings: Flow<UserSettings> =
-            dataStore.data.map { prefs ->
-                UserSettings(
-                    theme =
-                        prefs[Keys.Theme]?.let {
-                            runCatching { UserSettings.ThemeOption.valueOf(it) }.getOrNull()
-                        } ?: UserSettings.ThemeOption.System,
-                    dynamicColor = prefs[Keys.DynamicColor] ?: true,
-                    haptics = prefs[Keys.Haptics] ?: true,
-                    sound = prefs[Keys.Sound] ?: true,
-                    precision = prefs[Keys.Precision] ?: UserSettings.DEFAULT_PRECISION,
-                    crashOptIn = prefs[Keys.CrashOptIn] ?: false,
-                    lastUnitCategory = prefs[Keys.LastUnitCategory],
-                    gstIntraState = prefs[Keys.GstIntraState] ?: true,
-                    gstRate = prefs[Keys.GstRate] ?: "18",
-                    bmiHeightImperial = prefs[Keys.BmiHeightImperial] ?: false,
-                    bmiWeightImperial = prefs[Keys.BmiWeightImperial] ?: false,
-                    lastTzFromZone = prefs[Keys.LastTzFromZone],
-                    lastTzToZone = prefs[Keys.LastTzToZone],
-                )
-            }
+            dataStore.data
+                // A read error (not a corrupt file, which DataModule's
+                // corruption handler already replaces) falls back to the
+                // defaults instead of crashing every screen that observes.
+                .catch { e -> if (e is IOException) emit(emptyPreferences()) else throw e }
+                .map { prefs ->
+                    UserSettings(
+                        theme =
+                            prefs[Keys.Theme]?.let {
+                                runCatching { UserSettings.ThemeOption.valueOf(it) }.getOrNull()
+                            } ?: UserSettings.ThemeOption.System,
+                        dynamicColor = prefs[Keys.DynamicColor] ?: true,
+                        haptics = prefs[Keys.Haptics] ?: true,
+                        sound = prefs[Keys.Sound] ?: true,
+                        precision = prefs[Keys.Precision] ?: UserSettings.DEFAULT_PRECISION,
+                        crashOptIn = prefs[Keys.CrashOptIn] ?: false,
+                        lastUnitCategory = prefs[Keys.LastUnitCategory],
+                        gstIntraState = prefs[Keys.GstIntraState] ?: true,
+                        gstRate = prefs[Keys.GstRate] ?: "18",
+                        bmiHeightImperial = prefs[Keys.BmiHeightImperial] ?: false,
+                        bmiWeightImperial = prefs[Keys.BmiWeightImperial] ?: false,
+                        lastTzFromZone = prefs[Keys.LastTzFromZone],
+                        lastTzToZone = prefs[Keys.LastTzToZone],
+                    )
+                }
 
         override suspend fun setTheme(theme: UserSettings.ThemeOption) {
-            dataStore.edit { it[Keys.Theme] = theme.name }
+            safeEdit { it[Keys.Theme] = theme.name }
         }
 
         override suspend fun setDynamicColor(enabled: Boolean) {
-            dataStore.edit { it[Keys.DynamicColor] = enabled }
+            safeEdit { it[Keys.DynamicColor] = enabled }
         }
 
         override suspend fun setHaptics(enabled: Boolean) {
-            dataStore.edit { it[Keys.Haptics] = enabled }
+            safeEdit { it[Keys.Haptics] = enabled }
         }
 
         override suspend fun setSound(enabled: Boolean) {
-            dataStore.edit { it[Keys.Sound] = enabled }
+            safeEdit { it[Keys.Sound] = enabled }
         }
 
         override suspend fun setPrecision(precision: Int) {
-            dataStore.edit { it[Keys.Precision] = precision.coerceIn(UserSettings.PRECISION_RANGE) }
+            safeEdit { it[Keys.Precision] = precision.coerceIn(UserSettings.PRECISION_RANGE) }
         }
 
         override suspend fun setCrashOptIn(enabled: Boolean) {
-            dataStore.edit { it[Keys.CrashOptIn] = enabled }
+            safeEdit { it[Keys.CrashOptIn] = enabled }
         }
 
         override suspend fun setLastUnitCategory(category: String) {
-            dataStore.edit { it[Keys.LastUnitCategory] = category }
+            safeEdit { it[Keys.LastUnitCategory] = category }
         }
 
         override suspend fun setGstIntraState(intra: Boolean) {
-            dataStore.edit { it[Keys.GstIntraState] = intra }
+            safeEdit { it[Keys.GstIntraState] = intra }
         }
 
         override suspend fun setGstRate(rate: String) {
-            dataStore.edit { it[Keys.GstRate] = rate }
+            safeEdit { it[Keys.GstRate] = rate }
         }
 
         override suspend fun setBmiHeightImperial(imperial: Boolean) {
-            dataStore.edit { it[Keys.BmiHeightImperial] = imperial }
+            safeEdit { it[Keys.BmiHeightImperial] = imperial }
         }
 
         override suspend fun setBmiWeightImperial(imperial: Boolean) {
-            dataStore.edit { it[Keys.BmiWeightImperial] = imperial }
+            safeEdit { it[Keys.BmiWeightImperial] = imperial }
         }
 
-        override suspend fun setLastTzFromZone(zone: String) {
-            dataStore.edit { it[Keys.LastTzFromZone] = zone }
+        override suspend fun setLastTzPair(
+            from: String,
+            to: String,
+        ) {
+            safeEdit {
+                it[Keys.LastTzFromZone] = from
+                it[Keys.LastTzToZone] = to
+            }
         }
 
-        override suspend fun setLastTzToZone(zone: String) {
-            dataStore.edit { it[Keys.LastTzToZone] = zone }
+        // A failed write (disk full, file locked) loses that one change
+        // instead of crashing the caller's coroutine.
+        private suspend fun safeEdit(change: (MutablePreferences) -> Unit) {
+            try {
+                dataStore.edit(change)
+            } catch (e: IOException) {
+                Log.w(TAG, "Could not save a setting", e)
+            }
+        }
+
+        private companion object {
+            const val TAG = "SettingsRepository"
         }
 
         // Centralised keys so renames stay in one place.

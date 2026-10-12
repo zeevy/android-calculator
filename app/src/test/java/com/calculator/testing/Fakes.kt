@@ -47,9 +47,10 @@ class FakeSettingsRepository(
 
     override suspend fun setBmiWeightImperial(imperial: Boolean) = edit { copy(bmiWeightImperial = imperial) }
 
-    override suspend fun setLastTzFromZone(zone: String) = edit { copy(lastTzFromZone = zone) }
-
-    override suspend fun setLastTzToZone(zone: String) = edit { copy(lastTzToZone = zone) }
+    override suspend fun setLastTzPair(
+        from: String,
+        to: String,
+    ) = edit { copy(lastTzFromZone = from, lastTzToZone = to) }
 
     private fun edit(change: UserSettings.() -> UserSettings) {
         snapshot.value = snapshot.value.change()

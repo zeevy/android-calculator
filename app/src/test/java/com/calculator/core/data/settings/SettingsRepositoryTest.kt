@@ -4,6 +4,8 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import app.cash.turbine.test
+import com.calculator.core.data.di.DataModule
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -36,6 +38,33 @@ class SettingsRepositoryTest {
     fun cleanUp() {
         if (testFile.exists()) testFile.delete()
     }
+
+    @Test
+    fun corruptSettingsFileGivesDefaultsInsteadOfACrash() =
+        runTest {
+            val appFile = context.preferencesDataStoreFile("user_settings")
+            appFile.parentFile?.mkdirs()
+            appFile.writeBytes(byteArrayOf(0x7f, 0x00, 0x13, 0x37, 0x42))
+            try {
+                val repo = DataStoreSettingsRepository(DataModule.provideUserSettingsDataStore(context))
+                assertEquals(UserSettings(), repo.settings.first())
+                // The corrupt file is replaced, so new choices save again.
+                repo.setTheme(UserSettings.ThemeOption.Dark)
+                assertEquals(UserSettings.ThemeOption.Dark, repo.settings.first().theme)
+            } finally {
+                appFile.delete()
+            }
+        }
+
+    @Test
+    fun timezonePairIsSavedTogether() =
+        runTest {
+            val repo = DataStoreSettingsRepository(newDataStore())
+            repo.setLastTzPair("Europe/Paris", "Asia/Tokyo")
+            val saved = repo.settings.first()
+            assertEquals("Europe/Paris", saved.lastTzFromZone)
+            assertEquals("Asia/Tokyo", saved.lastTzToZone)
+        }
 
     @Test
     fun defaultsAreReturnedWhenNoValuesAreStored() =

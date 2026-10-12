@@ -25,11 +25,16 @@ class SettingsViewModel
     constructor(
         private val repository: SettingsRepository,
     ) : ViewModel() {
-        val settings: StateFlow<UserSettings> =
+        /**
+         * Saved settings, or null until the first read from disk finishes.
+         * The theme root waits for a value so the first frame already uses
+         * the saved theme.
+         */
+        val settings: StateFlow<UserSettings?> =
             repository.settings.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
-                initialValue = UserSettings(),
+                initialValue = null,
             )
 
         fun setTheme(theme: UserSettings.ThemeOption) {

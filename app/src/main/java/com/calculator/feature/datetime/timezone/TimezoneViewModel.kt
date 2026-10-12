@@ -59,13 +59,13 @@ class TimezoneViewModel
 
         fun setFromZone(zone: String) {
             _state.update { it.copy(fromZone = zone, pickerOpen = null) }
-            viewModelScope.launch { settings.setLastTzFromZone(zone) }
+            recordRecent()
             recompute()
         }
 
         fun setToZone(zone: String) {
             _state.update { it.copy(toZone = zone, pickerOpen = null) }
-            viewModelScope.launch { settings.setLastTzToZone(zone) }
+            recordRecent()
             recompute()
         }
 
@@ -142,8 +142,7 @@ class TimezoneViewModel
         private fun recordRecent() {
             val snap = _state.value
             viewModelScope.launch {
-                settings.setLastTzFromZone(snap.fromZone)
-                settings.setLastTzToZone(snap.toZone)
+                settings.setLastTzPair(snap.fromZone, snap.toZone)
             }
         }
 

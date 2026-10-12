@@ -2,7 +2,9 @@ package com.calculator.core.data.di
 
 import android.content.Context
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
 import com.calculator.core.data.converter.RoomUnitConverterRepository
@@ -33,8 +35,11 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DataModule {
+    // A corrupt file is replaced with empty preferences (all defaults)
+    // instead of crashing every launch until the user clears app data.
     private val Context.userSettingsDataStore: DataStore<Preferences> by preferencesDataStore(
         name = SETTINGS_DATASTORE_NAME,
+        corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
     )
 
     private const val SETTINGS_DATASTORE_NAME = "user_settings"

@@ -86,11 +86,11 @@ class UnitConverterViewModel
          * output reflects the new units immediately.
          */
         fun selectCategory(category: UnitCategory) {
+            // Persist the choice so the next time the user opens the
+            // converter they land on this category. Its own coroutine, so
+            // the unit lookup below does not wait for the disk write.
+            viewModelScope.launch { settings.setLastUnitCategory(category.name) }
             viewModelScope.launch {
-                // Persist the choice so the next time the user opens
-                // the converter they land on this category. Fire-and-
-                // forget; failure to write a preference is non-fatal.
-                settings.setLastUnitCategory(category.name)
                 val units = ConversionTable.unitsFor(category)
                 val saved = repository.recent(category)
                 // `firstOrNull` (not single()) because the saved symbol

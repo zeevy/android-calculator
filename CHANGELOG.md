@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A damaged settings file no longer crashes the app on every launch; the settings go back to their defaults and save normally again.
+- On a cold start the app no longer shows one frame in the wrong theme when the chosen theme differs from the system theme.
 - On Android 13 and later, starting the floating calculator from Settings now asks for the notification permission, so its notification and Stop action show in the shade.
 - The floating calculator service stops quietly instead of crashing when the overlay permission is missing.
 - No activity other than the main screen can be started by other apps.

@@ -1,5 +1,6 @@
 package com.calculator.feature.settings
 
+import app.cash.turbine.test
 import com.calculator.core.data.settings.UserSettings
 import com.calculator.testing.FakeSettingsRepository
 import kotlinx.coroutines.Dispatchers
@@ -12,6 +13,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -38,10 +40,14 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `default settings are exposed`() =
+    fun `settings are null until read, then the saved values`() =
         runTest(dispatcher) {
-            advanceUntilIdle()
-            assertEquals(UserSettings(), viewModel.settings.value)
+            assertNull(viewModel.settings.value)
+            viewModel.settings.test {
+                assertNull(awaitItem())
+                assertEquals(UserSettings(), awaitItem())
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 
     @Test

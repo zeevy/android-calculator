@@ -21,7 +21,7 @@ See [REQUIREMENTS.md](REQUIREMENTS.md) for the full product specification - it i
 | Navigation | Navigation Compose with **type-safe routes** (serializable route classes) |
 | DI | Hilt |
 | Async | Kotlin Coroutines + Flow |
-| Persistence | Room (history, recent unit pairs) + DataStore Preferences (user settings only) |
+| Persistence | Room (history, recent unit pairs) + DataStore Preferences (user settings and per-tool memory) |
 | Network | None. App is fully offline; no permissions declared. |
 | Math engine | Custom evaluator: `BigDecimal` for arithmetic, bounded `Double` with rounding for transcendentals (sin/cos/log/exp). Revisit BigMath-style libs only if precision bugs appear. |
 | Build | Gradle Kotlin DSL, **Version Catalogs** (`gradle/libs.versions.toml`), R8 minification + resource shrinking on release |

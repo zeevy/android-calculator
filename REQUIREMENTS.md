@@ -38,7 +38,7 @@ A modern, fully-offline, multi-purpose calculator for Android that bundles a sta
 | Architecture | MVVM + Unidirectional Data Flow, single-activity |
 | DI | Hilt |
 | Async | Kotlin Coroutines + Flow |
-| Persistence | Room (history, recent unit pairs) + DataStore Preferences (user settings) |
+| Persistence | Room (history, recent unit pairs) + DataStore Preferences (user settings and per-tool memory) |
 | Networking | None. App is fully offline; no permissions declared. |
 | Math Engine | Custom evaluator: `BigDecimal` for arithmetic/precision-sensitive ops; bounded `Double` with rounding for transcendental ops (sin/cos/log/exp). Optionally back transcendentals with a BigMath-style library if precision is insufficient. |
 | Build | Gradle Kotlin DSL, Version Catalogs (libs.versions.toml), R8 minification + resource shrinking on release |
@@ -150,9 +150,13 @@ app/
 ## 8. Data & APIs
 
 - **Room DB**
-  - `history` (id, expression, result, timestampUtc, type)
-  - `recent_unit_pair` (category, fromUnit, toUnit)
-- **DataStore Preferences** - user settings only (theme, dynamic-color flag, haptics, sound, precision, default unit system, crash-reporting opt-in).
+  - `history` (id, expression, result, timestampUtc, type), newest 1000 rows kept.
+  - `recent_unit_pair` (category, fromUnit, toUnit): the unit converter's last pair per category.
+- **DataStore Preferences** (`user_settings`)
+  - App settings shown in the Settings sheet: theme, dynamic-color flag, haptics, sound, precision, crash-reporting opt-in.
+  - Per-tool memory, so a tool opens where the user left it: last unit category, GST intra/inter and rate, BMI height and weight units, timezone converter zone pair (saved in one write).
+  - A corrupt file is replaced with defaults; a failed read or write never crashes the app.
+- **SharedPreferences** (`recent_tools`) - up to three recently opened tools, used only to publish launcher shortcuts.
 - **External APIs** - none. The currency-rates provider was removed when the currency converter feature was deleted; no network access is wired up.
 
 ## 9. Testing Strategy

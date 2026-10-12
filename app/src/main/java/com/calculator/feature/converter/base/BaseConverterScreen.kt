@@ -9,6 +9,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -42,33 +44,23 @@ import com.calculator.core.domain.math.BaseConverter
  */
 @Composable
 fun BaseConverterScreen(onOpenMenu: () -> Unit) {
-    // Seed each field independently so a mid-edit string like "" or
-    // "0xff" doesn't have to round-trip through Long before showing
-    // back. lastEdited tracks which radix is the source-of-truth and
-    // which three should be rewritten on the next recomposition.
-    var bin by remember { mutableStateOf("101010") }
-    var oct by remember { mutableStateOf("52") }
-    var dec by remember { mutableStateOf("42") }
-    var hex by remember { mutableStateOf("2A") }
-    var lastEdited by remember { mutableStateOf(BaseConverter.DEC) }
-
-    val sourceText =
-        when (lastEdited) {
-            BaseConverter.BIN -> bin
-            BaseConverter.OCT -> oct
-            BaseConverter.HEX -> hex
-            else -> dec
-        }
+    // Only the field the user is typing in keeps its raw text, so a
+    // mid-edit string like "" or "1_0" shows back exactly as typed. The
+    // other three are formatted from the last value that parsed.
+    var sourceText by remember { mutableStateOf("42") }
+    var lastEdited by remember { mutableIntStateOf(BaseConverter.DEC) }
+    var value by remember { mutableLongStateOf(DEFAULT_VALUE) }
     val parsed = BaseConverter.parse(sourceText, lastEdited)
 
-    if (parsed != null) {
-        // Re-derive the other three sides. Each branch only rewrites
-        // the non-source fields so the user's in-flight string in the
-        // source field is preserved exactly as typed.
-        if (lastEdited != BaseConverter.BIN) bin = BaseConverter.format(parsed, BaseConverter.BIN)
-        if (lastEdited != BaseConverter.OCT) oct = BaseConverter.format(parsed, BaseConverter.OCT)
-        if (lastEdited != BaseConverter.DEC) dec = BaseConverter.format(parsed, BaseConverter.DEC)
-        if (lastEdited != BaseConverter.HEX) hex = BaseConverter.format(parsed, BaseConverter.HEX)
+    fun textFor(radix: Int) = if (radix == lastEdited) sourceText else BaseConverter.format(value, radix)
+
+    fun edit(
+        radix: Int,
+        text: String,
+    ) {
+        sourceText = text
+        lastEdited = radix
+        BaseConverter.parse(text, radix)?.let { value = it }
     }
 
     LifeCalculatorScaffold(
@@ -79,45 +71,37 @@ fun BaseConverterScreen(onOpenMenu: () -> Unit) {
             LifeCalcSectionLabel(stringResource(R.string.basecalc_section_values))
             BaseField(
                 label = stringResource(R.string.basecalc_dec),
-                value = dec,
+                value = textFor(BaseConverter.DEC),
                 onValueChange = {
                     // Decimal: digit-only, accept negative not relevant
                     // (unsigned semantics).
-                    val filtered = it.filter { ch -> ch.isDigit() || ch == '_' }
-                    dec = filtered
-                    lastEdited = BaseConverter.DEC
+                    edit(BaseConverter.DEC, it.filter { ch -> ch.isDigit() || ch == '_' })
                 },
                 keyboard = KeyboardType.Number,
             )
             BaseField(
                 label = stringResource(R.string.basecalc_hex),
-                value = hex,
+                value = textFor(BaseConverter.HEX),
                 onValueChange = {
-                    val filtered = it.filter { ch -> ch.isLetterOrDigit() || ch == '_' }
-                    hex = filtered.uppercase()
-                    lastEdited = BaseConverter.HEX
+                    edit(BaseConverter.HEX, it.filter { ch -> ch.isLetterOrDigit() || ch == '_' }.uppercase())
                 },
                 keyboard = KeyboardType.Text,
                 monospace = true,
             )
             BaseField(
                 label = stringResource(R.string.basecalc_oct),
-                value = oct,
+                value = textFor(BaseConverter.OCT),
                 onValueChange = {
-                    val filtered = it.filter { ch -> (ch in '0'..'7') || ch == '_' }
-                    oct = filtered
-                    lastEdited = BaseConverter.OCT
+                    edit(BaseConverter.OCT, it.filter { ch -> (ch in '0'..'7') || ch == '_' })
                 },
                 keyboard = KeyboardType.Number,
                 monospace = true,
             )
             BaseField(
                 label = stringResource(R.string.basecalc_bin),
-                value = bin,
+                value = textFor(BaseConverter.BIN),
                 onValueChange = {
-                    val filtered = it.filter { ch -> ch == '0' || ch == '1' || ch == '_' }
-                    bin = filtered
-                    lastEdited = BaseConverter.BIN
+                    edit(BaseConverter.BIN, it.filter { ch -> ch == '0' || ch == '1' || ch == '_' })
                 },
                 keyboard = KeyboardType.Number,
                 monospace = true,
@@ -171,3 +155,5 @@ private fun BaseField(
         )
     }
 }
+
+private const val DEFAULT_VALUE = 42L
