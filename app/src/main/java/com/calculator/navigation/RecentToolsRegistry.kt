@@ -60,11 +60,13 @@ internal object RecentToolsRegistry {
         syncShortcuts(app, readRecents(prefs))
     }
 
+    // Ids of tools not offered on this device (GST outside India) are
+    // skipped, so they do not take one of the MAX_RECENTS slots.
     private fun readRecents(prefs: android.content.SharedPreferences): List<String> =
         prefs
             .getString(KEY_LIST, "")
             ?.split(",")
-            ?.filter { it.isNotBlank() }
+            ?.filter { availableToolById(it, Locale.getDefault(), ZoneId.systemDefault()) != null }
             ?: emptyList()
 
     private fun syncShortcuts(context: Context, recentIds: List<String>) {
