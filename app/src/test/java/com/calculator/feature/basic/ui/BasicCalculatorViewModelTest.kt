@@ -2,12 +2,14 @@ package com.calculator.feature.basic.ui
 
 import androidx.lifecycle.SavedStateHandle
 import com.calculator.core.math.AngleMode
+import com.calculator.testing.MainDispatcherExtension
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
  * Behavioural tests for [BasicCalculatorViewModel].
@@ -25,7 +27,12 @@ import org.junit.jupiter.api.Test
  */
 class BasicCalculatorViewModelTest {
     private val savedStateHandle = SavedStateHandle()
-    private val viewModel = BasicCalculatorViewModel(savedStateHandle, historyRepository = null)
+
+    @JvmField
+    @RegisterExtension
+    val mainDispatcher = MainDispatcherExtension()
+
+    private val viewModel by lazy { basicCalculatorViewModel(savedStateHandle) }
 
     private fun type(vararg symbols: String) = symbols.forEach { viewModel.onEvent(BasicCalculatorEvent.Append(it)) }
 
@@ -435,7 +442,7 @@ class BasicCalculatorViewModelTest {
 
             // Simulate process death by spinning up a new ViewModel with the
             // same SavedStateHandle - that's what the system does on restore.
-            val restored = BasicCalculatorViewModel(savedStateHandle)
+            val restored = basicCalculatorViewModel(savedStateHandle)
 
             assertEquals("6", restored.state.value.expression)
             assertEquals("", restored.state.value.pendingRepeat)
@@ -447,7 +454,7 @@ class BasicCalculatorViewModelTest {
         fun `error message survives restoration`() {
             type("5", "÷", "0")
             equals()
-            val restored = BasicCalculatorViewModel(savedStateHandle)
+            val restored = basicCalculatorViewModel(savedStateHandle)
             assertEquals("Can't divide by zero", restored.state.value.errorMessage)
         }
 
@@ -459,7 +466,7 @@ class BasicCalculatorViewModelTest {
             type("1", "+")
             equals()
 
-            val restored = BasicCalculatorViewModel(savedStateHandle)
+            val restored = basicCalculatorViewModel(savedStateHandle)
             restored.onEvent(BasicCalculatorEvent.Equals)
             assertEquals("3", restored.state.value.expression)
         }
@@ -470,7 +477,7 @@ class BasicCalculatorViewModelTest {
             equals()
             clear()
 
-            val restored = BasicCalculatorViewModel(savedStateHandle)
+            val restored = basicCalculatorViewModel(savedStateHandle)
             assertEquals("", restored.state.value.expression)
             assertNull(restored.state.value.pendingRepeat)
         }

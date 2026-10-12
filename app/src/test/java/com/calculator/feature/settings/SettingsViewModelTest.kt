@@ -1,12 +1,9 @@
 package com.calculator.feature.settings
 
-import com.calculator.core.data.settings.SettingsRepository
 import com.calculator.core.data.settings.UserSettings
+import com.calculator.testing.FakeSettingsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -78,63 +75,4 @@ class SettingsViewModelTest {
             advanceUntilIdle()
             assertTrue(repo.snapshot.value.crashOptIn)
         }
-
-    /** Tiny in-memory fake so the test doesn't need DataStore + Robolectric. */
-    private class FakeSettingsRepository : SettingsRepository {
-        val snapshot = MutableStateFlow(UserSettings())
-
-        override val settings: Flow<UserSettings> = snapshot.asStateFlow()
-
-        override suspend fun setTheme(theme: UserSettings.ThemeOption) {
-            snapshot.value = snapshot.value.copy(theme = theme)
-        }
-
-        override suspend fun setDynamicColor(enabled: Boolean) {
-            snapshot.value = snapshot.value.copy(dynamicColor = enabled)
-        }
-
-        override suspend fun setHaptics(enabled: Boolean) {
-            snapshot.value = snapshot.value.copy(haptics = enabled)
-        }
-
-        override suspend fun setSound(enabled: Boolean) {
-            snapshot.value = snapshot.value.copy(sound = enabled)
-        }
-
-        override suspend fun setPrecision(precision: Int) {
-            snapshot.value = snapshot.value.copy(precision = precision)
-        }
-
-        override suspend fun setCrashOptIn(enabled: Boolean) {
-            snapshot.value = snapshot.value.copy(crashOptIn = enabled)
-        }
-
-        override suspend fun setLastUnitCategory(category: String) {
-            snapshot.value = snapshot.value.copy(lastUnitCategory = category)
-        }
-
-        override suspend fun setGstIntraState(intra: Boolean) {
-            snapshot.value = snapshot.value.copy(gstIntraState = intra)
-        }
-
-        override suspend fun setGstRate(rate: String) {
-            snapshot.value = snapshot.value.copy(gstRate = rate)
-        }
-
-        override suspend fun setBmiHeightImperial(imperial: Boolean) {
-            snapshot.value = snapshot.value.copy(bmiHeightImperial = imperial)
-        }
-
-        override suspend fun setBmiWeightImperial(imperial: Boolean) {
-            snapshot.value = snapshot.value.copy(bmiWeightImperial = imperial)
-        }
-
-        override suspend fun setLastTzFromZone(zone: String) {
-            snapshot.value = snapshot.value.copy(lastTzFromZone = zone)
-        }
-
-        override suspend fun setLastTzToZone(zone: String) {
-            snapshot.value = snapshot.value.copy(lastTzToZone = zone)
-        }
-    }
 }

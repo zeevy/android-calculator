@@ -1,15 +1,12 @@
 package com.calculator.feature.converter.unit
 
 import com.calculator.core.data.converter.UnitConverterRepository
-import com.calculator.core.data.settings.SettingsRepository
 import com.calculator.core.data.settings.UserSettings
 import com.calculator.core.domain.converter.ConversionTable
 import com.calculator.core.domain.converter.UnitCategory
+import com.calculator.testing.FakeSettingsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -29,7 +26,7 @@ import org.junit.jupiter.api.Test
 class UnitConverterViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val repo = FakeRepo()
-    private val settings = FakeSettings()
+    private val settings = FakeSettingsRepository(UserSettings(precision = 6))
     private lateinit var viewModel: UnitConverterViewModel
 
     @BeforeEach
@@ -225,40 +222,5 @@ class UnitConverterViewModelTest {
         override suspend fun record(category: UnitCategory, fromSymbol: String, toSymbol: String) {
             records[category] = fromSymbol to toSymbol
         }
-    }
-
-    private class FakeSettings : SettingsRepository {
-        private val snapshot = MutableStateFlow(UserSettings(precision = 6))
-        override val settings: Flow<UserSettings> = snapshot.asStateFlow()
-
-        override suspend fun setTheme(theme: UserSettings.ThemeOption) = Unit
-
-        override suspend fun setDynamicColor(enabled: Boolean) = Unit
-
-        override suspend fun setHaptics(enabled: Boolean) = Unit
-
-        override suspend fun setSound(enabled: Boolean) = Unit
-
-        override suspend fun setPrecision(precision: Int) {
-            snapshot.value = snapshot.value.copy(precision = precision)
-        }
-
-        override suspend fun setCrashOptIn(enabled: Boolean) = Unit
-
-        override suspend fun setLastUnitCategory(category: String) {
-            snapshot.value = snapshot.value.copy(lastUnitCategory = category)
-        }
-
-        override suspend fun setGstIntraState(intra: Boolean) = Unit
-
-        override suspend fun setGstRate(rate: String) = Unit
-
-        override suspend fun setBmiHeightImperial(imperial: Boolean) = Unit
-
-        override suspend fun setBmiWeightImperial(imperial: Boolean) = Unit
-
-        override suspend fun setLastTzFromZone(zone: String) = Unit
-
-        override suspend fun setLastTzToZone(zone: String) = Unit
     }
 }

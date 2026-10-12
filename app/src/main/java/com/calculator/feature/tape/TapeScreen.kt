@@ -20,7 +20,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,9 +28,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.R
 import com.calculator.core.data.tape.TapeEntry
-import com.calculator.core.data.tape.TapeHolder
 import com.calculator.core.designsystem.component.LifeCalculatorScaffold
 
 /**
@@ -39,19 +39,21 @@ import com.calculator.core.designsystem.component.LifeCalculatorScaffold
  * bottom (just like a printed receipt). Tap any row to recall its
  * result back into the basic calculator; "Clear" empties the tape.
  *
- * The tape is in-memory and process-scoped (see [TapeHolder]) - it
+ * The tape is in-memory and process-scoped (see `TapeStore`) - it
  * survives navigation and configuration changes but resets on app
  * restart. Persistent history lives in the History sheet.
  *
  * @param onOpenMenu Opens the app's tools menu.
  * @param onReuseExpression Sends a tapped result to the basic calculator.
+ * @param viewModel Holds the session tape.
  */
 @Composable
 fun TapeScreen(
     onOpenMenu: () -> Unit,
     onReuseExpression: (String) -> Unit,
+    viewModel: TapeViewModel = hiltViewModel(),
 ) {
-    val entries by TapeHolder.entries.collectAsState()
+    val entries by viewModel.entries.collectAsStateWithLifecycle()
     val scheme = MaterialTheme.colorScheme
 
     LifeCalculatorScaffold(
@@ -60,7 +62,7 @@ fun TapeScreen(
         scrollable = false,
         actions = {
             if (entries.isNotEmpty()) {
-                IconButton(onClick = { TapeHolder.clear() }) {
+                IconButton(onClick = viewModel::clear) {
                     Icon(
                         imageVector = Icons.Filled.DeleteOutline,
                         contentDescription = stringResource(R.string.tape_clear),

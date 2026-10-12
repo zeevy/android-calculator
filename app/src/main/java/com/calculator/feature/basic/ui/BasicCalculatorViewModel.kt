@@ -8,7 +8,7 @@ import com.calculator.core.data.history.HistoryRepository
 import com.calculator.core.data.settings.SettingsRepository
 import com.calculator.core.data.settings.UserSettings
 import com.calculator.core.data.tape.TapeEntry
-import com.calculator.core.data.tape.TapeHolder
+import com.calculator.core.data.tape.TapeStore
 import com.calculator.core.math.AngleMode
 import com.calculator.core.math.EvaluationResult
 import com.calculator.core.math.Evaluator
@@ -59,24 +59,22 @@ class BasicCalculatorViewModel
     @Inject
     constructor(
         private val savedStateHandle: SavedStateHandle,
-        private val historyRepository: HistoryRepository? = null,
-        settingsRepository: SettingsRepository? = null,
+        private val historyRepository: HistoryRepository,
+        settingsRepository: SettingsRepository,
+        private val tapeStore: TapeStore,
     ) : ViewModel() {
-        // Precision flows in from SettingsRepository, defaulting to
-        // the app default when no repo is wired (e.g. unit tests construct
-        // the VM without one). Each `=` and live preview pulls the
-        // current value, so a precision change in Settings takes
-        // effect on the next keypress without restarting anything.
+        // Precision flows in from SettingsRepository. Each `=` and live
+        // preview pulls the current value, so a precision change in
+        // Settings takes effect on the next keypress without restarting
+        // anything.
         private val precision: StateFlow<Int> =
-            settingsRepository
-                ?.settings
-                ?.map { it.precision }
-                ?.stateIn(
+            settingsRepository.settings
+                .map { it.precision }
+                .stateIn(
                     scope = viewModelScope,
                     started = SharingStarted.Eagerly,
                     initialValue = UserSettings.DEFAULT_PRECISION,
                 )
-                ?: MutableStateFlow(UserSettings.DEFAULT_PRECISION).asStateFlow()
 
         // Restore from the SavedStateHandle so calculator state survives
         // process death and config changes. `liveResult` is derived from
@@ -88,12 +86,12 @@ class BasicCalculatorViewModel
          * Session tape of committed equations, oldest first.
          *
          * Surfaced as its own flow rather than folded into
-         * [BasicCalculatorUiState] because it lives in the process-wide
-         * [TapeHolder] - the display state is per-ViewModel, the tape is
+         * [BasicCalculatorUiState] because it lives in the shared
+         * [TapeStore] - the display state is per-ViewModel, the tape is
          * not, and keeping them separate avoids copying the whole list
          * into a new state object on every keystroke.
          */
-        val tape: StateFlow<List<TapeEntry>> = TapeHolder.entries
+        val tape: StateFlow<List<TapeEntry>> = tapeStore.entries
 
         private fun loadFromSavedState(): BasicCalculatorUiState {
             val expression = savedStateHandle.get<String>(KEY_EXPRESSION).orEmpty()
@@ -139,11 +137,9 @@ class BasicCalculatorViewModel
         init {
             // Key sounds and haptics follow Settings live; they are not part
             // of the saved calculator state.
-            settingsRepository?.settings?.let { flow ->
-                viewModelScope.launch {
-                    flow.collect { s ->
-                        _state.update { it.copy(soundEnabled = s.sound, hapticsEnabled = s.haptics) }
-                    }
+            viewModelScope.launch {
+                settingsRepository.settings.collect { s ->
+                    _state.update { it.copy(soundEnabled = s.sound, hapticsEnabled = s.haptics) }
                 }
             }
         }
@@ -159,7 +155,7 @@ class BasicCalculatorViewModel
                     // sheet", so the inline tape goes with the expression.
                     // The persistent History sheet is untouched - that is
                     // the durable record.
-                    TapeHolder.clear()
+                    tapeStore.clear()
                     clear()
                 }
                 BasicCalculatorEvent.Equals -> commit()
@@ -176,7 +172,7 @@ class BasicCalculatorViewModel
                 BasicCalculatorEvent.MemoryRecall -> memoryRecall()
                 BasicCalculatorEvent.MemoryClear -> memoryClear()
                 BasicCalculatorEvent.SignFlip -> signFlip()
-                is BasicCalculatorEvent.DeleteTapeLine -> TapeHolder.remove(event.id)
+                is BasicCalculatorEvent.DeleteTapeLine -> tapeStore.remove(event.id)
             }
         }
 
@@ -370,15 +366,13 @@ class BasicCalculatorViewModel
             scientific: Boolean,
             isRepeat: Boolean,
         ) {
-            TapeHolder.add(expression, result)
+            tapeStore.add(expression, result)
             if (isRepeat) return
-            // Best-effort and fire-and-forget: no repository is wired in
-            // tests and previews, and a failed insert is non-fatal
-            // because the user already saw their result.
-            val repo = historyRepository ?: return
+            // Best-effort and fire-and-forget: a failed insert is
+            // non-fatal because the user already saw their result.
             viewModelScope.launch {
                 runCatching {
-                    repo.add(
+                    historyRepository.add(
                         expression = expression,
                         result = result,
                         type = if (scientific) HistoryEntry.Type.Scientific else HistoryEntry.Type.Basic,
