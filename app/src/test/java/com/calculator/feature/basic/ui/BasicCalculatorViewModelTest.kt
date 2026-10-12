@@ -1,7 +1,9 @@
 package com.calculator.feature.basic.ui
 
 import androidx.lifecycle.SavedStateHandle
+import com.calculator.core.data.settings.UserSettings
 import com.calculator.core.math.AngleMode
+import com.calculator.testing.FakeSettingsRepository
 import com.calculator.testing.MainDispatcherExtension
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -64,6 +66,23 @@ class BasicCalculatorViewModelTest {
             assertTrue(state.scientific)
             viewModel.onEvent(BasicCalculatorEvent.SetScientific(false))
             assertEquals(false, state.scientific)
+        }
+    }
+
+    @Nested
+    inner class KeyFeedback {
+        @Test
+        fun `sound and haptics follow settings and survive clear`() {
+            val muted =
+                basicCalculatorViewModel(
+                    settingsRepository = FakeSettingsRepository(UserSettings(sound = false, haptics = false)),
+                )
+            assertEquals(false, muted.state.value.soundEnabled)
+            muted.onEvent(BasicCalculatorEvent.Append("5"))
+            muted.onEvent(BasicCalculatorEvent.Clear)
+            muted.onEvent(BasicCalculatorEvent.Reuse("1+1"))
+            assertEquals(false, muted.state.value.soundEnabled)
+            assertEquals(false, muted.state.value.hapticsEnabled)
         }
     }
 

@@ -268,11 +268,13 @@ class BasicCalculatorViewModel
         private fun clear() =
             _state.update { current ->
                 // Clear wipes the expression and error/repeat, but keeps user
-                // preferences (scientific mode, angle mode, memory).
+                // preferences (scientific mode, angle mode, memory, key feedback).
                 BasicCalculatorUiState(
                     scientific = current.scientific,
                     angleMode = current.angleMode,
                     memory = current.memory,
+                    soundEnabled = current.soundEnabled,
+                    hapticsEnabled = current.hapticsEnabled,
                 ).also(::persist)
             }
 
