@@ -6,7 +6,10 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 
@@ -21,8 +24,12 @@ import androidx.core.content.ContextCompat
 @Composable
 fun rememberFloatingCalculatorLauncher(): () -> Unit {
     val context = LocalContext.current
+    // A second tap while the dialog is opening would get an instant
+    // "denied" result and start the overlay behind the dialog.
+    var asking by remember { mutableStateOf(false) }
     val permissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+            asking = false
             FloatingCalculatorService.startOrRequestPermission(context)
         }
     return remember(context, permissionLauncher) {
@@ -32,7 +39,10 @@ fun rememberFloatingCalculatorLauncher(): () -> Unit {
                     ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
                     PackageManager.PERMISSION_GRANTED
             if (needsNotificationPermission) {
-                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                if (!asking) {
+                    asking = true
+                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
             } else {
                 FloatingCalculatorService.startOrRequestPermission(context)
             }
