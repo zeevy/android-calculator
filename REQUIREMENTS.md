@@ -45,8 +45,8 @@ A modern, fully-offline, multi-purpose calculator for Android that bundles a sta
 | Performance | Startup library for lightweight init |
 | Widgets | Jetpack Glance (Compose-style App Widget API) |
 | Splash | AndroidX SplashScreen API + adaptive icon |
-| Testing | JUnit5 (unit tests via `android-junit5` plugin), JUnit4 + AndroidX Test (instrumented & Compose UI tests), Turbine, MockK, Robolectric where useful |
-| CI | GitHub Actions: build, unit tests, instrumented tests on emulator, ktlint + detekt static analysis, R8-shrunk APK size check |
+| Testing | JUnit5 (unit tests via `android-junit5` plugin), JUnit4 + Robolectric (Compose UI tests on the JVM), Turbine, MockK. No instrumented tests yet |
+| CI | GitHub Actions: debug build, unit and JVM Compose UI tests, ktlint + detekt + Android Lint, R8 release build with a 15 MB AAB size check. An emulator job is added with the first test that needs a device |
 | Distribution | Google Play (AAB), Play App Signing |
 
 ## 4. Functional Requirements

@@ -125,7 +125,6 @@ dependencies {
     // ----- Compose (BOM keeps versions in sync) -----
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
-    androidTestImplementation(composeBom)
 
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.graphics)
@@ -210,13 +209,6 @@ dependencies {
     // engine in charge of discovery and avoids the runner-conflict
     // failures that come from layering two engines.
     testImplementation(libs.kotest.property)
-
-    // ----- Instrumented tests (JUnit4 + AndroidX Test + Compose) -----
-    androidTestImplementation(libs.junit4)
-    androidTestImplementation(libs.androidx.test.junit)
-    androidTestImplementation(libs.androidx.test.espresso.core)
-    androidTestImplementation(libs.compose.ui.test.junit4)
-    androidTestImplementation(libs.mockk.android)
 
     // ----- Detekt formatting rules -----
     detektPlugins(libs.detekt.formatting)

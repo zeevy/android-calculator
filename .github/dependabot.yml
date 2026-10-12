@@ -43,6 +43,8 @@ updates:
     # Workflows pin actions to floating major tags (@v6), so patch and minor
     # releases arrive without any change here. Only major bumps need a PR -
     # otherwise every upstream patch reopens a no-op PR that pins the tag.
+    # The two third-party actions in release.yml (the job with a write
+    # token) are pinned to a commit SHA instead; they also move on majors.
     ignore:
       - dependency-name: "*"
         update-types:

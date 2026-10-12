@@ -4,19 +4,19 @@
 # is split into independent jobs so the GitHub Actions UI renders each
 # step as its own block in the run graph:
 #
-#   ktlint  ─┐
-#   detekt  ─┤
-#   lint    ─┼──> ci-success
-#   tests   ─┤
-#   assemble ┘
+#   ktlint   ─┐
+#   detekt   ─┤
+#   lint     ─┤
+#   tests    ─┼──> ci-success
+#   assemble ─┤
+#   release  ─┘
 #
 # Each gate runs in parallel on its own runner. `ci-success` is a tiny
 # aggregator that branch protection can require as a single check.
 #
-# Instrumented tests are run on emulator runners and are intentionally
-# kept out of the default workflow (slow, flaky on shared infra). They
-# move into a separate workflow once the first emulator-pinned feature
-# lands.
+# Compose UI tests run on the JVM through Robolectric inside `tests`.
+# There are no instrumented (emulator) tests yet; add an emulator job
+# together with the first test that really needs a device.
 
 name: CI
 
@@ -159,18 +159,47 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 14
 
+  release-build:
+    # The R8-shrunk release build otherwise runs only after a tag is
+    # pushed. Catches broken keep rules and the 15 MB size target early.
+    name: Release build and size
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+      - name: Lint and bundle the release build
+        run: ./gradlew :app:lintRelease :app:bundleRelease --stacktrace
+      - name: Check the AAB size
+        run: |
+          size=$(stat -c%s app/build/outputs/bundle/release/app-release.aab)
+          max=$((15 * 1024 * 1024))
+          echo "AAB size: $size bytes (limit $max)"
+          if [ "$size" -gt "$max" ]; then
+            echo "::error::The release AAB is $size bytes, over the 15 MB limit."
+            exit 1
+          fi
+
   ci-success:
-    # Single required check for branch protection. Fails fast if any
-    # upstream gate failed or was skipped.
+    # Single required check for branch protection. Fails if any upstream
+    # gate failed, was cancelled or was skipped.
     name: CI success
     runs-on: ubuntu-latest
-    needs: [ktlint, detekt, lint, unit-tests, assemble-debug]
+    needs: [ktlint, detekt, lint, unit-tests, assemble-debug, release-build]
     if: ${{ always() }}
     steps:
       - name: Verify all upstream jobs succeeded
         run: |
-          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "true" ]; then
-            echo "One or more CI jobs failed or were cancelled."
+          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped') }}" = "true" ]; then
+            echo "One or more CI jobs failed, were cancelled or were skipped."
             exit 1
           fi
           echo "All CI jobs passed."

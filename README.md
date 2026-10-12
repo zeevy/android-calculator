@@ -80,9 +80,6 @@ cd calculator
 # Run unit tests
 ./gradlew test
 
-# Run instrumented tests (requires an emulator/device)
-./gradlew connectedAndroidTest
-
 # Static analysis
 ./gradlew detekt ktlintCheck lint
 ```

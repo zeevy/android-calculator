@@ -28,7 +28,7 @@ See [REQUIREMENTS.md](REQUIREMENTS.md) for the full product specification - it i
 | Performance | AndroidX Startup for lightweight init |
 | Widgets | Jetpack **Glance** (not legacy RemoteViews) |
 | Splash | AndroidX SplashScreen API + adaptive icon |
-| Testing | **JUnit5** (unit, via `android-junit5` plugin), **JUnit4 + AndroidX Test** (instrumented & Compose UI), Turbine, MockK, Robolectric where useful |
+| Testing | **JUnit5** (unit, via `android-junit5` plugin), **JUnit4 + Robolectric** (Compose UI tests on the JVM), Turbine, MockK. No instrumented tests yet |
 | Static analysis | ktlint + detekt + Android Lint (error severity) |
 | CI | GitHub Actions |
 | Distribution | Google Play (AAB), Play App Signing |
@@ -137,9 +137,6 @@ These come from the user's global preferences and apply to every commit, file, a
 ./gradlew testDebugUnitTest --tests "com.calculator.core.math.EvaluatorTest"
 ./gradlew testDebugUnitTest --tests "com.calculator.core.math.EvaluatorTest.divides by zero returns error"
 ./gradlew testDebugUnitTest --tests "com.calculator.feature.*"   # glob a package
-
-# Instrumented tests (needs running emulator/device)
-./gradlew connectedAndroidTest
 
 # Static analysis
 ./gradlew ktlintCheck

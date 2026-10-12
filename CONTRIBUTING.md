@@ -79,15 +79,14 @@ This project ships under the Apache License 2.0 and is intended to be read by co
 ## Tests
 
 - **Unit tests live in `app/src/test/`** and run on the JVM using JUnit5.
-- **Instrumented tests live in `app/src/androidTest/`** and run on an emulator/device using JUnit4 + AndroidX Test.
+- **Compose UI tests also live in `app/src/test/`.** They run on the JVM through Robolectric (JUnit4), so no emulator is needed. There are no instrumented (`androidTest`) tests yet.
 - Every bug fix must include a regression test.
 - Every new feature must include unit tests for its domain logic and a smoke-level Compose UI test for the screen.
 
 Run tests locally:
 
 ```bash
-./gradlew test                    # unit tests
-./gradlew connectedAndroidTest    # instrumented tests (needs a running device/emulator)
+./gradlew test    # unit and Compose UI tests
 ```
 
 ## Static analysis
