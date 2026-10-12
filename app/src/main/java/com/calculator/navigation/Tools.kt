@@ -30,8 +30,8 @@ import java.util.Locale
  * @property label Tile label and short shortcut label.
  * @property longLabel Long shortcut label.
  * @property icon Tile icon.
- * @property isAvailable Whether the tool is offered for this locale and
- *   time zone. India-only tools use [isIndia].
+ * @property indiaOnly True for a tool offered only on devices set up for
+ *   India (see [isIndia]).
  */
 internal data class Tool(
     val id: String,
@@ -39,7 +39,7 @@ internal data class Tool(
     @param:StringRes val label: Int,
     @param:StringRes val longLabel: Int = label,
     val icon: ImageVector,
-    val isAvailable: (Locale, ZoneId) -> Boolean = { _, _ -> true },
+    val indiaOnly: Boolean = false,
 )
 
 /**
@@ -65,7 +65,7 @@ internal val Tools: List<Tool> =
     listOf(
         Tool("units", UnitConverterRoute, R.string.tool_units, R.string.shortcut_units_long, Icons.Filled.Straighten),
         Tool("loan", LoanRoute, R.string.tool_loan, icon = Icons.Filled.AccountBalance),
-        Tool("gst", GstRoute, R.string.tool_gst, icon = Icons.Filled.Receipt, isAvailable = ::isIndia),
+        Tool("gst", GstRoute, R.string.tool_gst, icon = Icons.Filled.Receipt, indiaOnly = true),
         Tool("discount", DiscountRoute, R.string.tool_discount, icon = Icons.Filled.LocalOffer),
         Tool("tipsplit", TipSplitRoute, R.string.tool_tipsplit, icon = Icons.Filled.Restaurant),
         Tool("investment", InvestmentRoute, R.string.tool_investment, icon = Icons.Filled.Savings),
@@ -83,11 +83,11 @@ internal val Tools: List<Tool> =
 internal fun availableTools(
     locale: Locale,
     zone: ZoneId,
-): List<Tool> = Tools.filter { it.isAvailable(locale, zone) }
+): List<Tool> = Tools.filter { !it.indiaOnly || isIndia(locale, zone) }
 
 /** The tool with this shortcut [id], if it is offered for [locale] and [zone]. */
 internal fun availableToolById(
     id: String,
     locale: Locale,
     zone: ZoneId,
-): Tool? = Tools.firstOrNull { it.id == id }?.takeIf { it.isAvailable(locale, zone) }
+): Tool? = availableTools(locale, zone).firstOrNull { it.id == id }
