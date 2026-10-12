@@ -14,6 +14,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
     alias(libs.plugins.android.junit5)
@@ -98,6 +99,17 @@ android {
             isReturnDefaultValues = true
         }
     }
+
+    // The Room migration test reads the exported schemas as assets.
+    // Robolectric only sees the merged assets of the variant under test
+    // (not the `test` source set), so they go into debug builds only.
+    sourceSets.getByName("debug").assets.srcDir("$projectDir/schemas")
+}
+
+// Exported Room schemas are committed, so every schema change shows up in
+// review and the migration test can open old versions.
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 // Kotlin extension lives at the project level, not inside `android { }`.
@@ -180,6 +192,7 @@ dependencies {
     testImplementation(libs.turbine)
     testImplementation(libs.mockk)
     testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.room.testing)
     // Compose UI test on the JVM via Robolectric: the same APIs
     // (createComposeRule, onNodeWithText, performClick, ...) run
     // headlessly on `./gradlew test`, no emulator or device needed.

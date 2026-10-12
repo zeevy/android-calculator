@@ -23,6 +23,7 @@ Before pushing a `v*` tag:
 - [ ] `./gradlew :app:bundleRelease` builds. **AAB under 15 MB** (the
       most recent run came in at 5.1 MB - 3× headroom).
 - [ ] `LoanCopyTest` passes (Play personal-loans wording guard).
+- [ ] If the Room schema version changed: the new `app/schemas/.../<version>.json` is committed, a `Migration` for it is in `CalculatorDatabase.MIGRATIONS`, and `CalculatorDatabaseMigrationTest` passes.
 - [ ] `CHANGELOG.md` has a section for the new version with the
       user-visible changes since the previous release.
 - [ ] Privacy policy at [`PRIVACY.md`](../PRIVACY.md) reflects the

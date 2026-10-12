@@ -19,7 +19,10 @@ interface HistoryRepository {
     /** Newest first; replays the latest list to every new subscriber. */
     fun observe(): Flow<List<HistoryEntry>>
 
-    /** Record a new calculation. The repository assigns the timestamp. */
+    /**
+     * Record a new calculation. The repository assigns the timestamp and
+     * keeps only the newest [RoomHistoryRepository.MAX_ENTRIES] entries.
+     */
     suspend fun add(expression: String, result: String, type: HistoryEntry.Type)
 
     /** Delete a single entry by id. */
@@ -39,7 +42,7 @@ class RoomHistoryRepository
             dao.observeAll().map { rows -> rows.map { it.toEntry() } }
 
         override suspend fun add(expression: String, result: String, type: HistoryEntry.Type) {
-            dao.insert(
+            dao.insertKeepingNewest(
                 HistoryEntity(
                     expression = expression,
                     result = result,
@@ -50,6 +53,7 @@ class RoomHistoryRepository
                             HistoryEntry.Type.Scientific -> HistoryEntity.TYPE_SCIENTIFIC
                         },
                 ),
+                keep = MAX_ENTRIES,
             )
         }
 
@@ -69,4 +73,9 @@ class RoomHistoryRepository
                         else -> HistoryEntry.Type.Basic
                     },
             )
+
+        companion object {
+            /** History keeps this many newest entries; older ones are removed on insert. */
+            const val MAX_ENTRIES = 1000
+        }
     }

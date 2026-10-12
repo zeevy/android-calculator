@@ -3,6 +3,7 @@ package com.calculator.core.data.db
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -14,13 +15,36 @@ import kotlinx.coroutines.flow.Flow
  */
 @Dao
 interface HistoryDao {
-    /** Observe all entries, newest first. */
-    @Query("SELECT * FROM history ORDER BY timestampUtc DESC")
+    /**
+     * Observe all entries, newest first. Sorting by the auto-increment id
+     * gives the commit order and uses the primary key, so no index is needed.
+     */
+    @Query("SELECT * FROM history ORDER BY id DESC")
     fun observeAll(): Flow<List<HistoryEntity>>
 
     /** Insert a new entry; returns the generated row id. */
     @Insert
     suspend fun insert(entry: HistoryEntity): Long
+
+    /**
+     * Insert [entry] and remove the oldest rows so at most [keep] remain,
+     * in one transaction.
+     *
+     * @return the generated row id.
+     */
+    @Transaction
+    suspend fun insertKeepingNewest(
+        entry: HistoryEntity,
+        keep: Int,
+    ): Long {
+        val id = insert(entry)
+        deleteAllButNewest(keep)
+        return id
+    }
+
+    /** Remove every row except the [keep] newest ones. */
+    @Query("DELETE FROM history WHERE id NOT IN (SELECT id FROM history ORDER BY id DESC LIMIT :keep)")
+    suspend fun deleteAllButNewest(keep: Int)
 
     /** Delete a single entry by id. No-op if the id is unknown. */
     @Query("DELETE FROM history WHERE id = :id")

@@ -15,8 +15,8 @@ import androidx.room.PrimaryKey
  * @property expression The canonical expression as the user committed it
  *   (after any auto-close-parens or trailing-operator auto-complete).
  * @property result The displayed result string for that expression.
- * @property timestampUtc Epoch milliseconds at insert time, in UTC. Sorted
- *   descending in the UI so the most recent entry is on top.
+ * @property timestampUtc Epoch milliseconds at insert time, in UTC. Shown
+ *   next to the entry; the list itself is ordered by [id].
  * @property type Coarse category - basic, scientific, or one of the life
  *   calculators - so future screens can filter without re-parsing the
  *   expression. For now everything inserted is BASIC or SCIENTIFIC.

@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- History keeps the newest 1000 calculations. Older ones are removed when a new one is saved, so the History sheet stays fast.
+
+### Fixed
+
+- A future database change can no longer wipe saved history and unit pairs on upgrade. The database schema is now exported and checked by a migration test, and the destructive fallback is gone (it remains only for a downgrade).
 
 ## [1.2.0] - 2026-08-25
 

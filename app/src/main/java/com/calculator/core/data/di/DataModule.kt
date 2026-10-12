@@ -39,6 +39,8 @@ object DataModule {
 
     private const val SETTINGS_DATASTORE_NAME = "user_settings"
 
+    // The spread copies a tiny array once per process start.
+    @Suppress("SpreadOperator")
     @Provides
     @Singleton
     fun provideCalculatorDatabase(
@@ -49,12 +51,10 @@ object DataModule {
                 context,
                 CalculatorDatabase::class.java,
                 CalculatorDatabase.NAME,
-            )
-            // Acceptable while no public release has shipped. Pre-release
-            // builds reset their on-device DB across schema bumps; once
-            // we ship to Play, every schema bump must come with a
-            // Migration object.
-            .fallbackToDestructiveMigration()
+            ).addMigrations(*CalculatorDatabase.MIGRATIONS)
+            // A downgrade (installing an older build over a newer one) has
+            // no migration path, so only that case may reset the database.
+            .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
             .build()
 
     @Provides
