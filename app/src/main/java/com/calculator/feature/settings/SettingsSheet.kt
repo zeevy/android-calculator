@@ -27,7 +27,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -37,7 +36,7 @@ import com.calculator.BuildConfig
 import com.calculator.R
 import com.calculator.core.data.settings.DataStoreSettingsRepository
 import com.calculator.core.data.settings.UserSettings
-import com.calculator.feature.floating.FloatingCalculatorService
+import com.calculator.feature.floating.rememberFloatingCalculatorLauncher
 
 /**
  * Settings sheet shown when the user taps the Settings tile in the tools
@@ -57,8 +56,8 @@ fun SettingsSheetContent(
 ) {
     val settings by viewModel.settings.collectAsState()
     val accent = MaterialTheme.colorScheme.primary
-    val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
+    val launchFloating = rememberFloatingCalculatorLauncher()
 
     Column(
         modifier =
@@ -124,7 +123,7 @@ fun SettingsSheetContent(
         ActionRow(
             label = stringResource(R.string.settings_floating_launch),
             description = stringResource(R.string.settings_floating_desc),
-            onClick = { FloatingCalculatorService.startOrRequestPermission(context) },
+            onClick = launchFloating,
         )
 
         // Privacy.

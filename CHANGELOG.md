@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- On Android 13 and later, starting the floating calculator from Settings now asks for the notification permission, so its notification and Stop action show in the shade.
+- The floating calculator service stops quietly instead of crashing when the overlay permission is missing.
+- No activity other than the main screen can be started by other apps.
 - A future database change can no longer wipe saved history and unit pairs on upgrade. The database schema is now exported and checked by a migration test, and the destructive fallback is gone (it remains only for a downgrade).
 
 ## [1.2.0] - 2026-08-25

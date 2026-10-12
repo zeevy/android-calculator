@@ -139,7 +139,8 @@ dependencies {
     // merged manifest of every build variant (debug / release) so
     // testReleaseUnitTest can resolve the activity. The AAR contains
     // only the manifest stub - no runtime code, so the production cost
-    // is one extra `<activity>` line.
+    // is one extra `<activity>` line. The stub declares it exported;
+    // AndroidManifest.xml overrides that to exported="false".
     implementation(libs.compose.ui.test.manifest)
 
     // ----- AndroidX core / lifecycle / navigation -----

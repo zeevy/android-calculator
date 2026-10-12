@@ -12,6 +12,7 @@ import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
 import android.provider.Settings
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -64,8 +65,12 @@ class FloatingCalculatorService : Service() {
     override fun onCreate() {
         super.onCreate()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        // startForeground must run even when we stop at once, or the system
+        // crashes the app for a foreground service that never went foreground.
         startForegroundCompat()
-        addOverlay()
+        // A caller may start the service without the overlay permission (or it
+        // is revoked in between); stop quietly instead of crashing in addView.
+        if (!Settings.canDrawOverlays(this) || !addOverlay()) stopSelf()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -90,7 +95,8 @@ class FloatingCalculatorService : Service() {
 
     // ----- Overlay setup -----
 
-    private fun addOverlay() {
+    /** Adds the overlay window. Returns false when the system refuses it. */
+    private fun addOverlay(): Boolean {
         val view = LayoutInflater.from(this).inflate(R.layout.floating_calculator, null)
         // TYPE_APPLICATION_OVERLAY is the only legal type on API 26+ for
         // overlays drawn by user apps. Older types (TYPE_SYSTEM_ALERT,
@@ -117,7 +123,15 @@ class FloatingCalculatorService : Service() {
         params.x = (INITIAL_X_DP * density).toInt()
         params.y = (INITIAL_Y_DP * density).toInt()
 
-        windowManager.addView(view, params)
+        try {
+            windowManager.addView(view, params)
+        } catch (e: WindowManager.BadTokenException) {
+            Log.w(TAG, "Overlay window refused", e)
+            return false
+        } catch (e: SecurityException) {
+            Log.w(TAG, "Overlay permission missing", e)
+            return false
+        }
         overlayView = view
         layoutParams = params
 
@@ -125,6 +139,7 @@ class FloatingCalculatorService : Service() {
         wireDragging(view.findViewById(R.id.floating_header), params)
         wireButtons(view)
         renderDisplay()
+        return true
     }
 
     private fun wireDragging(header: View, params: WindowManager.LayoutParams) {
@@ -335,6 +350,7 @@ class FloatingCalculatorService : Service() {
 
     companion object {
         const val ACTION_STOP = "com.calculator.feature.floating.action.STOP"
+        private const val TAG = "FloatingCalculator"
         private const val NOTIFICATION_CHANNEL = "floating_calculator"
         private const val NOTIFICATION_ID = 1001
         private const val WIDTH_DP = 260
