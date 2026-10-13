@@ -101,14 +101,12 @@ private fun FdSection(
             label = stringResource(R.string.deposit_years),
             value = fields.years,
             onValueChange = { onChange(fields.copy(years = it)) },
-            suffix = stringResource(R.string.deposit_years_suffix),
             error = input.errorFor(R.string.deposit_years),
         )
         LifeCalcNumberField(
             label = stringResource(R.string.deposit_months),
             value = fields.months,
             onValueChange = { onChange(fields.copy(months = it)) },
-            suffix = stringResource(R.string.deposit_months_suffix),
             error = input.errorFor(R.string.deposit_months),
         )
         LifeCalcSectionLabel(stringResource(R.string.deposit_section_compounding))

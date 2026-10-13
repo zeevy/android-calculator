@@ -435,7 +435,6 @@
     <string name="deposit_yearly">वार्षिक जमा</string>
     <string name="deposit_rate">ब्याज दर प्रति वर्ष</string>
     <string name="deposit_years">वर्ष</string>
-    <string name="deposit_years_suffix">वर्ष</string>
     <string name="deposit_months">महीने</string>
     <string name="deposit_months_suffix">महीने</string>
     <string name="deposit_tenure">अवधि</string>

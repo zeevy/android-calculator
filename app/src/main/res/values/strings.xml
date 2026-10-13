@@ -281,7 +281,6 @@
     <string name="deposit_yearly">Yearly deposit</string>
     <string name="deposit_rate">Interest rate per year</string>
     <string name="deposit_years">Years</string>
-    <string name="deposit_years_suffix">yrs</string>
     <string name="deposit_months">Months</string>
     <string name="deposit_months_suffix">months</string>
     <string name="deposit_tenure">Tenure</string>
