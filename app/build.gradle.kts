@@ -14,6 +14,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
     alias(libs.plugins.android.junit5)
@@ -96,8 +97,26 @@ android {
         unitTests {
             isIncludeAndroidResources = true
             isReturnDefaultValues = true
+            // Same default locale on every machine, so formatting tests do
+            // not depend on how the contributor's computer is set up. Tests
+            // for other locales set them explicitly.
+            all {
+                it.systemProperty("user.language", "en")
+                it.systemProperty("user.country", "US")
+            }
         }
     }
+
+    // The Room migration test reads the exported schemas as assets.
+    // Robolectric only sees the merged assets of the variant under test
+    // (not the `test` source set), so they go into debug builds only.
+    sourceSets.getByName("debug").assets.srcDir("$projectDir/schemas")
+}
+
+// Exported Room schemas are committed, so every schema change shows up in
+// review and the migration test can open old versions.
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 // Kotlin extension lives at the project level, not inside `android { }`.
@@ -113,7 +132,6 @@ dependencies {
     // ----- Compose (BOM keeps versions in sync) -----
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
-    androidTestImplementation(composeBom)
 
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.graphics)
@@ -127,7 +145,8 @@ dependencies {
     // merged manifest of every build variant (debug / release) so
     // testReleaseUnitTest can resolve the activity. The AAR contains
     // only the manifest stub - no runtime code, so the production cost
-    // is one extra `<activity>` line.
+    // is one extra `<activity>` line. The stub declares it exported;
+    // AndroidManifest.xml overrides that to exported="false".
     implementation(libs.compose.ui.test.manifest)
 
     // ----- AndroidX core / lifecycle / navigation -----
@@ -180,6 +199,7 @@ dependencies {
     testImplementation(libs.turbine)
     testImplementation(libs.mockk)
     testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.room.testing)
     // Compose UI test on the JVM via Robolectric: the same APIs
     // (createComposeRule, onNodeWithText, performClick, ...) run
     // headlessly on `./gradlew test`, no emulator or device needed.
@@ -196,13 +216,6 @@ dependencies {
     // engine in charge of discovery and avoids the runner-conflict
     // failures that come from layering two engines.
     testImplementation(libs.kotest.property)
-
-    // ----- Instrumented tests (JUnit4 + AndroidX Test + Compose) -----
-    androidTestImplementation(libs.junit4)
-    androidTestImplementation(libs.androidx.test.junit)
-    androidTestImplementation(libs.androidx.test.espresso.core)
-    androidTestImplementation(libs.compose.ui.test.junit4)
-    androidTestImplementation(libs.mockk.android)
 
     // ----- Detekt formatting rules -----
     detektPlugins(libs.detekt.formatting)

@@ -14,53 +14,53 @@ import kotlinx.serialization.Serializable
  * Compared to string routes this catches typos at compile time and lets
  * arguments travel as typed properties.
  *
- * New features add a destination here and a corresponding `composable`
- * registration in [CalculatorNavHost].
+ * To add a tool: a route here, one entry in [Tools], one `composable`
+ * line in [CalculatorNavHost], and its strings.
  */
+sealed interface ToolRoute
+
+/** The basic calculator; the start destination, always at the bottom of the back stack. */
 @Serializable
-data object BasicCalculatorRoute
+data object BasicCalculatorRoute : ToolRoute
 
 @Serializable
-data object UnitConverterRoute
+data object UnitConverterRoute : ToolRoute
 
 @Serializable
-data object LoanRoute
+data object LoanRoute : ToolRoute
 
 @Serializable
-data object GstRoute
+data object GstRoute : ToolRoute
 
 @Serializable
-data object DiscountRoute
+data object DiscountRoute : ToolRoute
 
 @Serializable
-data object TipSplitRoute
+data object TipSplitRoute : ToolRoute
 
 @Serializable
-data object InvestmentRoute
+data object InvestmentRoute : ToolRoute
 
 @Serializable
-data object PercentRoute
+data object PercentRoute : ToolRoute
 
 @Serializable
-data object BaseConverterRoute
+data object BaseConverterRoute : ToolRoute
 
 @Serializable
-data object TapeRoute
+data object TapeRoute : ToolRoute
 
 @Serializable
-data object BmiRoute
+data object BmiRoute : ToolRoute
 
 @Serializable
-data object AgeRoute
+data object AgeRoute : ToolRoute
 
 @Serializable
-data object DateDiffRoute
+data object DateDiffRoute : ToolRoute
 
 @Serializable
-data object TimezoneRoute
+data object TimezoneRoute : ToolRoute
 
 @Serializable
-data object OvulationRoute
-
-// Future destinations follow the same pattern, e.g.:
-// @Serializable data object SettingsRoute
+data object OvulationRoute : ToolRoute

@@ -40,18 +40,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.R
+import com.calculator.core.designsystem.component.LifeCalcCard
+import com.calculator.core.designsystem.component.LifeCalcSectionLabel
+import com.calculator.core.designsystem.component.LifeCalculatorScaffold
 import com.calculator.core.domain.datetime.TimezoneConverter
-import com.calculator.feature.lifecalc.LifeCalcCard
-import com.calculator.feature.lifecalc.LifeCalcSectionLabel
-import com.calculator.feature.lifecalc.LifeCalculatorScaffold
-import com.calculator.navigation.TimezoneRoute
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -72,13 +69,12 @@ import java.time.format.DateTimeFormatter
  * source. The swap button between cards exchanges the (zone, time)
  * pairs.
  *
- * @param onNavigate Jump to another tool / home. Wired to the scaffold's
- *   hamburger menu.
+ * @param onOpenMenu Opens the app's tools menu.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimezoneScreen(
-    onNavigate: (Any) -> Unit,
+    onOpenMenu: () -> Unit,
     viewModel: TimezoneViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -86,8 +82,7 @@ fun TimezoneScreen(
 
     LifeCalculatorScaffold(
         title = stringResource(R.string.tz_title),
-        currentRoute = TimezoneRoute,
-        onNavigate = onNavigate,
+        onOpenMenu = onOpenMenu,
     ) {
         // From card
         ZoneCard(
@@ -257,7 +252,7 @@ private fun ZonePickerSheet(
                 value = query,
                 onValueChange = { query = it },
                 singleLine = true,
-                textStyle = TextStyle(color = scheme.onSurface, fontSize = 16.sp),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = scheme.onSurface),
                 cursorBrush = androidx.compose.ui.graphics
                     .SolidColor(scheme.primary),
                 modifier =
@@ -273,7 +268,7 @@ private fun ZonePickerSheet(
                             Text(
                                 text = stringResource(R.string.tz_picker_search_hint),
                                 color = scheme.onSurfaceVariant,
-                                style = TextStyle(fontSize = 16.sp),
+                                style = MaterialTheme.typography.bodyLarge,
                             )
                         }
                         inner()

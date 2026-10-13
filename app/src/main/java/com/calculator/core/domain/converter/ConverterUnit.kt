@@ -13,9 +13,8 @@ package com.calculator.core.domain.converter
  * `offset = 0` and the math collapses to a simple multiplication.
  *
  * @property symbol Short label (e.g. "m", "kg", "°C") rendered next to
- *   the value field.
- * @property displayName Longer human-readable name shown in the unit
- *   picker (e.g. "Meter", "Kilogram", "Celsius").
+ *   the value field. Unique across all categories; the UI maps it to a
+ *   translated name, so the domain holds no display text.
  * @property toCanonicalFactor Multiplicative coefficient when converting
  *   to the category's canonical unit.
  * @property toCanonicalOffset Additive coefficient applied after
@@ -23,7 +22,6 @@ package com.calculator.core.domain.converter
  */
 data class ConverterUnit(
     val symbol: String,
-    val displayName: String,
     val toCanonicalFactor: Double,
     val toCanonicalOffset: Double = 0.0,
 )

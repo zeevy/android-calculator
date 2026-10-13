@@ -73,16 +73,11 @@ class Evaluator(
         return try {
             EvaluationResult.Success(computeRpn(rpn))
         } catch (e: DomainException) {
-            EvaluationResult.Error.Domain(e.message ?: "out of domain")
+            EvaluationResult.Error.Domain(e.kind, e.function, e.message.orEmpty())
+        } catch (_: DivisionByZeroException) {
+            EvaluationResult.Error.DivisionByZero
         } catch (e: ArithmeticException) {
-            // BigDecimal.divide throws ArithmeticException on /0 - turn it into a typed error.
-            if (e.message?.contains("Division by zero", ignoreCase = true) == true ||
-                e.message?.contains("zero", ignoreCase = true) == true
-            ) {
-                EvaluationResult.Error.DivisionByZero
-            } else {
-                EvaluationResult.Error.Syntax(e.message ?: "arithmetic error")
-            }
+            EvaluationResult.Error.Syntax(e.message ?: "arithmetic error")
         } catch (e: IllegalStateException) {
             EvaluationResult.Error.Syntax(e.message ?: "malformed expression")
         }
@@ -236,11 +231,9 @@ class Evaluator(
                 //
                 // Explicit zero-divisor check: BigDecimal throws
                 // "Division by zero" for `x/0 where x != 0` and
-                // "Division undefined" for `0/0`. The upstream catch only
-                // recognised the first message, so `0÷0` was misclassified
-                // as Syntax. Catching it here uniformly avoids relying on
-                // exception-message string matching at all.
-                if (right.signum() == 0) throw ArithmeticException("Division by zero")
+                // "Division undefined" for `0/0`. A typed exception covers
+                // both without matching exception messages.
+                if (right.signum() == 0) throw DivisionByZeroException()
                 left.divide(right, mathContext)
             }
             Operator.Power -> powerOf(left, right)
@@ -254,8 +247,8 @@ class Evaluator(
      */
     private fun powerOf(base: BigDecimal, exp: BigDecimal): BigDecimal {
         val raw = Math.pow(base.toDouble(), exp.toDouble())
-        if (raw.isNaN()) throw DomainException("invalid power: $base^$exp")
-        if (raw.isInfinite()) throw DomainException("power overflow: $base^$exp")
+        if (raw.isNaN()) throw DomainException(DomainKind.InvalidPower, "invalid power: $base^$exp")
+        if (raw.isInfinite()) throw DomainException(DomainKind.PowerOverflow, "power overflow: $base^$exp")
         return BigDecimal(raw).round(mathContext)
     }
 
@@ -277,7 +270,7 @@ class Evaluator(
                     // before computing tan.
                     val radians = toRadians(raw)
                     if (kotlin.math.abs(Math.cos(radians)) < TAN_ASYMPTOTE_EPSILON) {
-                        throw DomainException("tan($arg) is undefined")
+                        throw DomainException(DomainKind.Function, "tan($arg) is undefined", FunctionId.Tan)
                     }
                     Math.tan(radians)
                 }
@@ -289,8 +282,8 @@ class Evaluator(
                 FunctionId.Sqrt -> Math.sqrt(raw)
                 FunctionId.Cbrt -> Math.cbrt(raw)
             }
-        if (out.isNaN()) throw DomainException("${func.keyword}($arg) is undefined")
-        if (out.isInfinite()) throw DomainException("${func.keyword}($arg) is infinite")
+        if (out.isNaN()) throw DomainException(DomainKind.Function, "${func.keyword}($arg) is undefined", func)
+        if (out.isInfinite()) throw DomainException(DomainKind.Function, "${func.keyword}($arg) is infinite", func)
         // Two-pass noise scrub for Double-backed transcendentals:
         //   1. Snap near-zero values to true zero. Significant-figure
         //      rounding can't collapse e.g. sin(π) ≈ 1.22e-16 -> 0,
@@ -327,13 +320,13 @@ class Evaluator(
      *    display can render.
      */
     private fun factorial(value: BigDecimal): BigDecimal {
-        if (value.signum() < 0) throw DomainException("factorial of negative: $value")
+        if (value.signum() < 0) throw DomainException(DomainKind.FactorialOfNegative, "factorial of negative: $value")
         // stripTrailingZeros collapses 5.0 -> 5 so it counts as integer.
         if (value.stripTrailingZeros().scale() > 0) {
-            throw DomainException("factorial of non-integer: $value")
+            throw DomainException(DomainKind.FactorialOfNonInteger, "factorial of non-integer: $value")
         }
         val n = value.toBigInteger()
-        if (n > FACTORIAL_CAP) throw DomainException("factorial too large: $value")
+        if (n > FACTORIAL_CAP) throw DomainException(DomainKind.FactorialTooLarge, "factorial too large: $value")
         var result = BigInteger.ONE
         // BigInteger.TWO is API 33+; valueOf works on every JVM target.
         var i = BigInteger.valueOf(2)
@@ -365,5 +358,12 @@ class Evaluator(
     }
 }
 
-/** Signals an out-of-domain argument to a function (e.g. `log(-1)`). */
-private class DomainException(message: String) : RuntimeException(message)
+/** Signals an out-of-domain argument (e.g. `log(-1)`), with the broken rule. */
+private class DomainException(
+    val kind: DomainKind,
+    message: String,
+    val function: FunctionId? = null,
+) : RuntimeException(message)
+
+/** Signals a division by zero, caught by type rather than by message. */
+private class DivisionByZeroException : ArithmeticException("Division by zero")

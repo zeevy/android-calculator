@@ -1,5 +1,6 @@
 package com.calculator.feature.converter.unit
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.calculator.core.common.format.NumberFormatter
@@ -41,8 +42,20 @@ class UnitConverterViewModel
     constructor(
         private val repository: UnitConverterRepository,
         private val settings: SettingsRepository,
+        private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
-        private val _state = MutableStateFlow(UnitConverterUiState())
+        // Typed text survives process death through SavedStateHandle; the
+        // category and unit pair come back from settings and Room in init.
+        private val _state =
+            MutableStateFlow(
+                UnitConverterUiState(
+                    fromText = savedStateHandle[KEY_FROM_TEXT] ?: "",
+                    toText = savedStateHandle[KEY_TO_TEXT] ?: "",
+                    lastEdited =
+                        savedStateHandle.get<String>(KEY_LAST_EDITED)?.let { UnitConverterUiState.PickerSide.valueOf(it) }
+                            ?: UnitConverterUiState.PickerSide.From,
+                ),
+            )
         val state: StateFlow<UnitConverterUiState> = _state.asStateFlow()
 
         init {
@@ -86,11 +99,11 @@ class UnitConverterViewModel
          * output reflects the new units immediately.
          */
         fun selectCategory(category: UnitCategory) {
+            // Persist the choice so the next time the user opens the
+            // converter they land on this category. Its own coroutine, so
+            // the unit lookup below does not wait for the disk write.
+            viewModelScope.launch { settings.setLastUnitCategory(category.name) }
             viewModelScope.launch {
-                // Persist the choice so the next time the user opens
-                // the converter they land on this category. Fire-and-
-                // forget; failure to write a preference is non-fatal.
-                settings.setLastUnitCategory(category.name)
                 val units = ConversionTable.unitsFor(category)
                 val saved = repository.recent(category)
                 // `firstOrNull` (not single()) because the saved symbol
@@ -150,30 +163,28 @@ class UnitConverterViewModel
         }
 
         /**
-         * Swap the From and To units. Carries the previous "result"
-         * (whichever side was the non-source) across to the new From
-         * field, and resets the source to From so the new To recomputes
-         * from it. So `1000 m → 1 km`, after swap: `1 km → 1,000 m`,
+         * Swap the From and To units. The To value moves to the new From
+         * field with its unit, and the source resets to From so the new To
+         * recomputes from it. So `1000 m → 1 km`, after swap: `1 km → 1,000 m`,
          * which is what the user expects when they tap the swap arrow
          * mid-conversion.
          */
         fun swap() {
+            // The old To unit becomes the From unit, so the old To text (the
+            // result, or what the user typed there) moves with it. Only a
+            // computed To side has an exact number to carry.
+            val carried = _state.value.lastResult.takeIf { _state.value.lastEdited == UnitConverterUiState.PickerSide.From }
             _state.update {
-                val previousResult =
-                    when (it.lastEdited) {
-                        UnitConverterUiState.PickerSide.From -> it.toText
-                        UnitConverterUiState.PickerSide.To -> it.fromText
-                    }
                 it.copy(
                     fromUnit = it.toUnit,
                     toUnit = it.fromUnit,
-                    fromText = previousResult,
+                    fromText = it.toText,
                     toText = "",
                     lastEdited = UnitConverterUiState.PickerSide.From,
                 )
             }
             recordRecent()
-            recompute()
+            recompute(sourceValue = carried)
         }
 
         fun openPicker(side: UnitConverterUiState.PickerSide) {
@@ -201,12 +212,23 @@ class UnitConverterViewModel
          * Bails to an empty target field when:
          *  - Either unit hasn't been resolved yet (transient state
          *    between `selectCategory` and the next emission).
-         *  - The source text doesn't parse as a Double (empty, "-",
-         *    "1.", etc.) - we keep the source field exactly as the
-         *    user typed it but blank the target rather than rendering
-         *    "NaN".
+         *  - The source text doesn't parse as a number in the device
+         *    locale (empty, "-", "10.5" in de-DE, etc.) - we keep the
+         *    source field exactly as the user typed it but blank the
+         *    target rather than rendering "NaN".
+         *
+         * @param sourceValue The source number when it is already known
+         *   (after swap), so its formatted text is not parsed back.
          */
-        private fun recompute() {
+        private fun recompute(sourceValue: Double? = null) {
+            recomputeState(sourceValue)
+            val saved = _state.value
+            savedStateHandle[KEY_FROM_TEXT] = saved.fromText
+            savedStateHandle[KEY_TO_TEXT] = saved.toText
+            savedStateHandle[KEY_LAST_EDITED] = saved.lastEdited.name
+        }
+
+        private fun recomputeState(sourceValue: Double?) {
             _state.update { current ->
                 val from = current.fromUnit
                 val to = current.toUnit
@@ -218,30 +240,30 @@ class UnitConverterViewModel
                 }
                 when (current.lastEdited) {
                     UnitConverterUiState.PickerSide.From -> {
-                        val value = current.fromText.toDoubleOrNullPermissive()
-                            ?: return@update current.copy(toText = "")
+                        val value = sourceValue ?: NumberFormatter.parseNumberInput(current.fromText)
+                            ?: return@update current.copy(toText = "", lastResult = null)
                         val raw = Converter.convert(value, from, to)
-                        current.copy(toText = formatResult(raw, current.precision))
+                        current.copy(toText = formatResult(raw, current.precision), lastResult = raw)
                     }
                     UnitConverterUiState.PickerSide.To -> {
-                        val value = current.toText.toDoubleOrNullPermissive()
-                            ?: return@update current.copy(fromText = "")
+                        val value = NumberFormatter.parseNumberInput(current.toText)
+                            ?: return@update current.copy(fromText = "", lastResult = null)
                         // Reverse direction: input now lives in `to` units,
                         // result lives in `from` units. Converter is
                         // symmetric, just swap the argument order.
                         val raw = Converter.convert(value, to, from)
-                        current.copy(fromText = formatResult(raw, current.precision))
+                        current.copy(fromText = formatResult(raw, current.precision), lastResult = raw)
                     }
                 }
             }
         }
-    }
 
-/** "1.", "-", and "" all parse to null without raising. */
-private fun String.toDoubleOrNullPermissive(): Double? {
-    if (isBlank() || this == "-" || this == "." || this == "-.") return null
-    return toDoubleOrNull()
-}
+        private companion object {
+            const val KEY_FROM_TEXT = "units.fromText"
+            const val KEY_TO_TEXT = "units.toText"
+            const val KEY_LAST_EDITED = "units.lastEdited"
+        }
+    }
 
 /**
  * Renders [value] to a string with [significantFigures] precision,
@@ -253,7 +275,7 @@ private fun String.toDoubleOrNullPermissive(): Double? {
  * leading zeros or unreadably long.
  */
 internal fun formatResult(value: Double, significantFigures: Int): String {
-    if (value == 0.0 || !value.isFinite()) return if (value.isFinite()) "0" else "—"
+    if (value == 0.0 || !value.isFinite()) return if (value.isFinite()) "0" else "∞"
     val absValue = abs(value)
     val sigFigs = significantFigures.coerceIn(1, MAX_SIG_FIGS)
     val useScientific = absValue < SCIENTIFIC_LOWER_BOUND || absValue >= SCIENTIFIC_UPPER_BOUND

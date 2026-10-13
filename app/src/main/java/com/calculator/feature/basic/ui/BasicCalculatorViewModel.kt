@@ -3,14 +3,17 @@ package com.calculator.feature.basic.ui
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.calculator.core.common.format.messageRes
 import com.calculator.core.data.history.HistoryEntry
 import com.calculator.core.data.history.HistoryRepository
 import com.calculator.core.data.settings.SettingsRepository
+import com.calculator.core.data.settings.UserSettings
 import com.calculator.core.data.tape.TapeEntry
-import com.calculator.core.data.tape.TapeHolder
+import com.calculator.core.data.tape.TapeStore
 import com.calculator.core.math.AngleMode
 import com.calculator.core.math.EvaluationResult
 import com.calculator.core.math.Evaluator
+import com.calculator.core.math.ExpressionEditor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -38,15 +41,9 @@ import javax.inject.Inject
  *  - The evaluation engine is synchronous and microsecond-fast for any
  *    realistic expression length, so no coroutine dispatch is needed.
  *
- * UX rules baked in (match common physical/iOS-style calculators):
- *  - Consecutive operators collapse: typing `1 + + ×` ends up as `1×`.
- *  - Leading `+`, `×`, `÷` are ignored; leading `-` is allowed (negation).
- *  - Only one decimal point per number segment.
- *  - A leading `.` is auto-prefixed with `0`, so `.5` reads as `0.5`.
- *  - Pressing a digit right after `=` starts a fresh expression.
- *  - Pressing an operator right after `=` chains on the result.
- *  - Pressing `=` with a trailing operator auto-completes the missing
- *    operand from the last typed number (`1 + =` → `1 + 1 = 2`).
+ * Input rules (operator collapse, decimals, leading zero, sign flip,
+ * `=` completion) live in [ExpressionEditor], shared with the widget and
+ * the floating calculator. On top of them this ViewModel adds:
  *  - Pressing `=` repeatedly re-applies the last `op + operand`.
  *  - Memory keys M+, M-, MR, MC operate on a single stored value.
  *
@@ -58,24 +55,22 @@ class BasicCalculatorViewModel
     @Inject
     constructor(
         private val savedStateHandle: SavedStateHandle,
-        private val historyRepository: HistoryRepository? = null,
-        settingsRepository: SettingsRepository? = null,
+        private val historyRepository: HistoryRepository,
+        settingsRepository: SettingsRepository,
+        private val tapeStore: TapeStore,
     ) : ViewModel() {
-        // Precision flows in from SettingsRepository, defaulting to
-        // DECIMAL64 when no repo is wired (e.g. unit tests construct
-        // the VM without one). Each `=` and live preview pulls the
-        // current value, so a precision change in Settings takes
-        // effect on the next keypress without restarting anything.
+        // Precision flows in from SettingsRepository. Each `=` and live
+        // preview pulls the current value, so a precision change in
+        // Settings takes effect on the next keypress without restarting
+        // anything.
         private val precision: StateFlow<Int> =
-            settingsRepository
-                ?.settings
-                ?.map { it.precision }
-                ?.stateIn(
+            settingsRepository.settings
+                .map { it.precision }
+                .stateIn(
                     scope = viewModelScope,
                     started = SharingStarted.Eagerly,
-                    initialValue = DEFAULT_PRECISION,
+                    initialValue = UserSettings.DEFAULT_PRECISION,
                 )
-                ?: MutableStateFlow(DEFAULT_PRECISION).asStateFlow()
 
         // Restore from the SavedStateHandle so calculator state survives
         // process death and config changes. `liveResult` is derived from
@@ -87,12 +82,12 @@ class BasicCalculatorViewModel
          * Session tape of committed equations, oldest first.
          *
          * Surfaced as its own flow rather than folded into
-         * [BasicCalculatorUiState] because it lives in the process-wide
-         * [TapeHolder] - the display state is per-ViewModel, the tape is
+         * [BasicCalculatorUiState] because it lives in the shared
+         * [TapeStore] - the display state is per-ViewModel, the tape is
          * not, and keeping them separate avoids copying the whole list
          * into a new state object on every keystroke.
          */
-        val tape: StateFlow<List<TapeEntry>> = TapeHolder.entries
+        val tape: StateFlow<List<TapeEntry>> = tapeStore.entries
 
         private fun loadFromSavedState(): BasicCalculatorUiState {
             val expression = savedStateHandle.get<String>(KEY_EXPRESSION).orEmpty()
@@ -110,7 +105,7 @@ class BasicCalculatorViewModel
             return BasicCalculatorUiState(
                 expression = expression,
                 liveResult = restoredPreview,
-                errorMessage = savedStateHandle.get<String>(KEY_ERROR),
+                errorMessage = savedStateHandle.get<Int>(KEY_ERROR),
                 pendingRepeat = savedStateHandle.get<String>(KEY_PENDING_REPEAT),
                 scientific = savedStateHandle.get<Boolean>(KEY_SCIENTIFIC) ?: false,
                 angleMode = angleMode,
@@ -135,6 +130,16 @@ class BasicCalculatorViewModel
             savedStateHandle[KEY_LAST_PREVIEW] = state.lastValidPreview
         }
 
+        init {
+            // Key sounds and haptics follow Settings live; they are not part
+            // of the saved calculator state.
+            viewModelScope.launch {
+                settingsRepository.settings.collect { s ->
+                    _state.update { it.copy(soundEnabled = s.sound, hapticsEnabled = s.haptics) }
+                }
+            }
+        }
+
         /** Dispatch a user event - typically called from the UI on key press. */
         fun onEvent(event: BasicCalculatorEvent) {
             when (event) {
@@ -146,24 +151,30 @@ class BasicCalculatorViewModel
                     // sheet", so the inline tape goes with the expression.
                     // The persistent History sheet is untouched - that is
                     // the durable record.
-                    TapeHolder.clear()
+                    tapeStore.clear()
                     clear()
                 }
                 BasicCalculatorEvent.Equals -> commit()
                 BasicCalculatorEvent.ToggleScientific -> toggleScientific()
+                is BasicCalculatorEvent.SetScientific ->
+                    if (_state.value.scientific != event.enabled) toggleScientific()
+                is BasicCalculatorEvent.Reuse -> {
+                    clear()
+                    append(event.expression)
+                }
                 BasicCalculatorEvent.ToggleAngleMode -> toggleAngleMode()
                 BasicCalculatorEvent.MemoryAdd -> memoryDelta(addToMemory = true)
                 BasicCalculatorEvent.MemorySubtract -> memoryDelta(addToMemory = false)
                 BasicCalculatorEvent.MemoryRecall -> memoryRecall()
                 BasicCalculatorEvent.MemoryClear -> memoryClear()
                 BasicCalculatorEvent.SignFlip -> signFlip()
-                is BasicCalculatorEvent.DeleteTapeLine -> TapeHolder.remove(event.id)
+                is BasicCalculatorEvent.DeleteTapeLine -> tapeStore.remove(event.id)
             }
         }
 
         private fun append(symbol: String) =
             _state.update { current ->
-                val next = nextExpressionAfterAppend(current, symbol)
+                val next = ExpressionEditor.append(current.expression, symbol, afterEquals = current.pendingRepeat != null)
                 val newPreview = preview(next, current.angleMode)
                 current
                     .copy(
@@ -187,51 +198,6 @@ class BasicCalculatorViewModel
                     ).also(::persist)
             }
 
-        private fun nextExpressionAfterAppend(current: BasicCalculatorUiState, symbol: String): String {
-            current.pendingRepeat?.let { return appendAfterEquals(current.expression, symbol) }
-            return appendDuringEdit(current.expression, symbol)
-        }
-
-        private fun appendAfterEquals(expr: String, symbol: String): String {
-            // After `=`, a number/decimal starts fresh; an operator or a
-            // function name chains on the result.
-            val isOperator = symbol.length == 1 && symbol[0] in ArithmeticOperators
-            val startsFunction = symbol.length > 1 && symbol.last() == '('
-            return when {
-                isOperator -> expr + symbol
-                startsFunction -> symbol
-                symbol == "." -> "0."
-                else -> symbol
-            }
-        }
-
-        private fun appendDuringEdit(expr: String, symbol: String): String {
-            val isOperator = symbol.length == 1 && symbol[0] in ArithmeticOperators
-            return when {
-                // Replace the trailing operator instead of stacking another.
-                isOperator && expr.isNotEmpty() && expr.last() in ArithmeticOperators ->
-                    expr.dropLast(1) + symbol
-
-                // Drop a stray leading `+`, `×`, `÷`, `^` (but allow leading `-` for negation).
-                isOperator && expr.isEmpty() && symbol != "-" -> expr
-
-                // Decimal-point rules.
-                symbol == "." -> appendDecimal(expr)
-
-                // Leading-zero trim: replace a lone `0` segment with the typed digit.
-                symbol.length == 1 && symbol[0].isDigit() && currentNumberIsLoneZero(expr) ->
-                    expr.dropLast(1) + symbol
-
-                else -> expr + symbol
-            }
-        }
-
-        private fun appendDecimal(expr: String): String {
-            if (currentNumberHasDot(expr)) return expr
-            val needsZeroPrefix = expr.isEmpty() || expr.last() in ArithmeticOperators || expr.last() == '('
-            return if (needsZeroPrefix) "$expr${"0."}" else "$expr."
-        }
-
         private fun backspace() =
             _state.update { current ->
                 val next = current.expression.dropLast(1)
@@ -253,23 +219,30 @@ class BasicCalculatorViewModel
         private fun clear() =
             _state.update { current ->
                 // Clear wipes the expression and error/repeat, but keeps user
-                // preferences (scientific mode, angle mode, memory).
+                // preferences (scientific mode, angle mode, memory, key feedback).
                 BasicCalculatorUiState(
                     scientific = current.scientific,
                     angleMode = current.angleMode,
                     memory = current.memory,
+                    soundEnabled = current.soundEnabled,
+                    hapticsEnabled = current.hapticsEnabled,
                 ).also(::persist)
             }
 
-        private fun commit() =
+        private fun commit() {
+            // update() may run its block more than once when it races, so the
+            // block only computes the new state; the tape and history writes
+            // happen once, after it.
+            var record: (() -> Unit)? = null
             _state.update { current ->
+                record = null
                 if (current.expression.isBlank()) return@update current
 
                 val (toEvaluate, repeatToken) = buildEquationToEvaluate(current)
 
                 when (val result = evaluatorFor(current.angleMode).evaluate(toEvaluate)) {
                     is EvaluationResult.Success -> {
-                        val canonicalResult = result.value.stripTrailingZeros().toPlainString()
+                        val canonicalResult = ExpressionEditor.resultText(result.value)
                         // An identity commit computed nothing, so it earns no
                         // line in either sink. This is what `=` does on a bare
                         // number: `5+6 =` leaves `11` on the display, and every
@@ -283,12 +256,14 @@ class BasicCalculatorViewModel
                         // none of those are identities.
                         val isIdentity = toEvaluate == canonicalResult
                         if (!isIdentity) {
-                            recordCommit(
-                                expression = toEvaluate,
-                                result = canonicalResult,
-                                scientific = current.scientific,
-                                isRepeat = current.pendingRepeat != null,
-                            )
+                            record = {
+                                recordCommit(
+                                    expression = toEvaluate,
+                                    result = canonicalResult,
+                                    scientific = current.scientific,
+                                    isRepeat = current.pendingRepeat != null,
+                                )
+                            }
                         }
                         current
                             .copy(
@@ -316,7 +291,7 @@ class BasicCalculatorViewModel
                         current
                             .copy(
                                 liveResult = null,
-                                errorMessage = errorToMessage(result),
+                                errorMessage = result.messageRes(),
                                 pendingRepeat = null,
                                 // Failed equations don't get an history line - the
                                 // expression that's still on screen IS the input,
@@ -329,6 +304,8 @@ class BasicCalculatorViewModel
                             ).also(::persist)
                 }
             }
+            record?.invoke()
+        }
 
         /**
          * Fan a successful `=` out to the session tape and the durable
@@ -351,15 +328,13 @@ class BasicCalculatorViewModel
             scientific: Boolean,
             isRepeat: Boolean,
         ) {
-            TapeHolder.add(expression, result)
+            tapeStore.add(expression, result)
             if (isRepeat) return
-            // Best-effort and fire-and-forget: no repository is wired in
-            // tests and previews, and a failed insert is non-fatal
-            // because the user already saw their result.
-            val repo = historyRepository ?: return
+            // Best-effort and fire-and-forget: a failed insert is
+            // non-fatal because the user already saw their result.
             viewModelScope.launch {
                 runCatching {
-                    repo.add(
+                    historyRepository.add(
                         expression = expression,
                         result = result,
                         type = if (scientific) HistoryEntry.Type.Scientific else HistoryEntry.Type.Basic,
@@ -404,12 +379,12 @@ class BasicCalculatorViewModel
                 // as a no-op instead so MR is harmless before any value
                 // is stored.
                 if (current.memory.signum() == 0) return@update current
-                val mem = current.memory.stripTrailingZeros().toPlainString()
+                val mem = ExpressionEditor.resultText(current.memory)
                 val next =
                     when {
                         current.pendingRepeat != null -> mem
                         current.expression.isEmpty() -> mem
-                        current.expression.last() in ArithmeticOperators ||
+                        current.expression.last() in ExpressionEditor.ArithmeticOperators ||
                             current.expression.last() == '(' -> current.expression + mem
                         else -> current.expression + "×" + mem
                     }
@@ -450,7 +425,7 @@ class BasicCalculatorViewModel
          */
         private fun signFlip() =
             _state.update { current ->
-                val flipped = flipSignOfTrailingOperand(current.expression)
+                val flipped = ExpressionEditor.flipSign(current.expression)
                 val newPreview = preview(flipped, current.angleMode)
                 current
                     .copy(
@@ -480,33 +455,7 @@ class BasicCalculatorViewModel
                 return (current.expression + repeat) to repeat
             }
 
-            // Auto-close unbalanced opens before any other transformation.
-            // `(1+2` evaluates as `(1+2)` and `((5+1` as `((5+1))`.
-            val expr = autoCloseParens(current.expression)
-
-            // Trailing operator: auto-complete with the operand the user just
-            // typed (the number immediately before that operator). So `1+=`
-            // resolves as `1+1=2`, `10-3×=` as `10-3×3=1`, and so on. This
-            // is the *only* path that arms a repeat-equals token: pressing
-            // `=` again replays the auto-completed `+1`, `×3`, etc.
-            if (expr.last() in ArithmeticOperators) {
-                val precedingNumber = PrecedingNumberRegex.find(expr)?.groupValues?.getOrNull(1)
-                return if (precedingNumber != null) {
-                    val repeat = expr.last() + precedingNumber
-                    (expr + precedingNumber) to repeat
-                } else {
-                    // Just an operator (e.g. `-`); let the evaluator surface the error.
-                    expr to null
-                }
-            }
-
-            // Normal path: a complete expression like `2+3`. We arm an
-            // empty-string repeat token: it does NOT add anything on
-            // subsequent `=` presses (the user has to type a dangling
-            // operator to opt into the repeat chain) but it still signals
-            // "we just completed an equals" so digit/decimal presses
-            // correctly start a fresh expression (see [appendAfterEquals]).
-            return expr to ""
+            return ExpressionEditor.completeForEquals(current.expression)
         }
 
         /**
@@ -519,7 +468,7 @@ class BasicCalculatorViewModel
         private fun preview(expression: String, angleMode: AngleMode): String? {
             if (expression.isBlank()) return null
             return when (val result = evaluatorFor(angleMode).evaluate(expression)) {
-                is EvaluationResult.Success -> result.value.stripTrailingZeros().toPlainString()
+                is EvaluationResult.Success -> ExpressionEditor.resultText(result.value)
                 is EvaluationResult.Error -> null
             }
         }
@@ -559,137 +508,7 @@ class BasicCalculatorViewModel
             state.liveResult?.let { runCatching { BigDecimal(it) }.getOrNull() }
                 ?: runCatching { BigDecimal(state.expression) }.getOrNull()
 
-        /**
-         * Translate engine errors to user-facing strings.
-         *
-         * In a fully internationalised build these would be string resource
-         * IDs resolved at the composable layer; for the scaffold we ship
-         * English literals which the i18n pass (M5) will replace.
-         */
-        private fun errorToMessage(error: EvaluationResult.Error): String =
-            when (error) {
-                EvaluationResult.Error.DivisionByZero -> "Can't divide by zero"
-                is EvaluationResult.Error.Syntax -> "Check your expression"
-                is EvaluationResult.Error.UnknownToken -> "Unsupported character"
-                is EvaluationResult.Error.Domain -> domainMessage(error.reason)
-            }
-
-        /**
-         * Map the engine's lower-level domain reason into a short, user-
-         * friendly message. The engine's reasons are precise but technical
-         * (`sqrt(-5) is undefined`, `factorial of negative: -3`); the user
-         * doesn't want to read function names out of the keypad they just
-         * pressed, they want to know *which* rule they bumped into.
-         *
-         * Prefix matching on the reason keeps this in one place and avoids
-         * coupling the UI layer to specific FunctionId enum values - any
-         * new domain rejection added in the engine will fall through to
-         * the generic last branch instead of breaking the build.
-         */
-        @Suppress("ReturnCount")
-        private fun domainMessage(reason: String): String = when {
-            reason.startsWith("sqrt") -> "Can't take √ of a negative number"
-            reason.startsWith("cbrt") -> "Cube root undefined here"
-            reason.startsWith("log") -> "Log needs a positive number"
-            reason.startsWith("ln") -> "ln needs a positive number"
-            reason.startsWith("asin") -> "asin needs a value between -1 and 1"
-            reason.startsWith("acos") -> "acos needs a value between -1 and 1"
-            reason.startsWith("tan") -> "tan is undefined at this angle"
-            reason.startsWith("factorial of negative") -> "Factorial needs a non-negative number"
-            reason.startsWith("factorial of non-integer") -> "Factorial needs a whole number"
-            reason.startsWith("factorial too large") -> "Factorial is too large to compute"
-            reason.startsWith("power overflow") -> "Result is too large"
-            reason.startsWith("invalid power") -> "That power isn't a real number"
-            else -> "Math out of domain"
-        }
-
-        /**
-         * Walk back through the current number segment; return true if a `.`
-         * already exists before any operator or paren is hit.
-         */
-        private fun currentNumberHasDot(expr: String): Boolean {
-            for (i in expr.length - 1 downTo 0) {
-                val c = expr[i]
-                if (c in ArithmeticOperators || c == '(' || c == ')') return false
-                if (c == '.') return true
-            }
-            return false
-        }
-
-        /**
-         * Return true if the current number segment is exactly `"0"`
-         * (i.e. ends in `0`, and the character before it - if any - is an
-         * operator or open paren). Used to power leading-zero trimming.
-         */
-        private fun currentNumberIsLoneZero(expr: String): Boolean {
-            if (expr.isEmpty() || expr.last() != '0') return false
-            val prev = expr.getOrNull(expr.length - 2) ?: return true
-            return prev in ArithmeticOperators || prev == '('
-        }
-
-        /**
-         * Append the matching `)` for every unbalanced `(` so `(1+2` reads
-         * as `(1+2)` when `=` fires. A naive paren count is enough: the
-         * tokenizer is the source of truth on mismatch, so this is just a
-         * convenience the user expects from a calculator.
-         */
-        private fun autoCloseParens(expr: String): String {
-            val opens = expr.count { it == '(' }
-            val closes = expr.count { it == ')' }
-            return if (opens > closes) expr + ")".repeat(opens - closes) else expr
-        }
-
-        /**
-         * Toggle the leading `-` of the rightmost numeric operand.
-         *
-         * "Operand" here is whatever the cursor is on - the trailing
-         * digits/dot string, optionally preceded by a unary `-`. If that
-         * unary `-` is present we remove it; otherwise we insert one.
-         *
-         * Three edge cases handled at the boundary:
-         *  - Empty expression: there's nothing to flip, but the user
-         *    pressing `±` first wants to start a negative number - so
-         *    we return `"-"` so the next digit appends to it.
-         *  - Expression ends with an operator (`10+`): no operand yet;
-         *    insert `-` after the operator (`10+-`) so the next digit
-         *    becomes the negative operand.
-         *  - Expression ends with `)` or `!`: don't try to flip; the
-         *    operand isn't a single numeric token.
-         *
-         * Each early return guards a distinct edge case; merging them
-         * into a single return point would only nest the logic and hide
-         * intent, hence the [ReturnCount] suppression.
-         */
-        @Suppress("ReturnCount")
-        private fun flipSignOfTrailingOperand(expr: String): String {
-            if (expr.isEmpty()) return "-"
-            val last = expr.last()
-            if (last in ArithmeticOperators || last == '(') {
-                // Arm a unary minus for the next digit.
-                return expr + "-"
-            }
-            if (last == ')' || last == '!') return expr // operand isn't a flat number
-            val match = TrailingNumberRegex.find(expr) ?: return expr
-            val numStart = match.range.first
-            // Is there a leading `-` directly before the number that we should
-            // remove? It counts as unary if it sits at the start of input, or
-            // right after an operator/`(`.
-            val minusPos = numStart - 1
-            if (minusPos >= 0 && expr[minusPos] == '-') {
-                val priorPos = minusPos - 1
-                val isUnary = priorPos < 0 || expr[priorPos] in "+-×÷*/^("
-                if (isUnary) {
-                    return expr.removeRange(minusPos, minusPos + 1)
-                }
-            }
-            return expr.substring(0, numStart) + "-" + expr.substring(numStart)
-        }
-
         private companion object {
-            // Matches DataStoreSettingsRepository.DEFAULT_PRECISION; pulled
-            // in only so the VM can construct an Evaluator without a
-            // settings repo (tests).
-            const val DEFAULT_PRECISION = 12
             const val KEY_EXPRESSION = "calculator.expression"
             const val KEY_ERROR = "calculator.error"
             const val KEY_PENDING_REPEAT = "calculator.pendingRepeat"
@@ -698,21 +517,5 @@ class BasicCalculatorViewModel
             const val KEY_MEMORY = "calculator.memory"
             const val KEY_LAST_COMMITTED = "calculator.lastCommittedExpression"
             const val KEY_LAST_PREVIEW = "calculator.lastValidPreview"
-
-            /** Characters the keypad treats as binary arithmetic operators. */
-            val ArithmeticOperators = setOf('+', '-', '×', '÷', '*', '/', '^')
-
-            /** Trailing `op + operand` for repeat-equals. */
-            val TrailingOpRegex = Regex("([+\\-×÷*/^])(\\d+(?:\\.\\d+)?)$")
-
-            /**
-             * The numeric literal sitting immediately before a trailing
-             * operator. Used to auto-complete an incomplete expression on
-             * `=` (e.g. `10-3×` → use `3`, the operand just entered).
-             */
-            val PrecedingNumberRegex = Regex("(\\d+(?:\\.\\d+)?)[+\\-×÷*/^]$")
-
-            /** The trailing numeric literal of the expression. Used by [flipSignOfTrailingOperand]. */
-            val TrailingNumberRegex = Regex("(\\d+(?:\\.\\d+)?|\\.\\d+)$")
         }
     }

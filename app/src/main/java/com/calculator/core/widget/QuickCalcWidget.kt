@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
@@ -19,7 +20,6 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.background
-import androidx.glance.color.ColorProvider
 import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
@@ -37,11 +37,15 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
-import androidx.glance.unit.ColorProvider
+import com.calculator.core.data.di.SettingsEntryPoint
 import com.calculator.core.math.AngleMode
 import com.calculator.core.math.EvaluationResult
 import com.calculator.core.math.Evaluator
-import androidx.compose.ui.graphics.Color as ComposeColor
+import com.calculator.core.math.ExpressionEditor
+import dagger.hilt.android.EntryPointAccessors
+import kotlinx.coroutines.flow.first
+import java.math.MathContext
+import java.math.RoundingMode
 
 /**
  * A pocket-calculator-shaped home-screen widget.
@@ -83,12 +87,9 @@ class QuickCalcWidgetReceiver : GlanceAppWidgetReceiver() {
 // its own DataStore file behind the scenes keyed by GlanceId.
 private val ExpressionKey = stringPreferencesKey("widget.expression")
 
-private val OperatorColor = ComposeColor(0xFFFF9F0A)
-private val OnOperatorColor = ComposeColor.White
-private val DigitColor = ComposeColor(0xFF505050)
-private val ModifierColor = ComposeColor(0xFFA5A5A5)
-private val DisplayBackground = ComposeColor(0xFF1C1C1E)
-private val WidgetBackground = ComposeColor.Black
+// True while the expression is a result just produced by `=`, so the next
+// digit starts over (the same rule as the app's keypad).
+private val AfterEqualsKey = booleanPreferencesKey("widget.afterEquals")
 
 @androidx.compose.runtime.Composable
 private fun WidgetContent() {
@@ -99,7 +100,9 @@ private fun WidgetContent() {
         modifier =
             GlanceModifier
                 .fillMaxSize()
-                .background(WidgetBackground)
+                // Theme roles, so the widget follows light/dark mode and the
+                // wallpaper colours like the app does.
+                .background(GlanceTheme.colors.widgetBackground)
                 .cornerRadius(20.dp)
                 .padding(8.dp),
         verticalAlignment = Alignment.Top,
@@ -112,7 +115,7 @@ private fun WidgetContent() {
                     .fillMaxWidth()
                     .height(56.dp)
                     .cornerRadius(12.dp)
-                    .background(DisplayBackground)
+                    .background(GlanceTheme.colors.surfaceVariant)
                     .padding(horizontal = 12.dp),
             contentAlignment = Alignment.CenterEnd,
         ) {
@@ -121,7 +124,7 @@ private fun WidgetContent() {
                 maxLines = 1,
                 style =
                     TextStyle(
-                        color = ColorProvider(ComposeColor.White),
+                        color = GlanceTheme.colors.onSurfaceVariant,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.End,
@@ -159,12 +162,12 @@ private data class WKey(val label: String, val kind: KeyKind)
 
 @androidx.compose.runtime.Composable
 private fun KeyBox(key: WKey) {
+    val colors = GlanceTheme.colors
     val (bg, fg) =
         when (key.kind) {
-            KeyKind.Digit -> DigitColor to ComposeColor.White
-            KeyKind.Operator -> OperatorColor to OnOperatorColor
-            KeyKind.Modifier -> ModifierColor to ComposeColor.Black
-            KeyKind.Equals -> OperatorColor to OnOperatorColor
+            KeyKind.Digit -> colors.secondaryContainer to colors.onSecondaryContainer
+            KeyKind.Operator, KeyKind.Equals -> colors.primary to colors.onPrimary
+            KeyKind.Modifier -> colors.tertiaryContainer to colors.onTertiaryContainer
         }
     Box(
         modifier =
@@ -186,7 +189,7 @@ private fun KeyBox(key: WKey) {
             text = key.label,
             style =
                 TextStyle(
-                    color = ColorProvider(fg),
+                    color = fg,
                     fontSize = 18.sp,
                     fontWeight =
                         if (key.kind == KeyKind.Equals) FontWeight.Bold else FontWeight.Medium,
@@ -196,9 +199,9 @@ private fun KeyBox(key: WKey) {
 }
 
 /**
- * Handles a single widget key press. Re-uses the main app's pure-Kotlin
- * [Evaluator] so widget math behaves identically to the in-app
- * calculator (no separate widget grammar to keep in sync).
+ * Handles a single widget key press with the app's own input rules
+ * ([ExpressionEditor]) and [Evaluator], at the precision chosen in
+ * Settings, so widget math behaves exactly like the in-app calculator.
  */
 class WidgetKeyAction : ActionCallback {
     override suspend fun onAction(
@@ -207,40 +210,52 @@ class WidgetKeyAction : ActionCallback {
         parameters: ActionParameters,
     ) {
         val label = parameters[LABEL_KEY] ?: return
+        val precision =
+            EntryPointAccessors
+                .fromApplication(context, SettingsEntryPoint::class.java)
+                .settingsRepository()
+                .settings
+                .first()
+                .precision
         updateAppWidgetState(context, glanceId) { prefs ->
             val current = prefs[ExpressionKey].orEmpty()
-            prefs[ExpressionKey] = next(current, label)
+            val afterEquals = prefs[AfterEqualsKey] ?: false
+            when (label) {
+                "C" -> prefs[ExpressionKey] = ""
+                "⌫" -> prefs[ExpressionKey] = current.dropLast(1)
+                "=" -> {
+                    val result = evaluate(current, precision)
+                    prefs[ExpressionKey] = result ?: current
+                    prefs[AfterEqualsKey] = result != null
+                    return@updateAppWidgetState
+                }
+                else -> prefs[ExpressionKey] = ExpressionEditor.append(current, label, afterEquals)
+            }
+            prefs[AfterEqualsKey] = false
         }
         QuickCalcWidget().update(context, glanceId)
     }
 
-    private fun next(current: String, label: String): String =
-        when (label) {
-            "C" -> ""
-            "⌫" -> if (current.isEmpty()) "" else current.dropLast(1)
-            "=" -> evaluate(current)
-            else -> current + label
-        }
-
     /**
-     * Run the shared [Evaluator] over the user's expression and return
-     * the canonical string form of the result.
+     * Evaluate the expression the way `=` does in the app (closing open
+     * parentheses, completing a trailing operator).
      *
-     * On a tokenizer/evaluator error we deliberately leave the
-     * expression unchanged rather than wiping it - the user just typed
-     * it; clearing on error would be a hostile experience. They can fix
-     * the typo and press `=` again.
+     * @return the result, or null on an error. The expression is then
+     *   left unchanged rather than wiped - the user just typed it and
+     *   can fix the typo and press `=` again.
      */
-    private fun evaluate(expression: String): String {
-        if (expression.isBlank()) return ""
-        // Radian mode is fixed because the widget has no scientific
-        // keys, so the angle-mode choice never affects basic
-        // arithmetic. Building a fresh Evaluator per click is fine -
-        // the constructor is microseconds and the widget rarely
-        // recomputes.
-        return when (val result = Evaluator(angleMode = AngleMode.Radian).evaluate(expression)) {
-            is EvaluationResult.Success -> result.value.stripTrailingZeros().toPlainString()
-            is EvaluationResult.Error -> expression // leave as-is; user can fix and retry
+    private fun evaluate(
+        expression: String,
+        precision: Int,
+    ): String? {
+        if (expression.isBlank()) return null
+        val (toEvaluate, _) = ExpressionEditor.completeForEquals(expression)
+        // Radian mode is fixed because the widget has no scientific keys.
+        val evaluator =
+            Evaluator(mathContext = MathContext(precision, RoundingMode.HALF_EVEN), angleMode = AngleMode.Radian)
+        return when (val result = evaluator.evaluate(toEvaluate)) {
+            is EvaluationResult.Success -> ExpressionEditor.resultText(result.value)
+            is EvaluationResult.Error -> null
         }
     }
 

@@ -15,6 +15,12 @@ import kotlin.math.ceil
  * display layer; the engine carries full precision.
  */
 object TipSplitCalculator {
+    /**
+     * Splits [bill] plus [tipAmount] between [people].
+     *
+     * @param roundUpPerPerson Round each share up to a whole unit; the extra goes into the tip.
+     * @throws IllegalArgumentException when [bill] or [tipAmount] is negative or [people] is below 1.
+     */
     fun compute(
         bill: Double,
         tipAmount: Double,
@@ -43,6 +49,13 @@ object TipSplitCalculator {
     }
 }
 
+/**
+ * Result of [TipSplitCalculator.compute], in the bill's currency.
+ *
+ * @property tip Tip, including any extra from rounding up.
+ * @property total Bill plus [tip].
+ * @property perPerson Each person's share.
+ */
 data class TipSplitResult(
     val tip: Double,
     val total: Double,

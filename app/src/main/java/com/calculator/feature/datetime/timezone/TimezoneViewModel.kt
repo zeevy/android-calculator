@@ -1,5 +1,6 @@
 package com.calculator.feature.datetime.timezone
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.calculator.core.data.settings.SettingsRepository
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -36,14 +38,24 @@ class TimezoneViewModel
     @Inject
     constructor(
         private val settings: SettingsRepository,
+        private val savedStateHandle: SavedStateHandle,
+        private val clock: Clock,
     ) : ViewModel() {
+        // Times the user picked come back from SavedStateHandle after
+        // process death; the zones come back from settings in init.
+        private val savedFromTime: LocalDateTime? = savedStateHandle[KEY_FROM_TIME]
+
         private val _state =
             MutableStateFlow(
-                // Seed with `now` so the screen renders a useful conversion on
-                // first frame instead of midnight. Both sides start at the
-                // same instant but in different zones - recompute() will
-                // restore consistency on first emit.
-                TimezoneUiState(fromTime = LocalDateTime.now(), toTime = LocalDateTime.now()),
+                // Placeholder until init knows the From zone and sets the
+                // current time there.
+                TimezoneUiState(
+                    fromTime = savedFromTime ?: LocalDateTime.now(clock),
+                    toTime = savedStateHandle[KEY_TO_TIME] ?: LocalDateTime.now(clock),
+                    lastEdited =
+                        savedStateHandle.get<String>(KEY_LAST_EDITED)?.let { TimezoneUiState.Side.valueOf(it) }
+                            ?: TimezoneUiState.Side.From,
+                ),
             )
         val state: StateFlow<TimezoneUiState> = _state.asStateFlow()
 
@@ -52,20 +64,32 @@ class TimezoneViewModel
                 val saved = settings.settings.firstOrNull()
                 val from = saved?.lastTzFromZone ?: "UTC"
                 val to = saved?.lastTzToZone ?: "Asia/Kolkata"
-                _state.update { it.copy(fromZone = from, toZone = to) }
+                _state.update { current ->
+                    // Start from "now" in the From zone, not the device's wall
+                    // time labelled as the From zone.
+                    val fromZoneId = runCatching { ZoneId.of(from) }.getOrNull()
+                    val now = if (savedFromTime == null &&
+                        fromZoneId != null
+                    ) {
+                        LocalDateTime.now(clock.withZone(fromZoneId))
+                    } else {
+                        current.fromTime
+                    }
+                    current.copy(fromZone = from, toZone = to, fromTime = now)
+                }
                 recompute()
             }
         }
 
         fun setFromZone(zone: String) {
             _state.update { it.copy(fromZone = zone, pickerOpen = null) }
-            viewModelScope.launch { settings.setLastTzFromZone(zone) }
+            recordRecent()
             recompute()
         }
 
         fun setToZone(zone: String) {
             _state.update { it.copy(toZone = zone, pickerOpen = null) }
-            viewModelScope.launch { settings.setLastTzToZone(zone) }
+            recordRecent()
             recompute()
         }
 
@@ -142,8 +166,7 @@ class TimezoneViewModel
         private fun recordRecent() {
             val snap = _state.value
             viewModelScope.launch {
-                settings.setLastTzFromZone(snap.fromZone)
-                settings.setLastTzToZone(snap.toZone)
+                settings.setLastTzPair(snap.fromZone, snap.toZone)
             }
         }
 
@@ -153,6 +176,14 @@ class TimezoneViewModel
          * [TimezoneUiState.toTime]; otherwise convert in reverse.
          */
         private fun recompute() {
+            recomputeState()
+            val saved = _state.value
+            savedStateHandle[KEY_FROM_TIME] = saved.fromTime
+            savedStateHandle[KEY_TO_TIME] = saved.toTime
+            savedStateHandle[KEY_LAST_EDITED] = saved.lastEdited.name
+        }
+
+        private fun recomputeState() {
             _state.update { current ->
                 val fromZone = runCatching { ZoneId.of(current.fromZone) }.getOrNull() ?: return@update current
                 val toZone = runCatching { ZoneId.of(current.toZone) }.getOrNull() ?: return@update current
@@ -167,5 +198,11 @@ class TimezoneViewModel
                     }
                 }
             }
+        }
+
+        private companion object {
+            const val KEY_FROM_TIME = "timezone.fromTime"
+            const val KEY_TO_TIME = "timezone.toTime"
+            const val KEY_LAST_EDITED = "timezone.lastEdited"
         }
     }

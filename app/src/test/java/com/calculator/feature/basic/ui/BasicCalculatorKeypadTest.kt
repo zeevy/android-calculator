@@ -1,9 +1,15 @@
 package com.calculator.feature.basic.ui
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import com.calculator.core.designsystem.theme.CalculatorTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -114,5 +120,19 @@ class BasicCalculatorKeypadTest {
         assertEquals(BasicCalculatorEvent.Append("cos("), events[1])
         assertEquals(BasicCalculatorEvent.Append("sqrt("), events[2])
         assertEquals(BasicCalculatorEvent.Append("π"), events[3])
+    }
+
+    @Test
+    fun keysAreButtonsWithSpokenNames() {
+        val events = mutableListOf<BasicCalculatorEvent>()
+        composeRule.setContent {
+            CalculatorTheme { Keypad(scientific = false, onEvent = events::add) }
+        }
+        val isButton = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)
+
+        composeRule.onNode(hasContentDescription("Plus") and isButton).performSemanticsAction(SemanticsActions.OnClick)
+        composeRule.onNode(hasContentDescription("Backspace") and isButton).performSemanticsAction(SemanticsActions.OnLongClick)
+
+        assertEquals(listOf(BasicCalculatorEvent.Append("+"), BasicCalculatorEvent.ClearAll), events)
     }
 }

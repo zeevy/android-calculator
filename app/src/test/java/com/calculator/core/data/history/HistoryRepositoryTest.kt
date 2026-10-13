@@ -11,6 +11,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
 import kotlin.test.assertEquals
 
 /**
@@ -32,7 +35,7 @@ class HistoryRepositoryTest {
                     CalculatorDatabase::class.java,
                 ).allowMainThreadQueries()
                 .build()
-        repo = RoomHistoryRepository(db.historyDao())
+        repo = RoomHistoryRepository(db.historyDao(), Clock.fixed(Instant.parse("2026-10-13T04:30:00Z"), ZoneOffset.UTC))
     }
 
     @After

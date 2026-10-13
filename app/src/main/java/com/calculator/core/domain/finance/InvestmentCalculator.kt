@@ -26,6 +26,13 @@ import kotlin.math.pow
  * is the display layer's responsibility.
  */
 object InvestmentCalculator {
+    /**
+     * Value of a monthly SIP of [monthlyAmount] for [years] at [annualRatePercent],
+     * each payment made at the start of its month.
+     *
+     * @throws IllegalArgumentException when an amount or rate is negative or [years] is not positive.
+     * @throws ResultTooLargeException when the value overflows a Double.
+     */
     fun sip(
         monthlyAmount: Double,
         annualRatePercent: Double,
@@ -46,9 +53,21 @@ object InvestmentCalculator {
                     (1.0 + monthlyRate)
             }
         val invested = monthlyAmount * months
-        return InvestmentResult(maturity = maturity, invested = invested, gains = maturity - invested)
+        return InvestmentResult(
+            maturity = maturity.requireFinite(),
+            invested = invested.requireFinite(),
+            gains = maturity - invested,
+        )
     }
 
+    /**
+     * Value of [principal] invested once for [years] at [annualRatePercent],
+     * compounded [timesPerYear] times a year.
+     *
+     * @throws IllegalArgumentException when an amount or rate is negative, [years] is not positive
+     *   or [timesPerYear] is below 1.
+     * @throws ResultTooLargeException when the value overflows a Double.
+     */
     fun lumpSum(
         principal: Double,
         annualRatePercent: Double,
@@ -61,7 +80,7 @@ object InvestmentCalculator {
         require(timesPerYear >= 1) { "timesPerYear must be >= 1" }
 
         val rate = annualRatePercent / PERCENT_BASE
-        val maturity = principal * (1.0 + rate / timesPerYear).pow(timesPerYear * years)
+        val maturity = (principal * (1.0 + rate / timesPerYear).pow(timesPerYear * years)).requireFinite()
         return InvestmentResult(
             maturity = maturity,
             invested = principal,
@@ -70,6 +89,13 @@ object InvestmentCalculator {
     }
 }
 
+/**
+ * Result of [InvestmentCalculator], in the investment's currency.
+ *
+ * @property maturity Value at the end of the term.
+ * @property invested Total paid in.
+ * @property gains [maturity] minus [invested].
+ */
 data class InvestmentResult(
     val maturity: Double,
     val invested: Double,

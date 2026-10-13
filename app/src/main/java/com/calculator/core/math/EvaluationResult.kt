@@ -37,9 +37,36 @@ sealed interface EvaluationResult {
         /**
          * The input was well-formed but operated on a value outside its
          * domain - e.g. `log(-1)`, `sqrt(-1)`, `(-1)!`.
+         *
+         * @property kind Which rule was broken, for choosing a message.
+         * @property function The function that rejected its argument, for [DomainKind.Function].
+         * @property reason Technical detail for logs and tests; not for display.
          */
         data class Domain(
-            val reason: String,
+            val kind: DomainKind,
+            val function: FunctionId? = null,
+            val reason: String = "",
         ) : Error
     }
+}
+
+/** The rule an out-of-domain input broke. */
+enum class DomainKind {
+    /** A function got an argument it is not defined for, e.g. `sqrt(-1)`, `tan(90°)`. */
+    Function,
+
+    /** `n!` with a negative `n`. */
+    FactorialOfNegative,
+
+    /** `n!` with a fractional `n`. */
+    FactorialOfNonInteger,
+
+    /** `n!` above the engine's cap. */
+    FactorialTooLarge,
+
+    /** `x^y` too large for a Double. */
+    PowerOverflow,
+
+    /** `x^y` with no real result, e.g. `(-8)^0.5`. */
+    InvalidPower,
 }

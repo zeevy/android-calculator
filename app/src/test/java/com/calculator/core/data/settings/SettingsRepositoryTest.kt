@@ -4,6 +4,8 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import app.cash.turbine.test
+import com.calculator.core.data.di.DataModule
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -38,6 +40,33 @@ class SettingsRepositoryTest {
     }
 
     @Test
+    fun corruptSettingsFileGivesDefaultsInsteadOfACrash() =
+        runTest {
+            val appFile = context.preferencesDataStoreFile("user_settings")
+            appFile.parentFile?.mkdirs()
+            appFile.writeBytes(byteArrayOf(0x7f, 0x00, 0x13, 0x37, 0x42))
+            try {
+                val repo = DataStoreSettingsRepository(DataModule.provideUserSettingsDataStore(context))
+                assertEquals(UserSettings(), repo.settings.first())
+                // The corrupt file is replaced, so new choices save again.
+                repo.setTheme(UserSettings.ThemeOption.Dark)
+                assertEquals(UserSettings.ThemeOption.Dark, repo.settings.first().theme)
+            } finally {
+                appFile.delete()
+            }
+        }
+
+    @Test
+    fun timezonePairIsSavedTogether() =
+        runTest {
+            val repo = DataStoreSettingsRepository(newDataStore())
+            repo.setLastTzPair("Europe/Paris", "Asia/Tokyo")
+            val saved = repo.settings.first()
+            assertEquals("Europe/Paris", saved.lastTzFromZone)
+            assertEquals("Asia/Tokyo", saved.lastTzToZone)
+        }
+
+    @Test
     fun defaultsAreReturnedWhenNoValuesAreStored() =
         runTest {
             val repo = DataStoreSettingsRepository(newDataStore())
@@ -47,8 +76,7 @@ class SettingsRepositoryTest {
                 assertTrue(snapshot.dynamicColor)
                 assertTrue(snapshot.haptics)
                 assertTrue(snapshot.sound)
-                assertEquals(DataStoreSettingsRepository.DEFAULT_PRECISION, snapshot.precision)
-                assertFalse(snapshot.crashOptIn)
+                assertEquals(UserSettings.DEFAULT_PRECISION, snapshot.precision)
                 cancelAndIgnoreRemainingEvents()
             }
         }
@@ -61,7 +89,6 @@ class SettingsRepositoryTest {
             first.setTheme(UserSettings.ThemeOption.Dark)
             first.setSound(false)
             first.setPrecision(10)
-            first.setCrashOptIn(true)
 
             val second = DataStoreSettingsRepository(store)
             second.settings.test {
@@ -69,7 +96,6 @@ class SettingsRepositoryTest {
                 assertEquals(UserSettings.ThemeOption.Dark, snapshot.theme)
                 assertFalse(snapshot.sound)
                 assertEquals(10, snapshot.precision)
-                assertTrue(snapshot.crashOptIn)
                 cancelAndIgnoreRemainingEvents()
             }
         }
@@ -80,7 +106,7 @@ class SettingsRepositoryTest {
             val repo = DataStoreSettingsRepository(newDataStore())
             repo.setPrecision(99) // out of range
             repo.settings.test {
-                assertEquals(DataStoreSettingsRepository.MAX_PRECISION, awaitItem().precision)
+                assertEquals(UserSettings.PRECISION_RANGE.last, awaitItem().precision)
                 cancelAndIgnoreRemainingEvents()
             }
         }

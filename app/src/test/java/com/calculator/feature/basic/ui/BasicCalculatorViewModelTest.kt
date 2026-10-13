@@ -1,13 +1,18 @@
 package com.calculator.feature.basic.ui
 
 import androidx.lifecycle.SavedStateHandle
+import com.calculator.R
+import com.calculator.core.data.settings.UserSettings
 import com.calculator.core.math.AngleMode
+import com.calculator.testing.FakeSettingsRepository
+import com.calculator.testing.MainDispatcherExtension
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
  * Behavioural tests for [BasicCalculatorViewModel].
@@ -25,7 +30,12 @@ import org.junit.jupiter.api.Test
  */
 class BasicCalculatorViewModelTest {
     private val savedStateHandle = SavedStateHandle()
-    private val viewModel = BasicCalculatorViewModel(savedStateHandle, historyRepository = null)
+
+    @JvmField
+    @RegisterExtension
+    val mainDispatcher = MainDispatcherExtension()
+
+    private val viewModel by lazy { basicCalculatorViewModel(savedStateHandle) }
 
     private fun type(vararg symbols: String) = symbols.forEach { viewModel.onEvent(BasicCalculatorEvent.Append(it)) }
 
@@ -38,6 +48,44 @@ class BasicCalculatorViewModelTest {
     private fun signFlip() = viewModel.onEvent(BasicCalculatorEvent.SignFlip)
 
     private val state get() = viewModel.state.value
+
+    @Nested
+    inner class HandOffFromOtherPages {
+        @Test
+        fun `Reuse replaces the current input`() {
+            type("9", "+", "1")
+            viewModel.onEvent(BasicCalculatorEvent.Reuse("12×3"))
+            assertEquals("12×3", state.expression)
+            assertEquals("36", state.liveResult)
+        }
+
+        @Test
+        fun `SetScientific switches the keypad only when the mode differs`() {
+            viewModel.onEvent(BasicCalculatorEvent.SetScientific(true))
+            assertTrue(state.scientific)
+            viewModel.onEvent(BasicCalculatorEvent.SetScientific(true))
+            assertTrue(state.scientific)
+            viewModel.onEvent(BasicCalculatorEvent.SetScientific(false))
+            assertEquals(false, state.scientific)
+        }
+    }
+
+    @Nested
+    inner class KeyFeedback {
+        @Test
+        fun `sound and haptics follow settings and survive clear`() {
+            val muted =
+                basicCalculatorViewModel(
+                    settingsRepository = FakeSettingsRepository(UserSettings(sound = false, haptics = false)),
+                )
+            assertEquals(false, muted.state.value.soundEnabled)
+            muted.onEvent(BasicCalculatorEvent.Append("5"))
+            muted.onEvent(BasicCalculatorEvent.Clear)
+            muted.onEvent(BasicCalculatorEvent.Reuse("1+1"))
+            assertEquals(false, muted.state.value.soundEnabled)
+            assertEquals(false, muted.state.value.hapticsEnabled)
+        }
+    }
 
     @Nested
     inner class OperatorCollapse {
@@ -378,7 +426,7 @@ class BasicCalculatorViewModelTest {
         fun `division by zero surfaces a typed message`() {
             type("5", "÷", "0")
             equals()
-            assertEquals("Can't divide by zero", state.errorMessage)
+            assertEquals(R.string.basic_error_division_by_zero, state.errorMessage)
         }
 
         @Test
@@ -386,7 +434,7 @@ class BasicCalculatorViewModelTest {
             // Unmatched `)` cannot be auto-fixed (auto-close only adds `)`).
             type("1", "+", "2", ")")
             equals()
-            assertEquals("Check your expression", state.errorMessage)
+            assertEquals(R.string.basic_error_syntax, state.errorMessage)
         }
 
         @Test
@@ -414,7 +462,7 @@ class BasicCalculatorViewModelTest {
 
             // Simulate process death by spinning up a new ViewModel with the
             // same SavedStateHandle - that's what the system does on restore.
-            val restored = BasicCalculatorViewModel(savedStateHandle)
+            val restored = basicCalculatorViewModel(savedStateHandle)
 
             assertEquals("6", restored.state.value.expression)
             assertEquals("", restored.state.value.pendingRepeat)
@@ -426,8 +474,8 @@ class BasicCalculatorViewModelTest {
         fun `error message survives restoration`() {
             type("5", "÷", "0")
             equals()
-            val restored = BasicCalculatorViewModel(savedStateHandle)
-            assertEquals("Can't divide by zero", restored.state.value.errorMessage)
+            val restored = basicCalculatorViewModel(savedStateHandle)
+            assertEquals(R.string.basic_error_division_by_zero, restored.state.value.errorMessage)
         }
 
         @Test
@@ -438,7 +486,7 @@ class BasicCalculatorViewModelTest {
             type("1", "+")
             equals()
 
-            val restored = BasicCalculatorViewModel(savedStateHandle)
+            val restored = basicCalculatorViewModel(savedStateHandle)
             restored.onEvent(BasicCalculatorEvent.Equals)
             assertEquals("3", restored.state.value.expression)
         }
@@ -449,7 +497,7 @@ class BasicCalculatorViewModelTest {
             equals()
             clear()
 
-            val restored = BasicCalculatorViewModel(savedStateHandle)
+            val restored = basicCalculatorViewModel(savedStateHandle)
             assertEquals("", restored.state.value.expression)
             assertNull(restored.state.value.pendingRepeat)
         }

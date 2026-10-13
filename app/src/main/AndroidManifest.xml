@@ -4,18 +4,20 @@
 
   Notes:
     - The app is still fully offline (no INTERNET permission).
-    - Floating-calculator feature uses three permissions:
+    - Floating-calculator feature uses four permissions:
         * SYSTEM_ALERT_WINDOW    - draw the floating window over apps.
         * FOREGROUND_SERVICE     - host the overlay in a fg service so
                                    it survives once the user leaves the app.
         * FOREGROUND_SERVICE_SPECIAL_USE - required for fg services on
                                    API 34+; SPECIAL_USE is the catch-all
                                    for "ongoing UI the user opted into".
-        * POST_NOTIFICATIONS     - lets the fg service show its required
-                                   ongoing notification on API 33+.
-      Users opt in via the Float tile in the menu; SYSTEM_ALERT_WINDOW
-      is granted through the system Settings flow we open on demand.
-    - Auto Backup is enabled (backupAgent rules in backup_rules.xml) so user
+        * POST_NOTIFICATIONS     - lets the fg service show its ongoing
+                                   notification (with a Stop action) on
+                                   API 33+. Asked at runtime the first time
+                                   the user starts the overlay from Settings.
+      Users opt in from Settings; SYSTEM_ALERT_WINDOW is granted through
+      the system Settings flow we open on demand.
+    - Auto Backup is enabled (rules in data_extraction_rules.xml) so user
       preferences and history survive a reinstall.
     - The activity declares a Material 3 SplashScreen theme; the theme then
       transitions to the app theme inside MainActivity once Compose attaches.
@@ -32,7 +34,6 @@
         android:name=".CalculatorApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -102,11 +103,19 @@
              appears. -->
         <activity
             android:name=".feature.floating.FloatingShortcutActivity"
-            android:exported="true"
+            android:exported="false"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:excludeFromRecents="true"
             android:taskAffinity=""
             android:noHistory="true" />
+
+        <!-- compose-ui-test-manifest (an `implementation` dependency so the
+             JVM Compose tests can launch it) declares this activity as
+             exported. Nothing outside the app needs to start it. -->
+        <activity
+            android:name="androidx.activity.ComponentActivity"
+            android:exported="false"
+            tools:replace="android:exported" />
 
     </application>
 

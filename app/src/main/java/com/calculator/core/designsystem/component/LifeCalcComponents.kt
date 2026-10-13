@@ -1,18 +1,23 @@
-package com.calculator.feature.lifecalc
+package com.calculator.core.designsystem.component
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -24,63 +29,45 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.calculator.R
-import com.calculator.navigation.BasicCalculatorRoute
+import com.calculator.core.common.input.InputResult
 
 /**
- * Reusable shell for every life-calculator screen.
+ * Shared page shell for every tool screen: themed canvas, a title row
+ * with the menu button on the right, and a body column.
  *
- * The seven calculators share the same visual chrome - themed canvas,
- * hamburger menu + screen title, a column of inputs, a card with outputs -
- * so we lift it into one composable and let each feature plug in only
- * what differs.
+ * The menu itself is hosted once by the app shell; this composable only
+ * draws the button and reports the tap through [onOpenMenu]. The button
+ * sits at the same spot as on the basic calculator, so it does not jump
+ * when the user moves between pages.
  *
- * Each feature module then composes:
- *   LifeCalculatorScaffold(
- *       title = "BMI",
- *       currentRoute = BmiRoute,
- *       onNavigate = onNavigate,
- *   ) {
- *       InputCard { ... }
- *       OutputCard { ... }
- *   }
- *
- * The top-left hamburger opens a shared [ToolsMenuOverlay] so the user
- * can jump to any other tool (or back to the basic calculator via Home)
- * without going through a back arrow - every tool reads as a standalone
- * page.
- *
- * @param title Screen title shown next to the hamburger.
- * @param currentRoute The destination this scaffold is rendering - used
- *   to highlight the matching tile in the menu sheet.
- * @param onNavigate Invoked with a destination route when the user picks
- *   a tile from the menu. The host translates this to a real nav action.
- * @param content Vertical body of the screen, scrollable. Receives a
- *   [ColumnScope] so cards can use `Modifier.weight` if they need to.
+ * @param title Screen title shown left of the menu button.
+ * @param onOpenMenu Invoked when the menu button is tapped.
+ * @param actions Extra icon buttons shown before the menu button.
+ * @param scrollable True to scroll the body as one column. Pass false
+ *   when the body has its own lazy list or fills the height itself.
+ * @param content Body of the screen. Receives a [ColumnScope] so cards
+ *   can use `Modifier.weight` if they need to.
  */
 @Composable
 fun LifeCalculatorScaffold(
     title: String,
-    currentRoute: Any,
-    onNavigate: (Any) -> Unit,
+    onOpenMenu: () -> Unit,
+    actions: @Composable RowScope.() -> Unit = {},
+    scrollable: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    var openSheet by remember { mutableStateOf<ToolsMenuSheet?>(null) }
     val scheme = MaterialTheme.colorScheme
     Column(
         modifier =
@@ -104,7 +91,8 @@ fun LifeCalculatorScaffold(
                 color = scheme.onBackground,
                 modifier = Modifier.weight(1f).padding(start = 8.dp),
             )
-            IconButton(onClick = { openSheet = ToolsMenuSheet.Tools }) {
+            actions()
+            IconButton(onClick = onOpenMenu) {
                 Icon(
                     imageVector = Icons.Filled.Menu,
                     contentDescription = stringResource(R.string.basic_open_menu),
@@ -112,36 +100,21 @@ fun LifeCalculatorScaffold(
                 )
             }
         }
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            content()
-            Spacer(Modifier.size(24.dp))
+        if (scrollable) {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                content()
+                Spacer(Modifier.size(24.dp))
+            }
+        } else {
+            Column(modifier = Modifier.fillMaxSize()) { content() }
         }
     }
-
-    ToolsMenuOverlay(
-        openSheet = openSheet,
-        onDismiss = { openSheet = null },
-        currentRoute = currentRoute,
-        isOnBasicCalc = false,
-        scientific = false,
-        onToggleScientific = {},
-        onOpenHistory = { openSheet = ToolsMenuSheet.History },
-        onOpenSettings = { openSheet = ToolsMenuSheet.Settings },
-        onNavigate = onNavigate,
-        onReuseExpression = { expr ->
-            // Tool pages can't apply an expression locally - stash it for
-            // the basic calculator to consume on next composition and
-            // jump home.
-            PendingExpressionHolder.expression = expr
-            onNavigate(BasicCalculatorRoute)
-        },
-    )
 }
 
 /** A bordered "card" container; use for grouping inputs or outputs. */
@@ -186,6 +159,7 @@ fun LifeCalcSectionLabel(text: String) {
  * @param onValueChange Invoked on each keystroke with the new string.
  * @param suffix Optional trailing unit (e.g. "kg", "%"). Rendered to the
  *   right of the field at smaller weight so the number reads as primary.
+ * @param error Message shown under the field when its value is wrong.
  */
 @Composable
 fun LifeCalcNumberField(
@@ -193,42 +167,69 @@ fun LifeCalcNumberField(
     value: String,
     onValueChange: (String) -> Unit,
     suffix: String? = null,
+    error: String? = null,
 ) {
     val scheme = MaterialTheme.colorScheme
     Column {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = scheme.onSurfaceVariant,
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle =
+                MaterialTheme.typography.headlineMedium.copy(
+                    color = scheme.onSurface,
+                    fontWeight = FontWeight.Bold,
+                ),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            cursorBrush = androidx.compose.ui.graphics
+                .SolidColor(scheme.primary),
+            modifier = Modifier.fillMaxWidth(),
+            // The label and unit are drawn inside the field, so screen
+            // readers read them with the typed value as one edit box.
+            decorationBox = { innerTextField ->
+                Column {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = scheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.size(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.weight(1f)) { innerTextField() }
+                        if (suffix != null) {
+                            Text(
+                                text = suffix,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = scheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 8.dp),
+                            )
+                        }
+                    }
+                }
+            },
         )
-        Spacer(Modifier.size(4.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                singleLine = true,
-                textStyle =
-                    TextStyle(
-                        color = scheme.onSurface,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                    ),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                cursorBrush = androidx.compose.ui.graphics
-                    .SolidColor(scheme.primary),
-                modifier = Modifier.weight(1f),
+        if (error != null) {
+            Text(
+                text = error,
+                style = MaterialTheme.typography.bodySmall,
+                color = scheme.error,
             )
-            if (suffix != null) {
-                Text(
-                    text = suffix,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = scheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
-            }
         }
     }
 }
+
+/**
+ * The message for [field] when this result says that field is wrong,
+ * or null. Pass it as a number field's `error`.
+ */
+@Suppress("SpreadOperator") // copies at most two format arguments, only while a field is wrong
+@Composable
+fun InputResult<*>.errorFor(
+    @StringRes field: Int,
+): String? =
+    (this as? InputResult.Invalid)
+        ?.takeIf { it.field == field }
+        ?.let { stringResource(it.message, *it.args.toTypedArray()) }
 
 /**
  * "Label .... value" output line; used in result cards.
@@ -290,24 +291,30 @@ fun LifeCalcSegmented(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
                 .background(scheme.surfaceContainerHigh)
-                .padding(4.dp),
+                .padding(4.dp)
+                .selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         options.forEachIndexed { idx, opt ->
             val selected = idx == selectedIndex
-            Text(
-                text = opt,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (selected) scheme.onPrimary else scheme.onSurface,
-                textAlign = TextAlign.Center,
+            Box(
                 modifier =
                     Modifier
                         .weight(1f)
+                        .heightIn(min = 48.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(if (selected) scheme.primary else Color.Transparent)
-                        .clickable { onSelect(idx) }
-                        .padding(vertical = 10.dp),
-            )
+                        // Read as one radio button of a group, with its state.
+                        .selectable(selected = selected, role = Role.RadioButton) { onSelect(idx) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = opt,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (selected) scheme.onPrimary else scheme.onSurface,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }

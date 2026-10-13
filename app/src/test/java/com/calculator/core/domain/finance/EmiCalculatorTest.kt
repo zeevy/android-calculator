@@ -26,15 +26,16 @@ class EmiCalculatorTest {
 
     @Test
     fun `amortisation balance lands at zero on the last row`() {
-        val r = EmiCalculator.emi(principal = 50_000.0, annualRatePercent = 12.0, months = 24)
-        assertEquals(0.0, r.amortisation.last().balanceAfter, 1e-6)
+        val rows = EmiCalculator.schedule(principal = 50_000.0, annualRatePercent = 12.0, months = 24)
+        assertEquals(0.0, rows.last().balanceAfter, 1e-6)
     }
 
     @Test
     fun `amortisation rows sum to the total payment within rounding`() {
         val r = EmiCalculator.emi(principal = 200_000.0, annualRatePercent = 7.5, months = 60)
+        val rows = EmiCalculator.schedule(principal = 200_000.0, annualRatePercent = 7.5, months = 60)
         val sumPaid =
-            r.amortisation.sumOf { it.principalPaid + it.interestPaid }
+            rows.sumOf { it.principalPaid + it.interestPaid }
         assertTrue(abs(sumPaid - r.totalPayment) < 1.0) {
             "sum=$sumPaid total=${r.totalPayment}"
         }
@@ -52,5 +53,18 @@ class EmiCalculatorTest {
         assertThrows(IllegalArgumentException::class.java) {
             EmiCalculator.emi(1_000.0, 10.0, 0)
         }
+    }
+
+    @Test
+    fun `a tenure that overflows the EMI is reported as too large, not NaN`() {
+        assertThrows(ResultTooLargeException::class.java) {
+            EmiCalculator.emi(principal = 100_000.0, annualRatePercent = 10.0, months = 1_000_000)
+        }
+    }
+
+    @Test
+    fun `a rate too small to change 1 + r gives the no-interest EMI`() {
+        val r = EmiCalculator.emi(principal = 120_000.0, annualRatePercent = 1e-13, months = 12)
+        assertEquals(10_000.0, r.emi, 1e-6)
     }
 }

@@ -8,12 +8,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,7 +20,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -32,7 +29,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,21 +37,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.R
+import com.calculator.core.designsystem.component.LifeCalculatorScaffold
 import com.calculator.core.domain.converter.ConverterUnit
 import com.calculator.core.domain.converter.UnitCategory
-import com.calculator.feature.lifecalc.PendingExpressionHolder
-import com.calculator.feature.lifecalc.ToolsMenuOverlay
-import com.calculator.feature.lifecalc.ToolsMenuSheet
-import com.calculator.navigation.BasicCalculatorRoute
-import com.calculator.navigation.UnitConverterRoute
 
 /**
  * Full-screen unit converter.
@@ -70,43 +61,16 @@ import com.calculator.navigation.UnitConverterRoute
  */
 @Composable
 fun UnitConverterScreen(
-    onNavigate: (Any) -> Unit,
+    onOpenMenu: () -> Unit,
     viewModel: UnitConverterViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
-    var openSheet by remember { mutableStateOf<ToolsMenuSheet?>(null) }
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .systemBarsPadding()
-                // 12dp matches the basic calculator's outer padding so
-                // the top-right hamburger sits at the same pixel.
-                .padding(horizontal = 12.dp),
+    LifeCalculatorScaffold(
+        title = stringResource(R.string.units_title),
+        onOpenMenu = onOpenMenu,
+        scrollable = false,
     ) {
-        // App-bar row: title on the left, hamburger pinned to the right
-        // so it matches the basic calculator's top-right menu position.
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.units_title),
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f).padding(start = 8.dp),
-            )
-            IconButton(onClick = { openSheet = ToolsMenuSheet.Tools }) {
-                Icon(
-                    imageVector = Icons.Filled.Menu,
-                    contentDescription = stringResource(R.string.basic_open_menu),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-        }
-
         // Category dropdown: one tap reveals all 11 categories vertically
         // with the current selection marked. Replaced an earlier
         // horizontal-scroll chip row that hid most of the categories
@@ -121,7 +85,8 @@ fun UnitConverterScreen(
         // From / Swap / To stack. Both fields are editable; the
         // ViewModel tracks `lastEdited` and rewrites the OTHER side
         // on every keystroke.
-        FromCard(
+        ConverterCard(
+            label = stringResource(R.string.units_from),
             unit = state.fromUnit,
             value = state.fromText,
             onValueChange = viewModel::setFromInput,
@@ -145,7 +110,8 @@ fun UnitConverterScreen(
             }
         }
         Spacer(Modifier.size(12.dp))
-        ToCard(
+        ConverterCard(
+            label = stringResource(R.string.units_to),
             unit = state.toUnit,
             value = state.toText,
             onValueChange = viewModel::setToInput,
@@ -172,22 +138,6 @@ fun UnitConverterScreen(
             onDismiss = viewModel::dismissPicker,
         )
     }
-
-    ToolsMenuOverlay(
-        openSheet = openSheet,
-        onDismiss = { openSheet = null },
-        currentRoute = UnitConverterRoute,
-        isOnBasicCalc = false,
-        scientific = false,
-        onToggleScientific = {},
-        onOpenHistory = { openSheet = ToolsMenuSheet.History },
-        onOpenSettings = { openSheet = ToolsMenuSheet.Settings },
-        onNavigate = onNavigate,
-        onReuseExpression = { expr ->
-            PendingExpressionHolder.expression = expr
-            onNavigate(BasicCalculatorRoute)
-        },
-    )
 }
 
 /**
@@ -226,7 +176,7 @@ private fun CategoryDropdown(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         Text(
-            text = selected.displayName,
+            text = stringResource(selected.labelRes()),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
@@ -250,7 +200,7 @@ private fun CategoryDropdown(
         ) {
             Column(modifier = Modifier.padding(bottom = 16.dp)) {
                 Text(
-                    text = "Category",
+                    text = stringResource(R.string.units_category),
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.SemiBold,
@@ -271,7 +221,7 @@ private fun CategoryDropdown(
                                 }.padding(horizontal = 24.dp, vertical = 14.dp),
                     ) {
                         Text(
-                            text = category.displayName,
+                            text = stringResource(category.labelRes()),
                             style = MaterialTheme.typography.bodyLarge,
                             color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.weight(1f),
@@ -291,12 +241,17 @@ private fun CategoryDropdown(
 }
 
 /**
- * Top "From" card with the editable number field. Custom
- * `decorationBox` paints a faded "0" placeholder when the field is
- * empty - BasicTextField doesn't expose Material's built-in placeholder.
+ * One side of the converter (From or To): unit chooser and an editable
+ * number field. Whichever side the user types into becomes the source;
+ * the ViewModel rewrites the other side. Custom `decorationBox` paints a
+ * faded "0" placeholder when the field is empty - BasicTextField doesn't
+ * expose Material's built-in placeholder.
+ *
+ * @param label "From" or "To", shown on the unit chooser.
  */
 @Composable
-private fun FromCard(
+private fun ConverterCard(
+    label: String,
     unit: ConverterUnit?,
     value: String,
     onValueChange: (String) -> Unit,
@@ -304,74 +259,15 @@ private fun FromCard(
 ) {
     UnitCard {
         Column(modifier = Modifier.padding(16.dp)) {
-            UnitChooser(unit = unit, onClick = onPickUnit, label = stringResource(R.string.units_from))
+            UnitChooser(unit = unit, onClick = onPickUnit, label = label)
             Spacer(Modifier.size(12.dp))
             BasicTextField(
                 value = value,
                 onValueChange = onValueChange,
                 singleLine = true,
                 textStyle =
-                    TextStyle(
+                    MaterialTheme.typography.displaySmall.copy(
                         color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 36.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.End,
-                    ),
-                keyboardOptions =
-                    KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                cursorBrush =
-                    androidx.compose.ui.graphics
-                        .SolidColor(MaterialTheme.colorScheme.primary),
-                modifier = Modifier.fillMaxWidth(),
-                decorationBox = { inner ->
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.CenterEnd,
-                    ) {
-                        if (value.isEmpty()) {
-                            Text(
-                                text = "0",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style =
-                                    MaterialTheme.typography.displayMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                    ),
-                            )
-                        }
-                        inner()
-                    }
-                },
-            )
-        }
-    }
-}
-
-/**
- * Symmetric to [FromCard]: same editable text field, same placeholder,
- * same styling. Whichever side the user types into becomes the source
- * for conversion - the ViewModel rewrites the other side on every
- * keystroke. The `decorationBox` paints the faded "0" placeholder
- * because BasicTextField doesn't expose Material's built-in one.
- */
-@Composable
-private fun ToCard(
-    unit: ConverterUnit?,
-    value: String,
-    onValueChange: (String) -> Unit,
-    onPickUnit: () -> Unit,
-) {
-    UnitCard {
-        Column(modifier = Modifier.padding(16.dp)) {
-            UnitChooser(unit = unit, onClick = onPickUnit, label = stringResource(R.string.units_to))
-            Spacer(Modifier.size(12.dp))
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                singleLine = true,
-                textStyle =
-                    TextStyle(
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.End,
                     ),
@@ -437,7 +333,7 @@ private fun UnitChooser(
             modifier = Modifier.weight(1f),
         )
         Text(
-            text = unit?.let { "${it.displayName} (${it.symbol})" } ?: "",
+            text = unit?.let { "${stringResource(it.labelRes())} (${it.symbol})" } ?: "",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.primary,
         )
@@ -478,7 +374,7 @@ private fun UnitPickerSheet(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = unit.displayName,
+                        text = stringResource(unit.labelRes()),
                         style = MaterialTheme.typography.bodyLarge,
                         color =
                             if (unit.symbol == currentSymbol) {

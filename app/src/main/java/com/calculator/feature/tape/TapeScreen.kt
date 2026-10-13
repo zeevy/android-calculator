@@ -5,29 +5,22 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,52 +28,41 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.R
 import com.calculator.core.data.tape.TapeEntry
-import com.calculator.core.data.tape.TapeHolder
-import com.calculator.feature.lifecalc.PendingExpressionHolder
-import com.calculator.feature.lifecalc.ToolsMenuOverlay
-import com.calculator.feature.lifecalc.ToolsMenuSheet
-import com.calculator.navigation.BasicCalculatorRoute
-import com.calculator.navigation.TapeRoute
+import com.calculator.core.designsystem.component.LifeCalculatorScaffold
 
 /**
  * Running session tape - one expression+result per row, newest at the
  * bottom (just like a printed receipt). Tap any row to recall its
  * result back into the basic calculator; "Clear" empties the tape.
  *
- * The tape is in-memory and process-scoped (see [TapeHolder]) - it
+ * The tape is in-memory and process-scoped (see `TapeStore`) - it
  * survives navigation and configuration changes but resets on app
  * restart. Persistent history lives in the History sheet.
  *
- * @param onNavigate Jump to another tool / home.
+ * @param onOpenMenu Opens the app's tools menu.
+ * @param onReuseExpression Sends a tapped result to the basic calculator.
+ * @param viewModel Holds the session tape.
  */
 @Composable
-fun TapeScreen(onNavigate: (Any) -> Unit) {
-    val entries by TapeHolder.entries.collectAsState()
-    var openSheet by remember { mutableStateOf<ToolsMenuSheet?>(null) }
+fun TapeScreen(
+    onOpenMenu: () -> Unit,
+    onReuseExpression: (String) -> Unit,
+    viewModel: TapeViewModel = hiltViewModel(),
+) {
+    val entries by viewModel.entries.collectAsStateWithLifecycle()
     val scheme = MaterialTheme.colorScheme
 
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(scheme.background)
-                .systemBarsPadding()
-                .padding(horizontal = 12.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.tape_title),
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = scheme.onBackground,
-                modifier = Modifier.weight(1f).padding(start = 8.dp),
-            )
+    LifeCalculatorScaffold(
+        title = stringResource(R.string.tape_title),
+        onOpenMenu = onOpenMenu,
+        scrollable = false,
+        actions = {
             if (entries.isNotEmpty()) {
-                IconButton(onClick = { TapeHolder.clear() }) {
+                IconButton(onClick = viewModel::clear) {
                     Icon(
                         imageVector = Icons.Filled.DeleteOutline,
                         contentDescription = stringResource(R.string.tape_clear),
@@ -88,15 +70,8 @@ fun TapeScreen(onNavigate: (Any) -> Unit) {
                     )
                 }
             }
-            IconButton(onClick = { openSheet = ToolsMenuSheet.Tools }) {
-                Icon(
-                    imageVector = Icons.Filled.Menu,
-                    contentDescription = stringResource(R.string.basic_open_menu),
-                    tint = scheme.onBackground,
-                )
-            }
-        }
-
+        },
+    ) {
         if (entries.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -118,34 +93,12 @@ fun TapeScreen(onNavigate: (Any) -> Unit) {
                 items(entries, key = { it.id }) { entry ->
                     TapeRow(
                         entry = entry,
-                        onTap = {
-                            // Push the result back onto the basic calc as
-                            // the next expression - same one-shot pattern
-                            // we use for history-row reuse.
-                            PendingExpressionHolder.expression = entry.result
-                            onNavigate(BasicCalculatorRoute)
-                        },
+                        onTap = { onReuseExpression(entry.result) },
                     )
                 }
             }
         }
     }
-
-    ToolsMenuOverlay(
-        openSheet = openSheet,
-        onDismiss = { openSheet = null },
-        currentRoute = TapeRoute,
-        isOnBasicCalc = false,
-        scientific = false,
-        onToggleScientific = {},
-        onOpenHistory = { openSheet = ToolsMenuSheet.History },
-        onOpenSettings = { openSheet = ToolsMenuSheet.Settings },
-        onNavigate = onNavigate,
-        onReuseExpression = { expr ->
-            PendingExpressionHolder.expression = expr
-            onNavigate(BasicCalculatorRoute)
-        },
-    )
 }
 
 @Composable

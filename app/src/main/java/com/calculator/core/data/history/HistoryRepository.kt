@@ -4,22 +4,25 @@ import com.calculator.core.data.db.HistoryDao
 import com.calculator.core.data.db.HistoryEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.Clock
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * Mediates between the Room DAO and the rest of the app.
  *
- * Keeps the engine/feature layers free of Room types ([HistoryEntity] is
- * private to the data package) and gives us a place to add caching or
- * cross-feature wiring later (e.g. emitting an "M chip" derivation when
- * a memory-bearing entry lands).
+ * Features use only [HistoryEntry]; [HistoryEntity] is the Room row and
+ * by convention stays inside core/data (it is public only because Hilt
+ * and Room code in this single module need to see it).
  */
 interface HistoryRepository {
     /** Newest first; replays the latest list to every new subscriber. */
     fun observe(): Flow<List<HistoryEntry>>
 
-    /** Record a new calculation. The repository assigns the timestamp. */
+    /**
+     * Record a new calculation. The repository assigns the timestamp and
+     * keeps only the newest [RoomHistoryRepository.MAX_ENTRIES] entries.
+     */
     suspend fun add(expression: String, result: String, type: HistoryEntry.Type)
 
     /** Delete a single entry by id. */
@@ -34,22 +37,24 @@ class RoomHistoryRepository
     @Inject
     constructor(
         private val dao: HistoryDao,
+        private val clock: Clock,
     ) : HistoryRepository {
         override fun observe(): Flow<List<HistoryEntry>> =
             dao.observeAll().map { rows -> rows.map { it.toEntry() } }
 
         override suspend fun add(expression: String, result: String, type: HistoryEntry.Type) {
-            dao.insert(
+            dao.insertKeepingNewest(
                 HistoryEntity(
                     expression = expression,
                     result = result,
-                    timestampUtc = System.currentTimeMillis(),
+                    timestampUtc = clock.millis(),
                     type =
                         when (type) {
                             HistoryEntry.Type.Basic -> HistoryEntity.TYPE_BASIC
                             HistoryEntry.Type.Scientific -> HistoryEntity.TYPE_SCIENTIFIC
                         },
                 ),
+                keep = MAX_ENTRIES,
             )
         }
 
@@ -69,4 +74,9 @@ class RoomHistoryRepository
                         else -> HistoryEntry.Type.Basic
                     },
             )
+
+        companion object {
+            /** History keeps this many newest entries; older ones are removed on insert. */
+            const val MAX_ENTRIES = 1000
+        }
     }

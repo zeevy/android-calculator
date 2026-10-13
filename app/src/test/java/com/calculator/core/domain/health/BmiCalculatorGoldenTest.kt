@@ -1,5 +1,7 @@
 package com.calculator.core.domain.health
 
+import com.calculator.core.domain.health.BmiCalculator.Height
+import com.calculator.core.domain.health.BmiCalculator.Weight
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.DisplayName
@@ -43,7 +45,7 @@ class BmiCalculatorGoldenTest {
         expectedBmi: Double,
         expectedCategory: BmiCalculator.Category,
     ) {
-        val r = BmiCalculator.metric(heightCm = heightCm, weightKg = weightKg)
+        val r = BmiCalculator.compute(Height.Cm(heightCm), Weight.Kg(weightKg))
         assertEquals(expectedBmi, r.bmi, 0.02)
         assertEquals(expectedCategory, r.category)
     }
@@ -62,7 +64,7 @@ class BmiCalculatorGoldenTest {
         "6,   2,    200,    25.68",
     )
     fun imperialBmi(feet: Int, inches: Double, weightLb: Double, expectedBmi: Double) {
-        val r = BmiCalculator.imperial(heightFeet = feet, heightInches = inches, weightLb = weightLb)
+        val r = BmiCalculator.compute(Height.FeetInches(feet, inches), Weight.Lb(weightLb))
         assertEquals(expectedBmi, r.bmi, 0.05)
     }
 
@@ -71,15 +73,15 @@ class BmiCalculatorGoldenTest {
     fun boundariesAreStrictLessThan() {
         // BMI exactly at 18.5 = Normal (Underweight is "< 18.5")
         // To land on exactly 18.5, choose h=2.0m and w=74.0kg → 74/4 = 18.5
-        val onUnderweightBoundary = BmiCalculator.metric(heightCm = 200.0, weightKg = 74.0)
+        val onUnderweightBoundary = BmiCalculator.compute(Height.Cm(200.0), Weight.Kg(74.0))
         assertEquals(BmiCalculator.Category.Normal, onUnderweightBoundary.category)
 
         // BMI exactly at 25.0 = Overweight (Normal is "< 25")
-        val onNormalBoundary = BmiCalculator.metric(heightCm = 200.0, weightKg = 100.0)
+        val onNormalBoundary = BmiCalculator.compute(Height.Cm(200.0), Weight.Kg(100.0))
         assertEquals(BmiCalculator.Category.Overweight, onNormalBoundary.category)
 
         // BMI exactly at 30.0 = Obese (Overweight is "< 30")
-        val onOverweightBoundary = BmiCalculator.metric(heightCm = 200.0, weightKg = 120.0)
+        val onOverweightBoundary = BmiCalculator.compute(Height.Cm(200.0), Weight.Kg(120.0))
         assertEquals(BmiCalculator.Category.Obese, onOverweightBoundary.category)
     }
 
@@ -87,22 +89,22 @@ class BmiCalculatorGoldenTest {
     @org.junit.jupiter.api.Test
     fun rejectsInvalidInputs() {
         // Non-positive height / weight
-        assertThrows(IllegalArgumentException::class.java) { BmiCalculator.metric(0.0, 70.0) }
-        assertThrows(IllegalArgumentException::class.java) { BmiCalculator.metric(-1.0, 70.0) }
-        assertThrows(IllegalArgumentException::class.java) { BmiCalculator.metric(180.0, 0.0) }
-        assertThrows(IllegalArgumentException::class.java) { BmiCalculator.metric(180.0, -1.0) }
+        assertThrows(IllegalArgumentException::class.java) { BmiCalculator.compute(Height.Cm(0.0), Weight.Kg(70.0)) }
+        assertThrows(IllegalArgumentException::class.java) { BmiCalculator.compute(Height.Cm(-1.0), Weight.Kg(70.0)) }
+        assertThrows(IllegalArgumentException::class.java) { BmiCalculator.compute(Height.Cm(180.0), Weight.Kg(0.0)) }
+        assertThrows(IllegalArgumentException::class.java) { BmiCalculator.compute(Height.Cm(180.0), Weight.Kg(-1.0)) }
         // Imperial: out-of-range inches
         assertThrows(IllegalArgumentException::class.java) {
-            BmiCalculator.imperial(heightFeet = 5, heightInches = 12.0, weightLb = 150.0)
+            BmiCalculator.compute(Height.FeetInches(5, 12.0), Weight.Lb(150.0))
         }
         assertThrows(IllegalArgumentException::class.java) {
-            BmiCalculator.imperial(heightFeet = 5, heightInches = -0.5, weightLb = 150.0)
+            BmiCalculator.compute(Height.FeetInches(5, -0.5), Weight.Lb(150.0))
         }
         assertThrows(IllegalArgumentException::class.java) {
-            BmiCalculator.imperial(heightFeet = -1, heightInches = 0.0, weightLb = 150.0)
+            BmiCalculator.compute(Height.FeetInches(-1, 0.0), Weight.Lb(150.0))
         }
         assertThrows(IllegalArgumentException::class.java) {
-            BmiCalculator.imperial(heightFeet = 5, heightInches = 10.0, weightLb = -1.0)
+            BmiCalculator.compute(Height.FeetInches(5, 10.0), Weight.Lb(-1.0))
         }
     }
 }

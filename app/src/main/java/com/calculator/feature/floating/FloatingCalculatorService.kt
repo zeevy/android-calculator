@@ -12,6 +12,8 @@ import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
 import android.provider.Settings
+import android.util.Log
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -20,9 +22,17 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
-import com.calculator.MainActivity
 import com.calculator.R
-import java.math.BigDecimal
+import com.calculator.core.common.format.messageRes
+import com.calculator.core.data.di.SettingsEntryPoint
+import com.calculator.core.data.settings.UserSettings
+import com.calculator.core.math.EvaluationResult
+import com.calculator.core.math.Evaluator
+import com.calculator.core.math.ExpressionEditor
+import dagger.hilt.android.EntryPointAccessors
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import java.math.MathContext
 import java.math.RoundingMode
 
@@ -32,9 +42,11 @@ import java.math.RoundingMode
  * The overlay is a single `WindowManager`-attached view; the service
  * exists only so the system keeps the window alive once the user
  * leaves the app. A drag handler on the header rewrites the
- * `WindowManager.LayoutParams.x`/`y`, and a tiny in-place evaluator
- * (operand / op / operand) drives the keypad - lighter than wiring
- * the full Compose calculator into a non-Activity context.
+ * `WindowManager.LayoutParams.x`/`y`. The keypad builds an expression
+ * with the shared [ExpressionEditor] and evaluates it with [Evaluator],
+ * so it follows the same rules (operator precedence included) as the
+ * app; only the window is View-based, because Compose needs more setup
+ * outside an Activity.
  *
  * The service starts itself as a foreground service so the system
  * doesn't reclaim it; the notification it posts is mandatory on API
@@ -47,25 +59,32 @@ class FloatingCalculatorService : Service() {
     private var layoutParams: WindowManager.LayoutParams? = null
     private lateinit var windowManager: WindowManager
     private lateinit var displayText: TextView
+    private var numberTextSize = 0f
 
-    // Mini calculator state. Desk-calculator style:
-    //   - `current` is what the display is showing (the operand the user
-    //     is currently editing, or the last computed result).
-    //   - `pending`/`pendingOp` capture the left side of the binary op
-    //     waiting for a right side.
-    //   - `freshEntry` flags that the next digit should REPLACE the
-    //     display instead of appending to it (typically true right
-    //     after `=`, an operator press, or a clear).
-    private var current: String = "0"
-    private var pending: BigDecimal? = null
-    private var pendingOp: Op? = null
-    private var freshEntry: Boolean = true
+    // Mini calculator state: the expression typed so far, built with the
+    // same ExpressionEditor rules as the app, whether it is a result just
+    // produced by `=`, and an error message to show instead of it.
+    private var expression: String = ""
+    private var afterEquals: Boolean = false
+    private var errorText: String? = null
+    private var precision: Int = UserSettings.DEFAULT_PRECISION
+    private val scope = MainScope()
 
     override fun onCreate() {
         super.onCreate()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        // startForeground must run even when we stop at once, or the system
+        // crashes the app for a foreground service that never went foreground.
         startForegroundCompat()
-        addOverlay()
+        // A caller may start the service without the overlay permission (or it
+        // is revoked in between); stop quietly instead of crashing in addView.
+        if (!Settings.canDrawOverlays(this) || !addOverlay()) {
+            stopSelf()
+            return
+        }
+        // Follow the precision setting, like the app's calculator.
+        val settings = EntryPointAccessors.fromApplication(this, SettingsEntryPoint::class.java).settingsRepository()
+        scope.launch { settings.settings.collect { precision = it.precision } }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -77,6 +96,7 @@ class FloatingCalculatorService : Service() {
     }
 
     override fun onDestroy() {
+        scope.cancel()
         overlayView?.let { v ->
             // removeView throws if the view isn't actually attached
             // (race during teardown); guard with isAttachedToWindow.
@@ -90,7 +110,8 @@ class FloatingCalculatorService : Service() {
 
     // ----- Overlay setup -----
 
-    private fun addOverlay() {
+    /** Adds the overlay window. Returns false when the system refuses it. */
+    private fun addOverlay(): Boolean {
         val view = LayoutInflater.from(this).inflate(R.layout.floating_calculator, null)
         // TYPE_APPLICATION_OVERLAY is the only legal type on API 26+ for
         // overlays drawn by user apps. Older types (TYPE_SYSTEM_ALERT,
@@ -117,14 +138,24 @@ class FloatingCalculatorService : Service() {
         params.x = (INITIAL_X_DP * density).toInt()
         params.y = (INITIAL_Y_DP * density).toInt()
 
-        windowManager.addView(view, params)
+        try {
+            windowManager.addView(view, params)
+        } catch (e: WindowManager.BadTokenException) {
+            Log.w(TAG, "Overlay window refused", e)
+            return false
+        } catch (e: SecurityException) {
+            Log.w(TAG, "Overlay permission missing", e)
+            return false
+        }
         overlayView = view
         layoutParams = params
 
         displayText = view.findViewById(R.id.floating_display)
+        numberTextSize = displayText.textSize
         wireDragging(view.findViewById(R.id.floating_header), params)
         wireButtons(view)
         renderDisplay()
+        return true
     }
 
     private fun wireDragging(header: View, params: WindowManager.LayoutParams) {
@@ -152,154 +183,94 @@ class FloatingCalculatorService : Service() {
         }
     }
 
-    @Suppress("LongMethod")
     private fun wireButtons(root: View) {
-        fun digit(id: Int, d: String) {
-            root.findViewById<Button>(id).setOnClickListener { onDigit(d) }
-        }
-        digit(R.id.floating_0, "0")
-        digit(R.id.floating_1, "1")
-        digit(R.id.floating_2, "2")
-        digit(R.id.floating_3, "3")
-        digit(R.id.floating_4, "4")
-        digit(R.id.floating_5, "5")
-        digit(R.id.floating_6, "6")
-        digit(R.id.floating_7, "7")
-        digit(R.id.floating_8, "8")
-        digit(R.id.floating_9, "9")
-
-        root.findViewById<Button>(R.id.floating_dot).setOnClickListener { onDot() }
+        val keys =
+            mapOf(
+                R.id.floating_0 to "0",
+                R.id.floating_1 to "1",
+                R.id.floating_2 to "2",
+                R.id.floating_3 to "3",
+                R.id.floating_4 to "4",
+                R.id.floating_5 to "5",
+                R.id.floating_6 to "6",
+                R.id.floating_7 to "7",
+                R.id.floating_8 to "8",
+                R.id.floating_9 to "9",
+                R.id.floating_dot to ".",
+                R.id.floating_pct to "%",
+                R.id.floating_add to "+",
+                R.id.floating_sub to "-",
+                R.id.floating_mul to "×",
+                R.id.floating_div to "÷",
+            )
+        keys.forEach { (id, symbol) -> root.findViewById<Button>(id).setOnClickListener { onKey(symbol) } }
         // Backspace: tap deletes one character, long-press clears the
         // whole expression. Replaces a separate C key.
         val backspace = root.findViewById<Button>(R.id.floating_back)
-        backspace.setOnClickListener { onBackspace() }
+        backspace.setOnClickListener { edit(expression.dropLast(1)) }
         backspace.setOnLongClickListener {
-            onClear()
+            edit("")
             true
         }
-        root.findViewById<Button>(R.id.floating_pct).setOnClickListener { onPercent() }
-        root.findViewById<Button>(R.id.floating_add).setOnClickListener { onOp(Op.ADD) }
-        root.findViewById<Button>(R.id.floating_sub).setOnClickListener { onOp(Op.SUB) }
-        root.findViewById<Button>(R.id.floating_mul).setOnClickListener { onOp(Op.MUL) }
-        root.findViewById<Button>(R.id.floating_div).setOnClickListener { onOp(Op.DIV) }
         root.findViewById<Button>(R.id.floating_eq).setOnClickListener { onEquals() }
-
         root.findViewById<View>(R.id.floating_close).setOnClickListener { stopSelf() }
     }
 
     // ----- Calc state -----
 
-    private fun onDigit(d: String) {
-        current = if (freshEntry || current == "0") d else current + d
-        freshEntry = false
-        renderDisplay()
-    }
+    private fun onKey(symbol: String) = edit(ExpressionEditor.append(expression, symbol, afterEquals))
 
-    private fun onDot() {
-        if (freshEntry) {
-            current = "0."
-            freshEntry = false
-        } else if (!current.contains('.')) {
-            current = "$current."
-        }
-        renderDisplay()
-    }
-
-    private fun onBackspace() {
-        current = if (current.length > 1) current.dropLast(1) else "0"
-        if (current == "-") current = "0"
-        renderDisplay()
-    }
-
-    private fun onClear() {
-        current = "0"
-        pending = null
-        pendingOp = null
-        freshEntry = true
-        renderDisplay()
-    }
-
-    private fun onOp(op: Op) {
-        commit()
-        pendingOp = op
-        freshEntry = true
+    private fun edit(next: String) {
+        expression = next
+        afterEquals = false
+        errorText = null
         renderDisplay()
     }
 
     private fun onEquals() {
-        commit()
-        pendingOp = null
-        freshEntry = true
-        renderDisplay()
-    }
-
-    private fun onPercent() {
-        val value = current.toBigDecimalOrNull() ?: return
-        current = value.divide(BigDecimal(100), MathContext.DECIMAL64).stripTrailingZeros().toPlainString()
-        freshEntry = true
-        renderDisplay()
-    }
-
-    /** Apply pending + current → new pending; fold errors into "Err". */
-    private fun commit() {
-        val rhs = current.toBigDecimalOrNull() ?: return
-        val lhs = pending
-        val op = pendingOp
-        val result = if (lhs == null || op == null) {
-            rhs
-        } else {
-            applyOp(lhs, rhs, op) ?: run {
-                current = "Err"
-                pending = null
-                return
+        if (expression.isBlank()) return
+        val (toEvaluate, _) = ExpressionEditor.completeForEquals(expression)
+        val evaluator = Evaluator(mathContext = MathContext(precision, RoundingMode.HALF_EVEN))
+        when (val result = evaluator.evaluate(toEvaluate)) {
+            is EvaluationResult.Success -> {
+                expression = ExpressionEditor.resultText(result.value)
+                afterEquals = true
             }
+            is EvaluationResult.Error -> errorText = getString(result.messageRes())
         }
-        pending = result
-        current = result.stripTrailingZeros().toPlainString()
+        renderDisplay()
     }
-
-    private fun applyOp(lhs: BigDecimal, rhs: BigDecimal, op: Op): BigDecimal? =
-        runCatching {
-            when (op) {
-                Op.ADD -> lhs.add(rhs, MathContext.DECIMAL64)
-                Op.SUB -> lhs.subtract(rhs, MathContext.DECIMAL64)
-                Op.MUL -> lhs.multiply(rhs, MathContext.DECIMAL64)
-                // BigDecimal.divide throws on non-terminating decimals
-                // without a MathContext; pass DECIMAL64 so 1/3 doesn't
-                // raise ArithmeticException.
-                Op.DIV ->
-                    if (rhs.signum() == 0) {
-                        null
-                    } else {
-                        lhs.divide(rhs, MathContext.DECIMAL64)
-                    }
-            }
-        }.getOrNull()
 
     private fun renderDisplay() {
-        displayText.text = current
+        val error = errorText
+        displayText.text = error ?: expression.ifEmpty { "0" }
+        // A sentence does not fit the narrow window at number size.
+        displayText.setTextSize(TypedValue.COMPLEX_UNIT_PX, if (error != null) numberTextSize / 2 else numberTextSize)
     }
 
     // ----- Foreground notification -----
 
     private fun startForegroundCompat() {
         val nm = getSystemService(NotificationManager::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // IMPORTANCE_LOW: silent / no heads-up; the notification is
-            // here for the system requirement, not the user.
-            val channel = NotificationChannel(
-                NOTIFICATION_CHANNEL,
-                getString(R.string.floating_channel_name),
-                NotificationManager.IMPORTANCE_LOW,
-            )
-            channel.setShowBadge(false)
-            nm.createNotificationChannel(channel)
-        }
+        // IMPORTANCE_LOW: silent / no heads-up; the notification is
+        // here for the system requirement, not the user.
+        val channel = NotificationChannel(
+            NOTIFICATION_CHANNEL,
+            getString(R.string.floating_channel_name),
+            NotificationManager.IMPORTANCE_LOW,
+        )
+        channel.setShowBadge(false)
+        nm.createNotificationChannel(channel)
 
+        // Resolves to the app's launcher activity, so this feature does
+        // not depend on the activity class.
         val openAppIntent = PendingIntent.getActivity(
             this,
             0,
-            Intent(this, MainActivity::class.java),
+            Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_LAUNCHER)
+                .setPackage(packageName)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val stopIntent = PendingIntent.getService(
@@ -331,10 +302,9 @@ class FloatingCalculatorService : Service() {
         }
     }
 
-    private enum class Op { ADD, SUB, MUL, DIV }
-
     companion object {
         const val ACTION_STOP = "com.calculator.feature.floating.action.STOP"
+        private const val TAG = "FloatingCalculator"
         private const val NOTIFICATION_CHANNEL = "floating_calculator"
         private const val NOTIFICATION_ID = 1001
         private const val WIDTH_DP = 260
@@ -359,15 +329,5 @@ class FloatingCalculatorService : Service() {
             context.startForegroundService(Intent(context, FloatingCalculatorService::class.java))
             return true
         }
-
-        fun stop(context: Context) {
-            context.stopService(Intent(context, FloatingCalculatorService::class.java))
-        }
     }
 }
-
-@Suppress("unused")
-private fun BigDecimal.scaleSafely() =
-    this.setScale(MAX_FRACTION_DIGITS, RoundingMode.HALF_UP).stripTrailingZeros()
-
-private const val MAX_FRACTION_DIGITS = 8

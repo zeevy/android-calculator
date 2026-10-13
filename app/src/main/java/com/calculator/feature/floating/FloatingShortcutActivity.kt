@@ -12,6 +12,10 @@ import android.os.Bundle
  * translucent theme and calls `finish()` immediately - the user sees
  * the overlay appear (or the system settings page if SYSTEM_ALERT_WINDOW
  * hasn't been granted yet) with no flash from MainActivity's splash.
+ *
+ * It does not ask for the notification permission: it finishes before a
+ * dialog could show. The overlay works without it; the user is asked the
+ * first time they start it from Settings.
  */
 class FloatingShortcutActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -4,7 +4,7 @@ Project-level guidance for Claude Code when working in this repository. Read thi
 
 ## Project overview
 
-An **open-source Android calculator** inspired by Mi Calculator (`com.miui.calculator` by Xiaomi Inc.). Goal: a modern, fully-offline, multi-purpose calculator with basic + scientific math, a unit converter, and life calculators (loan/EMI, GST, BMI, age, discount, date diff). Ad-free, no analytics, no network calls, no permissions declared. Apache 2.0 licensed, published to GitHub.
+An **open-source Android calculator** inspired by Mi Calculator (`com.miui.calculator` by Xiaomi Inc.). Goal: a modern, fully-offline, multi-purpose calculator with basic + scientific math, a unit converter, and life calculators (loan/EMI, GST, BMI, age, discount, date diff). Ad-free, no analytics, no network calls. It declares only the floating calculator permissions (see **Permissions declared** under [Things to know](#things-to-know-gotchas)). Apache 2.0 licensed, published to GitHub.
 
 See [REQUIREMENTS.md](REQUIREMENTS.md) for the full product specification - it is the source of truth for scope and non-functional targets.
 
@@ -21,14 +21,14 @@ See [REQUIREMENTS.md](REQUIREMENTS.md) for the full product specification - it i
 | Navigation | Navigation Compose with **type-safe routes** (serializable route classes) |
 | DI | Hilt |
 | Async | Kotlin Coroutines + Flow |
-| Persistence | Room (history, recent unit pairs) + DataStore Preferences (user settings only) |
-| Network | None. App is fully offline; no permissions declared. |
+| Persistence | Room (history, recent unit pairs) + DataStore Preferences (user settings and per-tool memory) |
+| Network | None. App is fully offline; no `INTERNET` permission. It declares only the floating calculator permissions (see [Things to know](#things-to-know-gotchas)). |
 | Math engine | Custom evaluator: `BigDecimal` for arithmetic, bounded `Double` with rounding for transcendentals (sin/cos/log/exp). Revisit BigMath-style libs only if precision bugs appear. |
 | Build | Gradle Kotlin DSL, **Version Catalogs** (`gradle/libs.versions.toml`), R8 minification + resource shrinking on release |
 | Performance | AndroidX Startup for lightweight init |
 | Widgets | Jetpack **Glance** (not legacy RemoteViews) |
 | Splash | AndroidX SplashScreen API + adaptive icon |
-| Testing | **JUnit5** (unit, via `android-junit5` plugin), **JUnit4 + AndroidX Test** (instrumented & Compose UI), Turbine, MockK, Robolectric where useful |
+| Testing | **JUnit5** (unit, via `android-junit5` plugin), **JUnit4 + Robolectric** (Compose UI tests on the JVM), Turbine, MockK. No instrumented tests yet |
 | Static analysis | ktlint + detekt + Android Lint (error severity) |
 | CI | GitHub Actions |
 | Distribution | Google Play (AAB), Play App Signing |
@@ -42,32 +42,30 @@ Everything ships from a **single Gradle module (`:app`)**. The `feature/` and `c
 ```
 app/
   src/main/java/com/calculator/
-    feature/            # User-facing features (each owns ui/, domain/, data/)
+    feature/            # User-facing features: screens and their ViewModels
       basic/            # Basic calculator (ui/)
       math/             # percent/ - percentage calculator
       converter/        # unit/ converter + base/ (number-base) converter
       finance/          # loan/, gst/, discount/, investment/, tipsplit/
       health/           # bmi/, ovulation/
       datetime/         # age/, datediff/, timezone/
-      lifecalc/         # life-calculator hub/landing
-      history/          # calculation history screen
+      history/          # calculation history sheet
       tape/             # running tape/paper-roll view
-      shortcuts/        # app-shortcut entry points
       floating/         # floating overlay calculator (foreground service)
-      settings/         # settings + about
+      settings/         # settings + about sheet
     core/
       math/             # Expression parser + evaluator (pure Kotlin, no Android deps); di/
-      data/             # Room DB, DAOs, DataStore (history/, converter/, settings/, db/, di/)
-      domain/           # Cross-feature use-cases, pure Kotlin (converter/, datetime/, health/, math/, finance/)
-      designsystem/     # theme/ - colors, typography, shared Compose components
-      common/           # format/ - utilities, formatters, locale helpers
-      widget/           # Glance home-screen widget
-    navigation/         # CalculatorNavHost.kt + Destinations.kt (type-safe routes)
+      data/             # Room DB, DAOs, DataStore (history/, converter/, settings/, tape/, db/, di/)
+      domain/           # Pure Kotlin calculators (converter/, datetime/, health/, math/, finance/)
+      designsystem/     # theme/ (colors, typography) + component/ (scaffold, cards, fields, date picker)
+      common/           # format/ and clipboard/ helpers
+      widget/           # Glance home-screen widget + Quick Settings tile
+    navigation/         # App shell: CalculatorNavHost, routes, tools menu, launcher shortcuts
     CalculatorApplication.kt
     MainActivity.kt
 ```
 
-Keep features self-contained. **A `feature/` package never imports another `feature/` package** - share via `core/`. Scientific functions route through `core/math`; there is no separate scientific feature package.
+Keep features self-contained. **A `feature/` package imports only `core/`** - never another feature, never `navigation/` and never `MainActivity`. Shared UI goes to `core/designsystem/component`. `navigation/` is the app shell: it is the only package that knows every feature, hosts the one tools menu, and wires features together through callbacks (screens take `onOpenMenu`). CI fails a feature that breaks this rule. Scientific functions route through `core/math`; there is no separate scientific feature package.
 
 ## Coding style and conventions
 
@@ -138,9 +136,6 @@ These come from the user's global preferences and apply to every commit, file, a
 ./gradlew testDebugUnitTest --tests "com.calculator.core.math.EvaluatorTest.divides by zero returns error"
 ./gradlew testDebugUnitTest --tests "com.calculator.feature.*"   # glob a package
 
-# Instrumented tests (needs running emulator/device)
-./gradlew connectedAndroidTest
-
 # Static analysis
 ./gradlew ktlintCheck
 ./gradlew detekt
@@ -157,18 +152,18 @@ These come from the user's global preferences and apply to every commit, file, a
 
 ## Things to know (gotchas)
 
-- **GST calculator is India-specific.** Hide or expose by locale, never hardcode it as universally available.
+- **GST calculator is India-specific.** It is offered only when the locale country is IN or the time zone is India's (`isIndia` in `navigation/Tools.kt`, the one tool list for the menu and launcher shortcuts). Never hardcode it as universally available; new India-only tools use the same check.
 - **Loan/EMI calculator: use neutral language.** Google Play's personal-loans policy bans wording that implies the app is a lender. Strings must read as a calculator, not a lending tool.
-- **No network calls.** The app is fully offline. The currency converter (the only previous network caller) was removed; don't add Retrofit / OkHttp / INTERNET back without an explicit conversation about the trade-off - the offline story is still part of the app's positioning.
+- **No network calls.** The app is fully offline. Don't add a network library or the `INTERNET` permission without an explicit conversation about the trade-off - the offline story is part of the app's positioning.
 - **Permissions declared** (the manifest is no longer zero-permissions; the floating-calculator feature pulls these in):
   - `SYSTEM_ALERT_WINDOW` - draw the floating overlay over other apps. User-granted via system settings.
   - `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_SPECIAL_USE` - host the overlay in a foreground service so it survives leaving the app (SPECIAL_USE is the catch-all type required on API 34+).
   - `POST_NOTIFICATIONS` - the foreground service's ongoing notification on API 33+.
-  No INTERNET, ACCESS_NETWORK_STATE, location, or contacts. Don't add permissions for new features without raising the trade-off with the user first.
+  The merged manifest also gets `WAKE_LOCK`, `ACCESS_NETWORK_STATE` and `RECEIVE_BOOT_COMPLETED` from AndroidX WorkManager (the Glance widget uses it to schedule updates; no network calls are made) and the signature permission `com.calculator.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` from AndroidX. No INTERNET, location, or contacts. Don't add permissions for new features without raising the trade-off with the user first.
 - **Locale decimal separator.** Parse and render numbers per-locale (`,` in many EU locales, `.` in US/IN). The math engine accepts both via a locale-aware formatter at the UI boundary - the engine itself works on canonical `.`-separated strings.
-- **Crash reporting is opt-in.** Default off, disclosed in settings. Do not wire up Crashlytics or Firebase without an explicit user toggle.
+- **No crash reporter.** The app has none. Adding one needs an explicit opt-in toggle in Settings, off by default, and an update to PRIVACY.md. Do not wire up Crashlytics or Firebase without it.
 - **No analytics in v1.** Do not add Firebase Analytics, no third-party SDKs that phone home.
-- **Backups.** Android Auto Backup is on; nothing sensitive is stored, but `backup_rules.xml` is authored explicitly so the policy is reviewable.
+- **Backups.** Android Auto Backup is on; nothing sensitive is stored, but `data_extraction_rules.xml` is authored explicitly so the policy is reviewable (the old `backup_rules.xml` was ignored on API 31+ and is gone). Health tools such as ovulation are never saved as recent tools.
 
 ## Working with the requirements doc
 

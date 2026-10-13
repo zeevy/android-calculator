@@ -21,23 +21,19 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.BuildConfig
 import com.calculator.R
-import com.calculator.core.data.settings.DataStoreSettingsRepository
 import com.calculator.core.data.settings.UserSettings
-import com.calculator.feature.floating.FloatingCalculatorService
 
 /**
  * Settings sheet shown when the user taps the Settings tile in the tools
@@ -47,17 +43,17 @@ import com.calculator.feature.floating.FloatingCalculatorService
  * Writes go straight through the ViewModel into [SettingsRepository] -
  * Compose collects the resulting StateFlow so the UI always reflects
  * the latest persisted state.
+ *
+ * @param onLaunchFloating Starts the floating calculator overlay. The app
+ *   shell owns that feature, so the sheet only reports the tap.
  */
 @Composable
 fun SettingsSheetContent(
-    // Kept in the API so the host bottom sheet can wire dismiss into its
-    // own state; the sheet itself has no in-content close affordance.
-    @Suppress("UnusedParameter") onClose: () -> Unit,
+    onLaunchFloating: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
-    val settings by viewModel.settings.collectAsState()
+    val settings = viewModel.settings.collectAsStateWithLifecycle().value ?: return
     val accent = MaterialTheme.colorScheme.primary
-    val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
 
     Column(
@@ -124,18 +120,7 @@ fun SettingsSheetContent(
         ActionRow(
             label = stringResource(R.string.settings_floating_launch),
             description = stringResource(R.string.settings_floating_desc),
-            onClick = { FloatingCalculatorService.startOrRequestPermission(context) },
-        )
-
-        // Privacy.
-        Spacer(Modifier.size(16.dp))
-        SectionLabel(stringResource(R.string.settings_section_privacy))
-        ToggleRow(
-            label = stringResource(R.string.settings_crash),
-            description = stringResource(R.string.settings_crash_desc),
-            checked = settings.crashOptIn,
-            onCheckedChange = viewModel::setCrashOptIn,
-            accent = accent,
+            onClick = onLaunchFloating,
         )
 
         // About.
@@ -321,13 +306,11 @@ private fun SegmentedThemePicker(
 /**
  * Significant-figures slider.
  *
- * Steps are the integer count between
- * [DataStoreSettingsRepository.MIN_PRECISION] and
- * [DataStoreSettingsRepository.MAX_PRECISION]. Slider's `steps` value
- * is "tick marks between min and max" (exclusive of both endpoints),
- * so it's `(max - min) - 1`.
+ * Steps are the integer count within [UserSettings.PRECISION_RANGE].
+ * Slider's `steps` value is "tick marks between min and max" (exclusive
+ * of both endpoints), so it's `(max - min) - 1`.
  *
- * Picked-up changes flow through [DataStoreSettingsRepository] and the
+ * Picked-up changes flow through the settings repository and the
  * Evaluator instances pull the new precision on their next construction
  * - precision changes take effect on the next keypress, no restart.
  */
@@ -362,10 +345,8 @@ private fun PrecisionRow(
             value = precision.toFloat(),
             onValueChange = { onChange(it.toInt()) },
             valueRange =
-                DataStoreSettingsRepository.MIN_PRECISION.toFloat()..DataStoreSettingsRepository.MAX_PRECISION.toFloat(),
-            steps =
-                DataStoreSettingsRepository.MAX_PRECISION -
-                    DataStoreSettingsRepository.MIN_PRECISION - 1,
+                UserSettings.PRECISION_RANGE.first.toFloat()..UserSettings.PRECISION_RANGE.last.toFloat(),
+            steps = UserSettings.PRECISION_RANGE.last - UserSettings.PRECISION_RANGE.first - 1,
             colors =
                 SliderDefaults.colors(
                     thumbColor = accent,

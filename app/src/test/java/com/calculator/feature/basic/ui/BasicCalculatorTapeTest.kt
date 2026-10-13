@@ -1,26 +1,29 @@
 package com.calculator.feature.basic.ui
 
-import androidx.lifecycle.SavedStateHandle
-import com.calculator.core.data.tape.TapeHolder
+import com.calculator.core.data.tape.TapeStore
+import com.calculator.testing.MainDispatcherExtension
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 
 /**
  * Covers the inline tape wiring: which key presses push a line, and
  * which reset gestures throw the tape away.
  *
- * [TapeHolder] is a process-wide singleton, so every test starts by
- * emptying it - otherwise entries leak between methods.
+ * Each test gets its own [TapeStore], so no state leaks between methods.
  */
 class BasicCalculatorTapeTest {
+    @JvmField
+    @RegisterExtension
+    val mainDispatcher = MainDispatcherExtension()
+
     private lateinit var viewModel: BasicCalculatorViewModel
 
     @BeforeEach
     fun setUp() {
-        TapeHolder.clear()
-        viewModel = BasicCalculatorViewModel(SavedStateHandle())
+        viewModel = basicCalculatorViewModel()
     }
 
     @Test

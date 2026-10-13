@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 class AgeCalculatorTest {
     @Test
@@ -47,5 +48,19 @@ class AgeCalculatorTest {
         // 2026 is not a leap year. Next birthday should be 2026-02-28
         // (58 days after Jan 1).
         assertEquals(58, r.daysToNextBirthday)
+    }
+
+    @Test
+    fun `a Feb 29 birthday comes back on Feb 29 in the next leap year`() {
+        val dob = LocalDate.of(2000, 2, 29)
+        // 2027-03-10: this year's birthday (Feb 28) has passed; 2028 is a leap year.
+        val result = AgeCalculator.compute(dob, LocalDate.of(2027, 3, 10))
+        assertEquals(ChronoUnit.DAYS.between(LocalDate.of(2027, 3, 10), LocalDate.of(2028, 2, 29)).toInt(), result.daysToNextBirthday)
+    }
+
+    @Test
+    fun `a Feb 29 birthday is on Feb 28 in a year that is not a leap year`() {
+        val result = AgeCalculator.compute(LocalDate.of(2000, 2, 29), LocalDate.of(2027, 2, 28))
+        assertEquals(0, result.daysToNextBirthday)
     }
 }

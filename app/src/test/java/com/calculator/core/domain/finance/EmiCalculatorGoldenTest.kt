@@ -83,22 +83,23 @@ class EmiCalculatorGoldenTest {
     )
     fun amortisationInvariants(principal: Double, rate: Double, months: Int) {
         val r = EmiCalculator.emi(principal, rate, months)
+        val rows = EmiCalculator.schedule(principal, rate, months)
         // Last row's balanceAfter is essentially zero
-        assert(abs(r.amortisation.last().balanceAfter) < 1.0) {
-            "expected final balance ≈ 0, got ${r.amortisation.last().balanceAfter}"
+        assert(abs(rows.last().balanceAfter) < 1.0) {
+            "expected final balance ≈ 0, got ${rows.last().balanceAfter}"
         }
         // Sum of principalPaid + interestPaid equals totalPayment (within rounding)
-        val sumPaid = r.amortisation.sumOf { it.principalPaid + it.interestPaid }
+        val sumPaid = rows.sumOf { it.principalPaid + it.interestPaid }
         assert(abs(sumPaid - r.totalPayment) < 1.0) {
             "amortisation sum=$sumPaid does not equal totalPayment=${r.totalPayment}"
         }
         // Sum of principal-paid equals principal
-        val sumPrincipal = r.amortisation.sumOf { it.principalPaid }
+        val sumPrincipal = rows.sumOf { it.principalPaid }
         assert(abs(sumPrincipal - principal) < 1.0) {
             "principal sum=$sumPrincipal != principal=$principal"
         }
         // Row count equals months
-        assertEquals(months, r.amortisation.size)
+        assertEquals(months, rows.size)
     }
 
     @DisplayName("rejects invalid inputs")

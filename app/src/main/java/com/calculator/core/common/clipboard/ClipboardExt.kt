@@ -1,7 +1,6 @@
 package com.calculator.core.common.clipboard
 
 import android.content.ClipData
-import android.content.Context
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.toClipEntry
 
@@ -17,18 +16,23 @@ private const val CLIPBOARD_LABEL = "Calculator"
 fun plainTextClipEntry(text: String): ClipEntry = ClipData.newPlainText(CLIPBOARD_LABEL, text).toClipEntry()
 
 /**
- * Read the first clipboard item as plain text, returning an empty string when
- * the clipboard is empty or holds something that has no text representation.
+ * Read the first clipboard item's text, cut to [MAX_PASTE_CHARS], or an
+ * empty string when there is none.
  *
- * [context] is needed because non-text items (a URI, for instance) are coerced
- * to text through a ContentResolver lookup.
+ * Only the item's own text is read. A clip that is a content URI is not
+ * opened (that would read a file of any size on the caller's thread), and
+ * a long text is cut before anyone scans it for a number.
  */
-fun ClipEntry?.readPlainText(context: Context): String {
+fun ClipEntry?.readPlainText(): String {
     val data = this?.clipData ?: return ""
     if (data.itemCount == 0) return ""
     return data
         .getItemAt(0)
-        .coerceToText(context)
+        .text
+        ?.take(MAX_PASTE_CHARS)
         ?.toString()
         .orEmpty()
 }
+
+/** Longest pasted text looked at; a number never needs more. */
+private const val MAX_PASTE_CHARS = 200

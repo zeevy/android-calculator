@@ -100,6 +100,29 @@ class HistoryDaoTest {
             }
         }
 
+    @Test
+    fun insertKeepingNewestDropsTheOldestRowsOverTheCap() =
+        runTest {
+            repeat(5) { dao.insertKeepingNewest(entity("$it+0", "$it"), keep = 3) }
+
+            dao.observeAll().test {
+                assertEquals(listOf("4+0", "3+0", "2+0"), awaitItem().map { it.expression })
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun observeAllUsesCommitOrderEvenWhenTheClockGoesBack() =
+        runTest {
+            dao.insert(entity("first", "1", timestamp = 5_000))
+            dao.insert(entity("second", "2", timestamp = 1_000))
+
+            dao.observeAll().test {
+                assertEquals(listOf("second", "first"), awaitItem().map { it.expression })
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
     private fun entity(
         expression: String,
         result: String,

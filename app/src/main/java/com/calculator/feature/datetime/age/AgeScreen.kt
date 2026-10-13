@@ -1,41 +1,23 @@
 package com.calculator.feature.datetime.age
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.calculator.R
+import com.calculator.core.common.time.LocalClock
+import com.calculator.core.designsystem.component.DateField
+import com.calculator.core.designsystem.component.LifeCalcCard
+import com.calculator.core.designsystem.component.LifeCalcOutputRow
+import com.calculator.core.designsystem.component.LifeCalcSectionLabel
+import com.calculator.core.designsystem.component.LifeCalculatorScaffold
 import com.calculator.core.domain.datetime.AgeCalculator
-import com.calculator.feature.lifecalc.LifeCalcCard
-import com.calculator.feature.lifecalc.LifeCalcOutputRow
-import com.calculator.feature.lifecalc.LifeCalcSectionLabel
-import com.calculator.feature.lifecalc.LifeCalculatorScaffold
-import com.calculator.navigation.AgeRoute
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 /**
  * Age calculator: takes a date of birth and reports elapsed
@@ -46,32 +28,31 @@ import java.time.format.DateTimeFormatter
  * underlying [AgeCalculator] takes "today" as a parameter so the unit
  * tests can pass a fixed date and assert deterministic output.
  *
- * @param onNavigate Jump to another tool / home. Wired to the scaffold's
- *   hamburger menu.
+ * @param onOpenMenu Opens the app's tools menu.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AgeScreen(onNavigate: (Any) -> Unit) {
+fun AgeScreen(onOpenMenu: () -> Unit) {
+    val clock = LocalClock.current
     val scheme = MaterialTheme.colorScheme
-    var dob by remember { mutableStateOf(LocalDate.of(DEFAULT_DOB_YEAR, 1, DEFAULT_DOB_DAY)) }
-    var pickerOpen by remember { mutableStateOf(false) }
+    // LocalDate is Serializable, so the saved state keeps it as is.
+    var dob by rememberSaveable { mutableStateOf(LocalDate.of(DEFAULT_DOB_YEAR, 1, DEFAULT_DOB_DAY)) }
     // Cached for this composition. The result card recomputes when
     // either `dob` or `today` changes; since `today` only changes when
     // recomposition happens past midnight, reading it once is fine for
     // a foreground calculator screen.
-    val today = LocalDate.now()
+    val today = LocalDate.now(clock)
 
     LifeCalculatorScaffold(
         title = stringResource(R.string.age_title),
-        currentRoute = AgeRoute,
-        onNavigate = onNavigate,
+        onOpenMenu = onOpenMenu,
     ) {
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.age_section_dob))
-            DateRow(date = dob, onClick = { pickerOpen = true })
+            DateField(date = dob, onDateChange = { dob = it })
         }
 
-        val result = runCatching { AgeCalculator.compute(dob, today) }.getOrNull()
+        val result = if (dob.isAfter(today)) null else AgeCalculator.compute(dob, today)
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.age_section_result))
             if (result == null) {
@@ -107,68 +88,6 @@ fun AgeScreen(onNavigate: (Any) -> Unit) {
                 )
             }
         }
-    }
-
-    if (pickerOpen) {
-        val state =
-            rememberDatePickerState(
-                initialSelectedDateMillis = dob.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli(),
-            )
-        DatePickerDialog(
-            onDismissRequest = { pickerOpen = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        state.selectedDateMillis?.let { ms ->
-                            dob = Instant.ofEpochMilli(ms).atZone(ZoneOffset.UTC).toLocalDate()
-                        }
-                        pickerOpen = false
-                    },
-                ) { Text(stringResource(R.string.action_ok)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { pickerOpen = false }) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            },
-        ) { DatePicker(state = state) }
-    }
-}
-
-/**
- * Tappable date row. Renders a friendly full date with weekday and a
- * "Tap to change" hint, styled to match the rest of the life-calc cards.
- *
- * Shared with the ovulation screen (and any future screen that needs a
- * "pick a date" affordance with the same look) - hence `internal`
- * visibility rather than `private`.
- *
- * @param date Date currently selected (also seeds the picker dialog).
- * @param onClick Open the date-picker dialog.
- */
-@Composable
-internal fun DateRow(date: LocalDate, onClick: () -> Unit) {
-    val scheme = MaterialTheme.colorScheme
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(scheme.surfaceContainerHigh)
-                .clickable(onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-    ) {
-        Text(
-            text = date.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy")),
-            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = scheme.primary,
-        )
-        Spacer(Modifier.size(2.dp))
-        Text(
-            text = stringResource(R.string.age_tap_to_change),
-            style = MaterialTheme.typography.bodySmall,
-            color = scheme.onSurfaceVariant,
-        )
     }
 }
 

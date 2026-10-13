@@ -25,8 +25,10 @@ on:
         description: Tag name to publish (e.g. v0.1.0)
         required: true
 
+# Read-only by default. Only the publish job, which runs no project code,
+# gets a write token.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release-${{ github.ref }}
@@ -42,7 +44,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
+          ref: ${{ inputs.tag || github.ref }}
           fetch-depth: 0
+          persist-credentials: false
+
+      # Play rejects a reused versionCode, and a tag that does not match
+      # the app version publishes a confusing release. Fail before building.
+      - name: Check the tag matches the app version
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          name=$(sed -nE 's/^ *versionName = "([^"]+)".*/\1/p' app/build.gradle.kts)
+          code=$(sed -nE 's/^ *versionCode = ([0-9]+).*/\1/p' app/build.gradle.kts)
+          if [ "$TAG" != "v$name" ]; then
+            echo "::error::Tag $TAG does not match versionName $name."
+            exit 1
+          fi
+          IFS=. read -r major minor patch <<< "$name"
+          expected=$((major * 10000 + minor * 100 + patch))
+          if [ "$code" != "$expected" ]; then
+            echo "::error::versionCode is $code; docs/RELEASE.md says $name needs $expected."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "::error::The tagged commit is not on main."
+            exit 1
+          fi
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -51,7 +78,7 @@ jobs:
           java-version: 17
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           cache-read-only: true
 
@@ -81,6 +108,8 @@ jobs:
     timeout-minutes: 10
     needs: build-artifacts
     if: ${{ startsWith(github.ref, 'refs/tags/') && needs.build-artifacts.result == 'success' }}
+    permissions:
+      contents: write
 
     steps:
       - name: Download APK
@@ -96,7 +125,7 @@ jobs:
           path: artifacts/aab
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           # Drafted, not published: the runbook's last step is to replace the
           # auto-generated commit list with the user-visible bullets from

@@ -25,11 +25,16 @@ class SettingsViewModel
     constructor(
         private val repository: SettingsRepository,
     ) : ViewModel() {
-        val settings: StateFlow<UserSettings> =
+        /**
+         * Saved settings, or null until the first read from disk finishes.
+         * The theme root waits for a value so the first frame already uses
+         * the saved theme.
+         */
+        val settings: StateFlow<UserSettings?> =
             repository.settings.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
-                initialValue = UserSettings(),
+                initialValue = null,
             )
 
         fun setTheme(theme: UserSettings.ThemeOption) {
@@ -50,25 +55,5 @@ class SettingsViewModel
 
         fun setPrecision(precision: Int) {
             viewModelScope.launch { repository.setPrecision(precision) }
-        }
-
-        fun setCrashOptIn(enabled: Boolean) {
-            viewModelScope.launch { repository.setCrashOptIn(enabled) }
-        }
-
-        fun setGstIntraState(intra: Boolean) {
-            viewModelScope.launch { repository.setGstIntraState(intra) }
-        }
-
-        fun setGstRate(rate: String) {
-            viewModelScope.launch { repository.setGstRate(rate) }
-        }
-
-        fun setBmiHeightImperial(imperial: Boolean) {
-            viewModelScope.launch { repository.setBmiHeightImperial(imperial) }
-        }
-
-        fun setBmiWeightImperial(imperial: Boolean) {
-            viewModelScope.launch { repository.setBmiWeightImperial(imperial) }
         }
     }

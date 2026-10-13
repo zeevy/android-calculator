@@ -1,15 +1,13 @@
 package com.calculator.feature.converter.unit
 
+import androidx.lifecycle.SavedStateHandle
 import com.calculator.core.data.converter.UnitConverterRepository
-import com.calculator.core.data.settings.SettingsRepository
 import com.calculator.core.data.settings.UserSettings
 import com.calculator.core.domain.converter.ConversionTable
 import com.calculator.core.domain.converter.UnitCategory
+import com.calculator.testing.FakeSettingsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -20,6 +18,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
+import java.util.Locale
 
 /**
  * Tests the conversion + UI-state semantics: typing into "from", picking
@@ -29,13 +30,13 @@ import org.junit.jupiter.api.Test
 class UnitConverterViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val repo = FakeRepo()
-    private val settings = FakeSettings()
+    private val settings = FakeSettingsRepository(UserSettings(precision = 6))
     private lateinit var viewModel: UnitConverterViewModel
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(dispatcher)
-        viewModel = UnitConverterViewModel(repo, settings)
+        viewModel = UnitConverterViewModel(repo, settings, SavedStateHandle())
     }
 
     @AfterEach
@@ -96,8 +97,91 @@ class UnitConverterViewModelTest {
             assertEquals("1", viewModel.state.value.fromText)
             // toOutput goes through NumberFormatter so the running
             // locale adds grouping ("1,000" in en-US, "1.000" in de-DE).
-            // Test JVM defaults to en-US; expect the comma-grouped form.
+            // The unit test task pins the default locale to en-US.
             assertEquals("1,000", viewModel.state.value.toText)
+        }
+
+    @ParameterizedTest
+    @CsvSource(
+        "en-US, '1,000,000', '1,000', '1,000,000'",
+        "de-DE, '1.000.000', '1.000', '1.000.000'",
+        "en-IN, '10,00,000', '1,000', '10,00,000'",
+    )
+    fun `swap with a grouped result keeps the exact number`(
+        tag: String,
+        typedMetres: String,
+        kilometres: String,
+        metresBack: String,
+    ) = runTest(dispatcher) {
+        val saved = Locale.getDefault()
+        Locale.setDefault(Locale.forLanguageTag(tag))
+        try {
+            advanceUntilIdle()
+            viewModel.selectCategory(UnitCategory.Length)
+            advanceUntilIdle()
+            viewModel.setFromInput(typedMetres)
+            advanceUntilIdle()
+            assertEquals(kilometres, viewModel.state.value.toText)
+
+            viewModel.swap()
+            advanceUntilIdle()
+            assertEquals(kilometres, viewModel.state.value.fromText)
+            assertEquals(metresBack, viewModel.state.value.toText)
+        } finally {
+            Locale.setDefault(saved)
+        }
+    }
+
+    @Test
+    fun `swap after typing in the to field keeps the typed value with its unit`() =
+        runTest(dispatcher) {
+            advanceUntilIdle()
+            viewModel.selectCategory(UnitCategory.Length)
+            advanceUntilIdle()
+            viewModel.setToInput("1")
+            advanceUntilIdle()
+            assertEquals("1,000", viewModel.state.value.fromText)
+
+            viewModel.swap()
+            advanceUntilIdle()
+            assertEquals(
+                "km",
+                viewModel.state.value.fromUnit
+                    ?.symbol,
+            )
+            assertEquals("1", viewModel.state.value.fromText)
+            assertEquals("1,000", viewModel.state.value.toText)
+        }
+
+    @Test
+    fun `a decimal comma reads as a decimal in de-DE`() =
+        runTest(dispatcher) {
+            val saved = Locale.getDefault()
+            Locale.setDefault(Locale.GERMANY)
+            try {
+                advanceUntilIdle()
+                viewModel.selectCategory(UnitCategory.Length)
+                advanceUntilIdle()
+                viewModel.setFromInput("1500,5")
+                advanceUntilIdle()
+                assertEquals("1,5005", viewModel.state.value.toText)
+            } finally {
+                Locale.setDefault(saved)
+            }
+        }
+
+    @Test
+    fun `typed text comes back after process death`() =
+        runTest(dispatcher) {
+            viewModel.selectCategory(UnitCategory.Length)
+            viewModel.setFromInput("2500")
+            advanceUntilIdle()
+
+            val handle = SavedStateHandle(mapOf("units.fromText" to "2500", "units.lastEdited" to "From"))
+            val restored = UnitConverterViewModel(repo, settings, handle)
+            advanceUntilIdle()
+            assertEquals("2500", restored.state.value.fromText)
+            assertEquals("2.5", restored.state.value.toText)
         }
 
     @Test
@@ -225,40 +309,5 @@ class UnitConverterViewModelTest {
         override suspend fun record(category: UnitCategory, fromSymbol: String, toSymbol: String) {
             records[category] = fromSymbol to toSymbol
         }
-    }
-
-    private class FakeSettings : SettingsRepository {
-        private val snapshot = MutableStateFlow(UserSettings(precision = 6))
-        override val settings: Flow<UserSettings> = snapshot.asStateFlow()
-
-        override suspend fun setTheme(theme: UserSettings.ThemeOption) = Unit
-
-        override suspend fun setDynamicColor(enabled: Boolean) = Unit
-
-        override suspend fun setHaptics(enabled: Boolean) = Unit
-
-        override suspend fun setSound(enabled: Boolean) = Unit
-
-        override suspend fun setPrecision(precision: Int) {
-            snapshot.value = snapshot.value.copy(precision = precision)
-        }
-
-        override suspend fun setCrashOptIn(enabled: Boolean) = Unit
-
-        override suspend fun setLastUnitCategory(category: String) {
-            snapshot.value = snapshot.value.copy(lastUnitCategory = category)
-        }
-
-        override suspend fun setGstIntraState(intra: Boolean) = Unit
-
-        override suspend fun setGstRate(rate: String) = Unit
-
-        override suspend fun setBmiHeightImperial(imperial: Boolean) = Unit
-
-        override suspend fun setBmiWeightImperial(imperial: Boolean) = Unit
-
-        override suspend fun setLastTzFromZone(zone: String) = Unit
-
-        override suspend fun setLastTzToZone(zone: String) = Unit
     }
 }

@@ -1,13 +1,9 @@
 package com.calculator.feature.basic.ui
 
-import androidx.lifecycle.SavedStateHandle
 import com.calculator.core.data.history.HistoryEntry
-import com.calculator.core.data.history.HistoryRepository
+import com.calculator.testing.FakeHistoryRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -31,7 +27,7 @@ class BasicCalculatorHistoryTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(dispatcher)
-        viewModel = BasicCalculatorViewModel(SavedStateHandle(), repo)
+        viewModel = basicCalculatorViewModel(historyRepository = repo)
     }
 
     @AfterEach
@@ -120,22 +116,4 @@ class BasicCalculatorHistoryTest {
             advanceUntilIdle()
             assertEquals(0, repo.added.size)
         }
-
-    /** Stand-in [HistoryRepository] that captures every [add] call. */
-    private class FakeHistoryRepository : HistoryRepository {
-        data class AddCall(val expression: String, val result: String, val type: HistoryEntry.Type)
-
-        val added = mutableListOf<AddCall>()
-        private val backing = MutableStateFlow<List<HistoryEntry>>(emptyList())
-
-        override fun observe(): Flow<List<HistoryEntry>> = backing.asStateFlow()
-
-        override suspend fun add(expression: String, result: String, type: HistoryEntry.Type) {
-            added += AddCall(expression, result, type)
-        }
-
-        override suspend fun delete(id: Long) = Unit
-
-        override suspend fun clearAll() = Unit
-    }
 }

@@ -9,15 +9,13 @@ package com.calculator.core.data.settings
  *  - Haptics + sound on (parity with iOS).
  *  - Precision 12 sig figs (matches the math engine's transcendental
  *    round-trip).
- *  - Crash reporting OFF until the user opts in (open-source / privacy).
  */
 data class UserSettings(
     val theme: ThemeOption = ThemeOption.System,
     val dynamicColor: Boolean = true,
     val haptics: Boolean = true,
     val sound: Boolean = true,
-    val precision: Int = 12,
-    val crashOptIn: Boolean = false,
+    val precision: Int = DEFAULT_PRECISION,
     /**
      * Per-tool "remember last selection" preferences.
      *
@@ -49,4 +47,12 @@ data class UserSettings(
     val lastTzToZone: String? = null,
 ) {
     enum class ThemeOption { System, Light, Dark }
+
+    companion object {
+        /** Significant digits used until the user picks another value. */
+        const val DEFAULT_PRECISION = 12
+
+        /** Precision values the Settings slider offers and the repository accepts. */
+        val PRECISION_RANGE: IntRange = 6..16
+    }
 }

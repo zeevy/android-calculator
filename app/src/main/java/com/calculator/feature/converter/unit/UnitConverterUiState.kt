@@ -38,6 +38,12 @@ data class UnitConverterUiState(
     val lastEdited: PickerSide = PickerSide.From,
     val precision: Int = 6,
     val pickerOpen: PickerSide? = null,
+    /**
+     * Numeric value of the side that was computed last (the non-source
+     * side), kept so swap carries the exact number instead of re-reading
+     * its formatted, grouped text.
+     */
+    val lastResult: Double? = null,
 ) {
     enum class PickerSide { From, To }
 }

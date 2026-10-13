@@ -2,7 +2,9 @@ package com.calculator.core.data.di
 
 import android.content.Context
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
 import com.calculator.core.data.converter.RoomUnitConverterRepository
@@ -19,6 +21,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import java.time.Clock
 import javax.inject.Singleton
 
 /**
@@ -33,12 +36,17 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DataModule {
+    // A corrupt file is replaced with empty preferences (all defaults)
+    // instead of crashing every launch until the user clears app data.
     private val Context.userSettingsDataStore: DataStore<Preferences> by preferencesDataStore(
         name = SETTINGS_DATASTORE_NAME,
+        corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
     )
 
     private const val SETTINGS_DATASTORE_NAME = "user_settings"
 
+    // The spread copies a tiny array once per process start.
+    @Suppress("SpreadOperator")
     @Provides
     @Singleton
     fun provideCalculatorDatabase(
@@ -49,13 +57,18 @@ object DataModule {
                 context,
                 CalculatorDatabase::class.java,
                 CalculatorDatabase.NAME,
-            )
-            // Acceptable while no public release has shipped. Pre-release
-            // builds reset their on-device DB across schema bumps; once
-            // we ship to Play, every schema bump must come with a
-            // Migration object.
-            .fallbackToDestructiveMigration()
+            ).addMigrations(*CalculatorDatabase.MIGRATIONS)
+            // A downgrade (installing an older build over a newer one) has
+            // no migration path, so only that case may reset the database.
+            .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
             .build()
+
+    /**
+     * The clock for "now". Not a singleton, so each user picks up the
+     * device time zone current at that moment; tests pass a fixed clock.
+     */
+    @Provides
+    fun provideClock(): Clock = Clock.systemDefaultZone()
 
     @Provides
     @Singleton

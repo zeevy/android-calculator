@@ -1,7 +1,7 @@
 package com.calculator
 
 import android.app.Application
-import com.calculator.feature.shortcuts.RecentToolsRegistry
+import com.calculator.navigation.RecentToolsRegistry
 import dagger.hilt.android.HiltAndroidApp
 
 /**

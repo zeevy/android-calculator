@@ -7,7 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing yet.
+### Removed
+
+- The "Crash reporting" switch in Settings. The app has no crash reporter, so the switch did nothing; the privacy policy and Play listing now say the app sends nothing anywhere.
+
+### Changed
+
+- The GST calculator is shown only on devices set up for India (an Indian locale, or India's time zone), in the tools menu and in launcher shortcuts.
+
+- History keeps the newest 1000 calculations. Older ones are removed when a new one is saved, so the History sheet stays fast.
+
+### Fixed
+
+- A Feb 29 birthday now counts down to Feb 29 in the next leap year (it stopped at Feb 28).
+- Percent change from a negative start has the right sign (-100 to -150 is -50%).
+- The ovulation tool is never saved as a recent tool or shown as a launcher shortcut, since its use is private.
+- Paste reads only the clipboard's text and at most 200 characters, so pasting a large file can no longer freeze the app.
+- The timezone converter opens on the real current time: on a phone in India it no longer shows "UTC 10:00 = India 15:30" at 10:00 local time.
+- Hindi users see Hindi everywhere: error messages, BMI categories, unit and category names, and the tools added after the first translation (percentage, investment, tip split, bases, tape, floating calculator).
+- TalkBack, Switch Access and Voice Access can use the keypad: every key is a button with a spoken name (for example "Divide", "Memory recall"), and backspace offers "Clear all" as its long-press action. Number fields are read with their label, and mode switches are read as radio buttons with their state.
+- Keys and switches are at least 48dp tall, including the short rows of the scientific keypad and the floating calculator.
+- The home-screen widget follows the light or dark theme and wallpaper colours.
+- Typed values in every tool survive the app being closed in the background (for example while you switch to another app), and a launcher shortcut no longer jumps back to its tool after such a restart.
+- Tool screens say which field is wrong (for example "Must be from 0 to 11.99" under inches) instead of one general message, and BMI rejects inches of 12 or more. A loan tenure above 600 months is rejected instead of slowing the app down.
+- The floating calculator and the home-screen widget follow the same rules as the app: `2 + 3 × 4 =` gives 14 everywhere (the floating calculator gave 20), the widget no longer accepts `5++` or `1..2`, and both use the precision from Settings. The floating calculator shows the whole expression while you type and a readable error message.
+- Number fields accept the decimal separator of the phone's language, so `10,5` works in German or French. A number with misplaced group separators (such as `10.5` in German) shows an error instead of being read as 105.
+- Money amounts use lakh and crore grouping (`12,34,567.89`) on phones set to English (India) or Hindi, in every tool.
+- The unit converter keeps the exact value when you swap units, also for results of 1,000 or more; before, swap blanked the result or read `1.000` as 1 in German.
+- Pasting a number into the calculator reads it in the phone's language (`1.234,50` in German is 1234.5).
+- A loan or investment term long enough to overflow now shows an error instead of `NaN`.
+- A damaged settings file no longer crashes the app on every launch; the settings go back to their defaults and save normally again.
+- On a cold start the app no longer shows one frame in the wrong theme when the chosen theme differs from the system theme.
+- On Android 13 and later, starting the floating calculator from Settings now asks for the notification permission, so its notification and Stop action show in the shade.
+- The floating calculator service stops quietly instead of crashing when the overlay permission is missing.
+- No activity other than the main screen can be started by other apps.
+- A future database change can no longer wipe saved history and unit pairs on upgrade. The database schema is now exported and checked by a migration test, and the destructive fallback is gone (it remains only for a downgrade).
 
 ## [1.2.0] - 2026-08-25
 

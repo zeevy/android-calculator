@@ -1,12 +1,10 @@
 package com.calculator.feature.settings
 
-import com.calculator.core.data.settings.SettingsRepository
+import app.cash.turbine.test
 import com.calculator.core.data.settings.UserSettings
+import com.calculator.testing.FakeSettingsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -15,7 +13,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -41,10 +39,14 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `default settings are exposed`() =
+    fun `settings are null until read, then the saved values`() =
         runTest(dispatcher) {
-            advanceUntilIdle()
-            assertEquals(UserSettings(), viewModel.settings.value)
+            assertNull(viewModel.settings.value)
+            viewModel.settings.test {
+                assertNull(awaitItem())
+                assertEquals(UserSettings(), awaitItem())
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 
     @Test
@@ -70,71 +72,4 @@ class SettingsViewModelTest {
             advanceUntilIdle()
             assertEquals(8, repo.snapshot.value.precision)
         }
-
-    @Test
-    fun `setCrashOptIn propagates to the repository`() =
-        runTest(dispatcher) {
-            viewModel.setCrashOptIn(true)
-            advanceUntilIdle()
-            assertTrue(repo.snapshot.value.crashOptIn)
-        }
-
-    /** Tiny in-memory fake so the test doesn't need DataStore + Robolectric. */
-    private class FakeSettingsRepository : SettingsRepository {
-        val snapshot = MutableStateFlow(UserSettings())
-
-        override val settings: Flow<UserSettings> = snapshot.asStateFlow()
-
-        override suspend fun setTheme(theme: UserSettings.ThemeOption) {
-            snapshot.value = snapshot.value.copy(theme = theme)
-        }
-
-        override suspend fun setDynamicColor(enabled: Boolean) {
-            snapshot.value = snapshot.value.copy(dynamicColor = enabled)
-        }
-
-        override suspend fun setHaptics(enabled: Boolean) {
-            snapshot.value = snapshot.value.copy(haptics = enabled)
-        }
-
-        override suspend fun setSound(enabled: Boolean) {
-            snapshot.value = snapshot.value.copy(sound = enabled)
-        }
-
-        override suspend fun setPrecision(precision: Int) {
-            snapshot.value = snapshot.value.copy(precision = precision)
-        }
-
-        override suspend fun setCrashOptIn(enabled: Boolean) {
-            snapshot.value = snapshot.value.copy(crashOptIn = enabled)
-        }
-
-        override suspend fun setLastUnitCategory(category: String) {
-            snapshot.value = snapshot.value.copy(lastUnitCategory = category)
-        }
-
-        override suspend fun setGstIntraState(intra: Boolean) {
-            snapshot.value = snapshot.value.copy(gstIntraState = intra)
-        }
-
-        override suspend fun setGstRate(rate: String) {
-            snapshot.value = snapshot.value.copy(gstRate = rate)
-        }
-
-        override suspend fun setBmiHeightImperial(imperial: Boolean) {
-            snapshot.value = snapshot.value.copy(bmiHeightImperial = imperial)
-        }
-
-        override suspend fun setBmiWeightImperial(imperial: Boolean) {
-            snapshot.value = snapshot.value.copy(bmiWeightImperial = imperial)
-        }
-
-        override suspend fun setLastTzFromZone(zone: String) {
-            snapshot.value = snapshot.value.copy(lastTzFromZone = zone)
-        }
-
-        override suspend fun setLastTzToZone(zone: String) {
-            snapshot.value = snapshot.value.copy(lastTzToZone = zone)
-        }
-    }
 }
