@@ -162,9 +162,10 @@ app/
 ## 9. Testing Strategy
 
 - **Unit tests (JUnit5)** for the math engine - precedence, unary minus, division by zero, very large/small numbers, transcendental rounding, locale-specific decimal separators.
-- **Unit tests** for each life-calculator's formula (deterministic golden-input/golden-output cases).
-- **Compose UI tests (JUnit4 + AndroidX Test or Robolectric)** for key flows: basic calculation, scientific mode, unit conversion, every life calculator.
-- **Screenshot tests** (Paparazzi or Roborazzi) for the design system in light / dark / dynamic-color variants.
+- **Unit tests** for each life-calculator's formula (deterministic golden-input/golden-output cases) and for each tool's input function (empty, partial and out-of-range input).
+- **Compose UI tests (JUnit4 + Robolectric, on the JVM)** for key flows: basic calculation, scientific mode, unit conversion, and a smoke or save/restore test for the life calculators.
+- **Locale**: the unit test task pins the default locale to en-US; tests for other locales set them explicitly, so results do not depend on the machine.
+- Screenshot tests are not used; looks are checked on a device before a release.
 - **Static analysis** in CI: ktlint, detekt, Android Lint at error severity.
 
 ## 10. Release Plan (Tentative)

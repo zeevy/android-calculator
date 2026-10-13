@@ -4,6 +4,7 @@ import com.calculator.core.data.db.HistoryDao
 import com.calculator.core.data.db.HistoryEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.Clock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -37,6 +38,7 @@ class RoomHistoryRepository
     @Inject
     constructor(
         private val dao: HistoryDao,
+        private val clock: Clock,
     ) : HistoryRepository {
         override fun observe(): Flow<List<HistoryEntry>> =
             dao.observeAll().map { rows -> rows.map { it.toEntry() } }
@@ -46,7 +48,7 @@ class RoomHistoryRepository
                 HistoryEntity(
                     expression = expression,
                     result = result,
-                    timestampUtc = System.currentTimeMillis(),
+                    timestampUtc = clock.millis(),
                     type =
                         when (type) {
                             HistoryEntry.Type.Basic -> HistoryEntity.TYPE_BASIC

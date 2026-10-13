@@ -57,7 +57,10 @@ class FakeSettingsRepository(
     }
 }
 
-/** In-memory [HistoryRepository] that records every [add] call in [added]. */
+/**
+ * In-memory [HistoryRepository]. [observe] emits whatever is set on
+ * [entries]; [add], [delete] and [clearAll] calls are recorded.
+ */
 class FakeHistoryRepository : HistoryRepository {
     /** One recorded [add] call. */
     data class AddCall(
@@ -67,9 +70,12 @@ class FakeHistoryRepository : HistoryRepository {
     )
 
     val added = mutableListOf<AddCall>()
-    private val backing = MutableStateFlow<List<HistoryEntry>>(emptyList())
+    val deleted = mutableListOf<Long>()
+    var clearAllCalls = 0
+        private set
+    val entries = MutableStateFlow<List<HistoryEntry>>(emptyList())
 
-    override fun observe(): Flow<List<HistoryEntry>> = backing.asStateFlow()
+    override fun observe(): Flow<List<HistoryEntry>> = entries.asStateFlow()
 
     override suspend fun add(
         expression: String,
@@ -79,9 +85,13 @@ class FakeHistoryRepository : HistoryRepository {
         added += AddCall(expression, result, type)
     }
 
-    override suspend fun delete(id: Long) = Unit
+    override suspend fun delete(id: Long) {
+        deleted += id
+    }
 
-    override suspend fun clearAll() = Unit
+    override suspend fun clearAll() {
+        clearAllCalls++
+    }
 }
 
 /** JUnit 5 extension that swaps `Dispatchers.Main` for [dispatcher] around each test. */

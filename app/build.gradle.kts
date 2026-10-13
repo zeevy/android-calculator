@@ -97,6 +97,13 @@ android {
         unitTests {
             isIncludeAndroidResources = true
             isReturnDefaultValues = true
+            // Same default locale on every machine, so formatting tests do
+            // not depend on how the contributor's computer is set up. Tests
+            // for other locales set them explicitly.
+            all {
+                it.systemProperty("user.language", "en")
+                it.systemProperty("user.country", "US")
+            }
         }
     }
 

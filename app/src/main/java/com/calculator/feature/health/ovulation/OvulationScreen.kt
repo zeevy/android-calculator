@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.calculator.R
+import com.calculator.core.common.time.LocalClock
 import com.calculator.core.designsystem.component.DateField
 import com.calculator.core.designsystem.component.LifeCalcCard
 import com.calculator.core.designsystem.component.LifeCalcSectionLabel
@@ -49,11 +50,12 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OvulationScreen(onOpenMenu: () -> Unit) {
+    val clock = LocalClock.current
     // Seed the LMP to ~two weeks ago so on first open the user sees a
     // populated result roughly centred on today's date. They will replace
     // it with their actual LMP via the picker.
     val scheme = MaterialTheme.colorScheme
-    var lmp by rememberSaveable { mutableStateOf(LocalDate.now().minusDays(DEFAULT_LMP_OFFSET_DAYS)) }
+    var lmp by rememberSaveable { mutableStateOf(LocalDate.now(clock).minusDays(DEFAULT_LMP_OFFSET_DAYS)) }
     var cycleDays by rememberSaveable { mutableIntStateOf(OvulationCalculator.DEFAULT_CYCLE_DAYS) }
 
     LifeCalculatorScaffold(
@@ -91,7 +93,7 @@ fun OvulationScreen(onOpenMenu: () -> Unit) {
         }
 
         // The last period cannot start in the future.
-        val lmpInFuture = lmp.isAfter(LocalDate.now())
+        val lmpInFuture = lmp.isAfter(LocalDate.now(clock))
         val valid = !lmpInFuture && cycleDays in OvulationCalculator.MIN_CYCLE_DAYS..OvulationCalculator.MAX_CYCLE_DAYS
         val result = if (valid) OvulationCalculator.compute(lmp, cycleDays) else null
         LifeCalcCard {

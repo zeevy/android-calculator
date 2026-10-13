@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.calculator.R
 import com.calculator.core.common.input.InputResult
+import com.calculator.core.common.time.LocalClock
 import com.calculator.core.designsystem.component.DateField
 import com.calculator.core.designsystem.component.LifeCalcCard
 import com.calculator.core.designsystem.component.LifeCalcNumberField
@@ -47,14 +48,15 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateDiffScreen(onOpenMenu: () -> Unit) {
+    val clock = LocalClock.current
     val scheme = MaterialTheme.colorScheme
     // Saveable, so the mode, dates and offset survive the app being
     // killed in the background.
     var mode by rememberSaveable { mutableIntStateOf(0) } // 0 = two dates, 1 = date + offset
     // Defaults seed a sample 1-year span so the result card has
     // something to display on first render.
-    var dateA by rememberSaveable { mutableStateOf(LocalDate.now().minusYears(1)) }
-    var dateB by rememberSaveable { mutableStateOf(LocalDate.now()) }
+    var dateA by rememberSaveable { mutableStateOf(LocalDate.now(clock).minusYears(1)) }
+    var dateB by rememberSaveable { mutableStateOf(LocalDate.now(clock)) }
     var offsetDays by rememberSaveable { mutableStateOf("90") }
     val offsetInput = remember(dateA, offsetDays) { dateOffsetInput(dateA, offsetDays) }
 

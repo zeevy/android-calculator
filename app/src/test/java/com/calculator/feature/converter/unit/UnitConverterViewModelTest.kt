@@ -97,7 +97,7 @@ class UnitConverterViewModelTest {
             assertEquals("1", viewModel.state.value.fromText)
             // toOutput goes through NumberFormatter so the running
             // locale adds grouping ("1,000" in en-US, "1.000" in de-DE).
-            // Test JVM defaults to en-US; expect the comma-grouped form.
+            // The unit test task pins the default locale to en-US.
             assertEquals("1,000", viewModel.state.value.toText)
         }
 

@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -38,18 +39,19 @@ class TimezoneViewModel
     constructor(
         private val settings: SettingsRepository,
         private val savedStateHandle: SavedStateHandle,
+        private val clock: Clock,
     ) : ViewModel() {
+        // Times the user picked come back from SavedStateHandle after
+        // process death; the zones come back from settings in init.
+        private val savedFromTime: LocalDateTime? = savedStateHandle[KEY_FROM_TIME]
+
         private val _state =
             MutableStateFlow(
-                // Seed with `now` so the screen renders a useful conversion on
-                // first frame instead of midnight. Both sides start at the
-                // same instant but in different zones - recompute() will
-                // restore consistency on first emit. Times the user picked
-                // come back from SavedStateHandle after process death; the
-                // zones come back from settings in init.
+                // Placeholder until init knows the From zone and sets the
+                // current time there.
                 TimezoneUiState(
-                    fromTime = savedStateHandle[KEY_FROM_TIME] ?: LocalDateTime.now(),
-                    toTime = savedStateHandle[KEY_TO_TIME] ?: LocalDateTime.now(),
+                    fromTime = savedFromTime ?: LocalDateTime.now(clock),
+                    toTime = savedStateHandle[KEY_TO_TIME] ?: LocalDateTime.now(clock),
                     lastEdited =
                         savedStateHandle.get<String>(KEY_LAST_EDITED)?.let { TimezoneUiState.Side.valueOf(it) }
                             ?: TimezoneUiState.Side.From,
@@ -62,7 +64,19 @@ class TimezoneViewModel
                 val saved = settings.settings.firstOrNull()
                 val from = saved?.lastTzFromZone ?: "UTC"
                 val to = saved?.lastTzToZone ?: "Asia/Kolkata"
-                _state.update { it.copy(fromZone = from, toZone = to) }
+                _state.update { current ->
+                    // Start from "now" in the From zone, not the device's wall
+                    // time labelled as the From zone.
+                    val fromZoneId = runCatching { ZoneId.of(from) }.getOrNull()
+                    val now = if (savedFromTime == null &&
+                        fromZoneId != null
+                    ) {
+                        LocalDateTime.now(clock.withZone(fromZoneId))
+                    } else {
+                        current.fromTime
+                    }
+                    current.copy(fromZone = from, toZone = to, fromTime = now)
+                }
                 recompute()
             }
         }

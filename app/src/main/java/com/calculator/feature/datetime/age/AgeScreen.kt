@@ -10,6 +10,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import com.calculator.R
+import com.calculator.core.common.time.LocalClock
 import com.calculator.core.designsystem.component.DateField
 import com.calculator.core.designsystem.component.LifeCalcCard
 import com.calculator.core.designsystem.component.LifeCalcOutputRow
@@ -32,6 +33,7 @@ import java.time.LocalDate
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AgeScreen(onOpenMenu: () -> Unit) {
+    val clock = LocalClock.current
     val scheme = MaterialTheme.colorScheme
     // LocalDate is Serializable, so the saved state keeps it as is.
     var dob by rememberSaveable { mutableStateOf(LocalDate.of(DEFAULT_DOB_YEAR, 1, DEFAULT_DOB_DAY)) }
@@ -39,7 +41,7 @@ fun AgeScreen(onOpenMenu: () -> Unit) {
     // either `dob` or `today` changes; since `today` only changes when
     // recomposition happens past midnight, reading it once is fine for
     // a foreground calculator screen.
-    val today = LocalDate.now()
+    val today = LocalDate.now(clock)
 
     LifeCalculatorScaffold(
         title = stringResource(R.string.age_title),

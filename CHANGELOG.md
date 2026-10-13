@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The timezone converter opens on the real current time: on a phone in India it no longer shows "UTC 10:00 = India 15:30" at 10:00 local time.
 - Hindi users see Hindi everywhere: error messages, BMI categories, unit and category names, and the tools added after the first translation (percentage, investment, tip split, bases, tape, floating calculator).
 - TalkBack, Switch Access and Voice Access can use the keypad: every key is a button with a spoken name (for example "Divide", "Memory recall"), and backspace offers "Clear all" as its long-press action. Number fields are read with their label, and mode switches are read as radio buttons with their state.
 - Keys and switches are at least 48dp tall, including the short rows of the scientific keypad and the floating calculator.
