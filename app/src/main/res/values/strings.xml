@@ -34,8 +34,11 @@
     <string name="tool_loan">Loan</string>
     <string name="tool_gst">GST</string>
     <string name="tool_discount">Discount</string>
+    <string name="tool_profit">Profit</string>
     <string name="tool_tipsplit">Tip &amp; split</string>
     <string name="tool_investment">Investment</string>
+    <string name="tool_deposit">Deposits</string>
+    <string name="tool_salary">Salary hike</string>
     <string name="tool_percent">Percentage</string>
     <string name="tool_basecalc">Bases</string>
     <string name="tool_tape">Tape</string>
@@ -164,6 +167,8 @@
 
     <!-- Launcher shortcuts -->
     <string name="shortcut_units_long">Unit converter</string>
+    <string name="shortcut_deposit_long">FD, RD and PPF</string>
+    <string name="shortcut_profit_long">Profit and markup</string>
     <string name="shortcut_floating_short">Float</string>
     <string name="shortcut_floating_long">Floating calculator</string>
 
@@ -189,6 +194,25 @@
     <string name="discount_percent_suffix" translatable="false">%</string>
     <string name="discount_error_invalid">Enter valid numbers (final must be in 0..MRP).</string>
 
+    <!-- Profit and markup -->
+    <string name="profit_title">Profit and markup</string>
+    <string name="profit_section_mode">Mode</string>
+    <string name="profit_section_result">Result</string>
+    <string name="profit_mode_prices">Prices</string>
+    <string name="profit_mode_markup">Markup</string>
+    <string name="profit_mode_margin">Margin</string>
+    <string name="profit_cost">Cost price</string>
+    <string name="profit_selling">Selling price</string>
+    <string name="profit_markup_input">Markup on cost</string>
+    <string name="profit_margin_input">Margin on selling price</string>
+    <string name="profit_profit">Profit</string>
+    <string name="profit_loss">Loss</string>
+    <string name="profit_markup">Markup %</string>
+    <string name="profit_margin">Margin %</string>
+    <string name="profit_loss_percent">Loss %</string>
+    <string name="profit_selling_result">Selling price</string>
+    <string name="profit_error_invalid">Enter valid prices and percentages.</string>
+
     <!-- Tip & split -->
     <string name="tipsplit_title">Tip &amp; split</string>
     <string name="tipsplit_section_inputs">Inputs</string>
@@ -202,12 +226,34 @@
     <string name="tipsplit_per_person">Per person</string>
     <string name="tipsplit_error_invalid">Enter a valid bill and tip amount.</string>
 
+    <!-- Salary hike -->
+    <string name="salary_title">Salary hike</string>
+    <string name="salary_section_mode">Mode</string>
+    <string name="salary_section_period">Salary period</string>
+    <string name="salary_section_result">Result</string>
+    <string name="salary_mode_new">New salary</string>
+    <string name="salary_mode_hike">Hike %</string>
+    <string name="salary_period_monthly">Monthly</string>
+    <string name="salary_period_yearly">Yearly</string>
+    <string name="salary_current">Current salary</string>
+    <string name="salary_hike_input">Hike</string>
+    <string name="salary_old">Old salary</string>
+    <string name="salary_new">New salary</string>
+    <string name="salary_new_monthly">New salary per month</string>
+    <string name="salary_new_yearly">New salary per year</string>
+    <string name="salary_increase_monthly">Increase per month</string>
+    <string name="salary_increase_yearly">Increase per year</string>
+    <string name="salary_increase">Increase amount</string>
+    <string name="salary_hike_result">Hike</string>
+    <string name="salary_error_invalid">Fix the values above to see the result.</string>
+
     <!-- Investment (SIP / compound interest) -->
     <string name="investment_title">Investment</string>
     <string name="investment_section_mode">Mode</string>
     <string name="investment_section_result">Result</string>
     <string name="investment_mode_sip" translatable="false">SIP</string>
     <string name="investment_mode_lumpsum">Lump sum</string>
+    <string name="investment_mode_cagr" translatable="false">CAGR</string>
     <string name="investment_monthly">Monthly amount</string>
     <string name="investment_principal">Principal</string>
     <string name="investment_rate">Annual rate</string>
@@ -217,6 +263,46 @@
     <string name="investment_gains">Estimated gains</string>
     <string name="investment_maturity">Maturity value</string>
     <string name="investment_error_invalid">Enter a positive amount, rate, and tenure.</string>
+    <string name="investment_start">Start value</string>
+    <string name="investment_end">End value</string>
+    <string name="investment_cagr">CAGR (per year)</string>
+    <string name="investment_absolute_return">Absolute return</string>
+    <string name="investment_gain">Gain</string>
+    <string name="investment_cagr_error_invalid">Enter a start value above 0, an end value and a tenure.</string>
+
+    <!-- Deposits (FD, RD, PPF) -->
+    <string name="deposit_title">Deposits</string>
+    <string name="deposit_section_type">Deposit type</string>
+    <string name="deposit_mode_fd" translatable="false">FD</string>
+    <string name="deposit_mode_rd" translatable="false">RD</string>
+    <string name="deposit_mode_ppf" translatable="false">PPF</string>
+    <string name="deposit_amount">Deposit amount</string>
+    <string name="deposit_monthly">Monthly deposit</string>
+    <string name="deposit_yearly">Yearly deposit</string>
+    <string name="deposit_rate">Interest rate per year</string>
+    <string name="deposit_years">Years</string>
+    <string name="deposit_months">Months</string>
+    <string name="deposit_months_suffix">months</string>
+    <string name="deposit_tenure">Tenure</string>
+    <string name="deposit_section_compounding">Compounding</string>
+    <string name="deposit_compounding_monthly">Monthly</string>
+    <string name="deposit_compounding_quarterly">Quarterly</string>
+    <string name="deposit_compounding_half_yearly">Half-yearly</string>
+    <string name="deposit_compounding_yearly">Yearly</string>
+    <string name="deposit_section_result">Result</string>
+    <string name="deposit_deposited">Total deposited</string>
+    <string name="deposit_interest">Total interest</string>
+    <string name="deposit_maturity">Maturity amount</string>
+    <string name="deposit_ppf_years">%1$d years</string>
+    <string name="deposit_error_invalid">Fix the marked field to see the result.</string>
+    <string name="deposit_fd_note">Like most banks: a deposit below 6 months earns simple interest, and the months after the last full compounding period earn simple interest on the compounded amount.</string>
+    <string name="deposit_rd_note">Interest is compounded every quarter, as banks and India Post do.</string>
+    <string name="deposit_ppf_note">Assumes each year\'s deposit is made by 5 April, so it earns interest for the full year. The government sets the PPF rate every quarter.</string>
+    <string name="deposit_section_years">Year by year</string>
+    <string name="deposit_col_year">Year</string>
+    <string name="deposit_col_deposit">Deposit</string>
+    <string name="deposit_col_interest">Interest</string>
+    <string name="deposit_col_balance">Balance</string>
 
     <!-- Percentage -->
     <string name="percent_title">Percentage</string>
@@ -311,6 +397,7 @@
     <string name="input_error_max">Must be at most %1$s</string>
     <string name="input_error_too_large">The result is too large</string>
     <string name="input_error_zero">Can\'t be 0</string>
+    <string name="input_error_below">Must be below %1$s</string>
     <!-- Unit converter: category and unit names -->
     <string name="unit_category_length">Length</string>
     <string name="unit_category_area">Area</string>

@@ -24,10 +24,13 @@ import com.calculator.feature.converter.unit.UnitConverterScreen
 import com.calculator.feature.datetime.age.AgeScreen
 import com.calculator.feature.datetime.datediff.DateDiffScreen
 import com.calculator.feature.datetime.timezone.TimezoneScreen
+import com.calculator.feature.finance.deposit.DepositScreen
 import com.calculator.feature.finance.discount.DiscountScreen
 import com.calculator.feature.finance.gst.GstScreen
 import com.calculator.feature.finance.investment.InvestmentScreen
 import com.calculator.feature.finance.loan.LoanScreen
+import com.calculator.feature.finance.profit.ProfitScreen
+import com.calculator.feature.finance.salary.SalaryScreen
 import com.calculator.feature.finance.tipsplit.TipSplitScreen
 import com.calculator.feature.health.bmi.BmiScreen
 import com.calculator.feature.health.ovulation.OvulationScreen
@@ -104,11 +107,20 @@ fun CalculatorNavHost(startDestinationHint: String? = null) {
         composable<DiscountRoute> {
             DiscountScreen(onOpenMenu = openMenu)
         }
+        composable<ProfitRoute> {
+            ProfitScreen(onOpenMenu = openMenu)
+        }
         composable<TipSplitRoute> {
             TipSplitScreen(onOpenMenu = openMenu)
         }
         composable<InvestmentRoute> {
             InvestmentScreen(onOpenMenu = openMenu)
+        }
+        composable<DepositRoute> {
+            DepositScreen(onOpenMenu = openMenu)
+        }
+        composable<SalaryRoute> {
+            SalaryScreen(onOpenMenu = openMenu)
         }
         composable<PercentRoute> {
             PercentScreen(onOpenMenu = openMenu)

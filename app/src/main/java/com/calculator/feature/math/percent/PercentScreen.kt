@@ -92,13 +92,13 @@ fun PercentScreen(onOpenMenu: () -> Unit) {
                     val (label, formatted) =
                         when (mode) {
                             PercentMode.PercentOf -> stringResource(R.string.percent_result_value) to plain(result)
-                            PercentMode.WhatPercent -> stringResource(R.string.percent_result_percent) to "${plain(result)} %"
+                            PercentMode.WhatPercent -> stringResource(R.string.percent_result_percent) to NumberFormatter.percent(result)
                             PercentMode.Change -> {
                                 // Lead the change value with an explicit
                                 // +/- so direction reads at a glance.
                                 val sign = if (result >= 0) "+" else "-"
                                 stringResource(R.string.percent_result_change) to
-                                    "$sign${plain(result.absoluteValue)} %"
+                                    sign + NumberFormatter.percent(result.absoluteValue)
                             }
                         }
                     LifeCalcOutputRow(label = label, value = formatted, accent = true)

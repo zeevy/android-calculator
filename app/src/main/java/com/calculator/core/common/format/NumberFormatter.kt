@@ -101,6 +101,15 @@ object NumberFormatter {
     ): String = format(value, locale, minFractionDigits = 2, maxFractionDigits = 2)
 
     /**
+     * Render a percentage with up to two decimals and a `%` sign, for
+     * example `14.87 %`, `-5 %` or `12,5 %` in German.
+     */
+    fun percent(
+        value: Double,
+        locale: Locale = Locale.getDefault(),
+    ): String = "${format(value, locale, minFractionDigits = 0, maxFractionDigits = 2)} %"
+
+    /**
      * Render [value] for an editable text field: the locale's decimal
      * separator, no grouping, up to [maxFractionDigits] decimals. What it
      * returns always reads back through [parseNumberInput].

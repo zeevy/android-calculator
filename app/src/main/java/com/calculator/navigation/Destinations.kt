@@ -36,10 +36,19 @@ data object GstRoute : ToolRoute
 data object DiscountRoute : ToolRoute
 
 @Serializable
+data object ProfitRoute : ToolRoute
+
+@Serializable
 data object TipSplitRoute : ToolRoute
 
 @Serializable
 data object InvestmentRoute : ToolRoute
+
+@Serializable
+data object DepositRoute : ToolRoute
+
+@Serializable
+data object SalaryRoute : ToolRoute
 
 @Serializable
 data object PercentRoute : ToolRoute

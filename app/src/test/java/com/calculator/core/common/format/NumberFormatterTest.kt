@@ -136,4 +136,12 @@ class NumberFormatterTest {
         assertNull(NumberFormatter.parseNumberInput("1 0", Locale.US))
         assertNull(NumberFormatter.parseNumberInput("1'000", Locale.US))
     }
+
+    @Test
+    fun `percent keeps up to two decimals and the sign`() {
+        assertEquals("14.87 %", NumberFormatter.percent(14.869_835, Locale.US))
+        assertEquals("25 %", NumberFormatter.percent(25.0, Locale.US))
+        assertEquals("-5 %", NumberFormatter.percent(-5.0, Locale.US))
+        assertEquals("12,5 %", NumberFormatter.percent(12.5, Locale.GERMANY))
+    }
 }

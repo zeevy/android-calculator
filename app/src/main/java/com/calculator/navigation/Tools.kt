@@ -3,13 +3,16 @@ package com.calculator.navigation
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Notes
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.MonitorWeight
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Percent
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Receipt
@@ -70,8 +73,18 @@ internal val Tools: List<Tool> =
         Tool("loan", LoanRoute, R.string.tool_loan, icon = Icons.Filled.AccountBalance),
         Tool("gst", GstRoute, R.string.tool_gst, icon = Icons.Filled.Receipt, indiaOnly = true),
         Tool("discount", DiscountRoute, R.string.tool_discount, icon = Icons.Filled.LocalOffer),
+        Tool("profit", ProfitRoute, R.string.tool_profit, R.string.shortcut_profit_long, Icons.AutoMirrored.Filled.TrendingUp),
         Tool("tipsplit", TipSplitRoute, R.string.tool_tipsplit, icon = Icons.Filled.Restaurant),
         Tool("investment", InvestmentRoute, R.string.tool_investment, icon = Icons.Filled.Savings),
+        Tool(
+            "deposit",
+            DepositRoute,
+            R.string.tool_deposit,
+            R.string.shortcut_deposit_long,
+            Icons.Filled.AccountBalanceWallet,
+            indiaOnly = true,
+        ),
+        Tool("salary", SalaryRoute, R.string.tool_salary, icon = Icons.Filled.Payments),
         Tool("percent", PercentRoute, R.string.tool_percent, icon = Icons.Filled.Percent),
         Tool("bases", BaseConverterRoute, R.string.tool_basecalc, icon = Icons.Filled.Code),
         Tool("bmi", BmiRoute, R.string.tool_bmi, icon = Icons.Filled.MonitorWeight),

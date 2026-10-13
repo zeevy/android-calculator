@@ -1,5 +1,6 @@
 package com.calculator.core.domain.finance
 
+import com.calculator.core.domain.math.PercentCalculator
 import kotlin.math.pow
 
 /**
@@ -21,6 +22,11 @@ import kotlin.math.pow
  *
  * Both return an [InvestmentResult] reporting the maturity value, the
  * total amount invested, and the gains (maturity - invested).
+ *
+ *  - **CAGR**: the reverse of the lump sum. The yearly rate that grows
+ *    a start value into an end value over a number of years:
+ *
+ *        CAGR = (end / start)^(1 / years) - 1
  *
  * The math is pure `Double`; rounding to the user's preferred precision
  * is the display layer's responsibility.
@@ -87,6 +93,31 @@ object InvestmentCalculator {
             gains = maturity - principal,
         )
     }
+
+    /**
+     * Compound annual growth rate that turns [startValue] into [endValue] in [years].
+     * An end value below the start gives a negative rate; an end value of 0 gives -100 %.
+     *
+     * @throws IllegalArgumentException when [startValue] or [years] is not positive or
+     *   [endValue] is negative.
+     * @throws ResultTooLargeException when the rate overflows a Double.
+     */
+    fun cagr(
+        startValue: Double,
+        endValue: Double,
+        years: Double,
+    ): CagrResult {
+        require(startValue > 0) { "startValue must be > 0" }
+        require(endValue >= 0) { "endValue must be >= 0" }
+        require(years > 0) { "years must be > 0" }
+
+        val growth = (endValue / startValue).pow(1.0 / years) - 1.0
+        return CagrResult(
+            cagrPercent = (growth * PERCENT_BASE).requireFinite(),
+            absoluteReturnPercent = PercentCalculator.percentChange(startValue, endValue).requireFinite(),
+            gain = endValue - startValue,
+        )
+    }
 }
 
 /**
@@ -100,6 +131,19 @@ data class InvestmentResult(
     val maturity: Double,
     val invested: Double,
     val gains: Double,
+)
+
+/**
+ * Result of [InvestmentCalculator.cagr].
+ *
+ * @property cagrPercent Growth per year, in percent.
+ * @property absoluteReturnPercent Total growth over the whole period, in percent.
+ * @property gain End value minus start value; negative for a loss.
+ */
+data class CagrResult(
+    val cagrPercent: Double,
+    val absoluteReturnPercent: Double,
+    val gain: Double,
 )
 
 private const val MONTHS_PER_YEAR = 12.0

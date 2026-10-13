@@ -85,8 +85,11 @@ Each is a focused screen with its own inputs and outputs. All of them open from 
 - **Loan / EMI** - principal, rate, tenure → EMI, total interest, amortisation table.
 - **GST** (India) - amount + rate (5/12/18/28% presets) → CGST, SGST/IGST, net & gross. Shown only on devices set up for India (section 11).
 - **Discount** - MRP + discount % → savings + final price; reverse calc (final + MRP → %).
+- **Profit** - cost price + selling price → profit or loss, markup % (on cost), margin % (on selling price); or cost + markup % / margin % → selling price and profit. A loss shows as "Loss" with loss % on cost; a margin of 100 % or more is an input error.
 - **Tip & split** - bill + tip + number of people → tip, total, per-person share, with an option to round up.
-- **Investment** - SIP (monthly amount) or lump sum + annual rate + tenure → total invested, estimated gains, maturity value.
+- **Investment** - SIP (monthly amount) or lump sum + annual rate + tenure → total invested, estimated gains, maturity value; CAGR mode: start value + end value + tenure → CAGR %, absolute return %, gain.
+- **Deposits** (India) - FD (amount, rate, years + months, compounding monthly/quarterly/half-yearly/yearly), RD (monthly deposit, rate, months) and PPF (yearly deposit 500 to 1,50,000, rate, 15 years) → maturity and total interest (RD and PPF also total deposited); PPF also shows a year-by-year table. FD follows the bank rules: simple interest below 6 months and for the months after the last full period. RD compounds every quarter. PPF assumes each deposit by 5 April. Shown only on devices set up for India (section 11).
+- **Salary hike** - current salary + hike % (per month or per year) → new salary and increase, both per month and per year; or old + new salary → hike % and increase.
 - **Percentage** - percentage calculator.
 - **Bases** - number-base converter: decimal, hexadecimal, octal, binary.
 - **BMI** - height + weight (metric + imperial) → BMI value + category.
@@ -144,7 +147,7 @@ app/
       basic/            # Basic calculator (ui/)
       math/             # percent/ - percentage calculator
       converter/        # unit/ converter + base/ (number-base) converter
-      finance/          # loan/, gst/, discount/, investment/, tipsplit/
+      finance/          # loan/, gst/, discount/, profit/, investment/, deposit/, salary/, tipsplit/
       health/           # bmi/, ovulation/
       datetime/         # age/, datediff/, timezone/
       history/          # calculation history sheet
@@ -208,7 +211,7 @@ app/
 
 - **Math precision for transcendentals** - `BigDecimal` has no native sin/cos/log. Decision: arithmetic on `BigDecimal`; transcendental ops on bounded `Double` with rounding. Revisit (BigMath / mpmath-style) if user-reported precision bugs appear.
 - **Locale decimal separator** (`,` vs `.`) - must parse and render per-locale without breaking the engine. Date pickers must also be locale-aware.
-- **Regional features** (GST is India-only) - shown only when the device locale country is IN or the time zone is India's (many Indian phones run English (United States), so the locale alone is not enough). The rule lives in `navigation/Tools.kt` (`isIndia`).
+- **Regional features** (GST and Deposits are India-only) - shown only when the device locale country is IN or the time zone is India's (many Indian phones run English (United States), so the locale alone is not enough). The rule lives in `navigation/Tools.kt` (`isIndia`).
 - **Play policy compliance** - the "loan" calculator must use neutral language (no implication that the app is a lender) per Google's personal-loans policy.
 - **Crash-free metric vs no-analytics stance** - resolved by shipping no crash reporter. The crash rate comes from Play Console Android vitals and pre-release testing. If a crash reporter is ever added, it must be opt-in with a Settings toggle, off by default.
 - **Solo-dev velocity** - the 8-week plan assumes no major blockers; the Glance widget has a learning-curve tail that may push M5/M6.

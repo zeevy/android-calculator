@@ -2,6 +2,7 @@ package com.calculator.core.domain.finance
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 /** Known answers for the SIP and lump sum math in [InvestmentCalculator]. */
 class InvestmentCalculatorTest {
@@ -60,5 +61,45 @@ class InvestmentCalculatorTest {
             )
 
         results.forEach { assertEquals(it.maturity, it.invested + it.gains, 1e-6) }
+    }
+
+    @Test
+    fun `cagr of 100000 growing to 200000 in 5 years`() {
+        val result = InvestmentCalculator.cagr(startValue = 100_000.0, endValue = 200_000.0, years = 5.0)
+
+        // 2^(1/5) - 1
+        assertEquals(14.87, result.cagrPercent, 0.005)
+        assertEquals(100.0, result.absoluteReturnPercent, 1e-9)
+        assertEquals(100_000.0, result.gain, 1e-9)
+    }
+
+    @Test
+    fun `cagr of 15000 growing to 25000 in 3 years`() {
+        val result = InvestmentCalculator.cagr(startValue = 15_000.0, endValue = 25_000.0, years = 3.0)
+
+        assertEquals(18.56, result.cagrPercent, 0.005)
+        assertEquals(66.67, result.absoluteReturnPercent, 0.005)
+    }
+
+    @Test
+    fun `cagr is negative when the end value is below the start`() {
+        val result = InvestmentCalculator.cagr(startValue = 200_000.0, endValue = 100_000.0, years = 5.0)
+
+        // 0.5^(1/5) - 1
+        assertEquals(-12.94, result.cagrPercent, 0.005)
+        assertEquals(-50.0, result.absoluteReturnPercent, 1e-9)
+        assertEquals(-100_000.0, result.gain, 1e-9)
+    }
+
+    @Test
+    fun `cagr of an end value of 0 is minus 100 percent`() {
+        assertEquals(-100.0, InvestmentCalculator.cagr(1_000.0, 0.0, 2.0).cagrPercent, 1e-9)
+    }
+
+    @Test
+    fun `cagr needs a positive start value and tenure`() {
+        assertThrows<IllegalArgumentException> { InvestmentCalculator.cagr(0.0, 100.0, 5.0) }
+        assertThrows<IllegalArgumentException> { InvestmentCalculator.cagr(100.0, 200.0, 0.0) }
+        assertThrows<IllegalArgumentException> { InvestmentCalculator.cagr(100.0, -1.0, 5.0) }
     }
 }

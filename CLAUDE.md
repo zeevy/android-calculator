@@ -46,7 +46,7 @@ app/
       basic/            # Basic calculator (ui/)
       math/             # percent/ - percentage calculator
       converter/        # unit/ converter + base/ (number-base) converter
-      finance/          # loan/, gst/, discount/, investment/, tipsplit/
+      finance/          # loan/, gst/, discount/, profit/, investment/, deposit/, salary/, tipsplit/
       health/           # bmi/, ovulation/
       datetime/         # age/, datediff/, timezone/
       history/          # calculation history sheet
@@ -152,7 +152,7 @@ These come from the user's global preferences and apply to every commit, file, a
 
 ## Things to know (gotchas)
 
-- **GST calculator is India-specific.** It is offered only when the locale country is IN or the time zone is India's (`isIndia` in `navigation/Tools.kt`, the one tool list for the menu and launcher shortcuts). Never hardcode it as universally available; new India-only tools use the same check.
+- **GST and Deposits (FD, RD, PPF) are India-specific.** They are offered only when the locale country is IN or the time zone is India's (`isIndia` in `navigation/Tools.kt`, the one tool list for the menu and launcher shortcuts). Never hardcode it as universally available; new India-only tools use the same check.
 - **Loan/EMI calculator: use neutral language.** Google Play's personal-loans policy bans wording that implies the app is a lender. Strings must read as a calculator, not a lending tool.
 - **No network calls.** The app is fully offline. Don't add a network library or the `INTERNET` permission without an explicit conversation about the trade-off - the offline story is part of the app's positioning.
 - **Permissions declared** (the manifest is no longer zero-permissions; the floating-calculator feature pulls these in):
