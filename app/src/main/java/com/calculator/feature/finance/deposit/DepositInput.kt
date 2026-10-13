@@ -72,7 +72,7 @@ internal fun ppfInput(
     return tooLargeAsError { DepositCalculator.ppf(amount, rate) }
 }
 
-// The tenures are capped, so a huge rate is the only way to overflow.
+// The tenures are capped, so a huge rate is the usual cause of an overflow.
 private inline fun <T> tooLargeAsError(compute: () -> T): InputResult<T> =
     try {
         InputResult.Ok(compute())

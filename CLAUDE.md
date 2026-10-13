@@ -46,7 +46,7 @@ app/
       basic/            # Basic calculator (ui/)
       math/             # percent/ - percentage calculator
       converter/        # unit/ converter + base/ (number-base) converter
-      finance/          # loan/, gst/, discount/, investment/, tipsplit/
+      finance/          # loan/, gst/, discount/, profit/, investment/, deposit/, salary/, tipsplit/
       health/           # bmi/, ovulation/
       datetime/         # age/, datediff/, timezone/
       history/          # calculation history sheet

@@ -67,7 +67,6 @@ object ProfitCalculator {
     ): ProfitResult {
         val profit = selling - cost
         return ProfitResult(
-            cost = cost,
             selling = selling,
             profit = profit,
             markupPercent = if (cost == 0.0) null else (profit / cost * PERCENT_BASE).requireFinite(),
@@ -79,14 +78,12 @@ object ProfitCalculator {
 /**
  * Result of [ProfitCalculator], in the prices' currency.
  *
- * @property cost Cost price.
  * @property selling Selling price.
  * @property profit [selling] minus [cost]; negative for a loss.
  * @property markupPercent Profit as a percentage of [cost]; null when [cost] is 0.
  * @property marginPercent Profit as a percentage of [selling]; null when [selling] is 0.
  */
 data class ProfitResult(
-    val cost: Double,
     val selling: Double,
     val profit: Double,
     val markupPercent: Double?,

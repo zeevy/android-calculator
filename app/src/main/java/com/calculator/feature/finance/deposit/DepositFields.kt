@@ -2,6 +2,7 @@ package com.calculator.feature.finance.deposit
 
 import androidx.annotation.StringRes
 import com.calculator.R
+import com.calculator.core.common.format.NumberFormatter
 import java.io.Serializable
 
 /**
@@ -50,13 +51,17 @@ internal data class RdFields(
 
 /**
  * PPF fields as typed. The rate default is only a starting value; the
- * government sets the PPF rate every quarter.
+ * government sets the PPF rate every quarter. It is written with the
+ * locale's decimal separator, so it reads back as a number in German too.
  */
 internal data class PpfFields(
     val amount: String = "150000",
-    val rate: String = "7.1",
+    val rate: String = NumberFormatter.formatForInput(PPF_STARTING_RATE),
 ) : Serializable {
     private companion object {
         private const val serialVersionUID = 1L
     }
 }
+
+// The PPF rate since April 2020, unchanged for October to December 2026.
+private const val PPF_STARTING_RATE = 7.1

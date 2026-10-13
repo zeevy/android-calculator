@@ -123,10 +123,9 @@ object DepositCalculator {
         var balance = 0.0
         val years =
             (1..PPF_YEARS).map { year ->
-                val opening = balance
-                val interest = (opening + yearlyDeposit) * rate
-                balance = (opening + yearlyDeposit + interest).requireFinite()
-                PpfYear(year = year, opening = opening, deposit = yearlyDeposit, interest = interest, closing = balance)
+                val interest = (balance + yearlyDeposit) * rate
+                balance = (balance + yearlyDeposit + interest).requireFinite()
+                PpfYear(year = year, deposit = yearlyDeposit, interest = interest, closing = balance)
             }
         val deposited = yearlyDeposit * PPF_YEARS
         return PpfResult(maturity = balance, deposited = deposited, interest = balance - deposited, years = years)
@@ -165,14 +164,12 @@ data class PpfResult(
  * One year of a PPF account.
  *
  * @property year 1 for the first year.
- * @property opening Balance at the start of the year, before the deposit.
  * @property deposit Paid in at the start of the year.
  * @property interest Interest credited at the end of the year.
  * @property closing Balance at the end of the year.
  */
 data class PpfYear(
     val year: Int,
-    val opening: Double,
     val deposit: Double,
     val interest: Double,
     val closing: Double,

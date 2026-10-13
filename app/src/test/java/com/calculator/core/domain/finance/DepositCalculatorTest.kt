@@ -105,10 +105,9 @@ class DepositCalculatorTest {
 
         assertEquals(DepositCalculator.PPF_YEARS, result.years.size)
         val first = result.years.first()
-        assertEquals(0.0, first.opening, 1e-9)
         assertEquals(10_650.0, first.interest, 1e-6)
         assertEquals(160_650.0, first.closing, 1e-6)
-        assertEquals(first.closing, result.years[1].opening, 1e-9)
+        assertEquals((160_650.0 + 150_000.0) * 1.071, result.years[1].closing, 1e-6)
         assertEquals(result.maturity, result.years.last().closing, 1e-9)
     }
 

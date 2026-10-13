@@ -60,4 +60,16 @@ class DepositInputTest {
         assertEquals(R.string.deposit_rate, error.field)
         assertEquals(R.string.input_error_too_large, error.message)
     }
+
+    @Test
+    fun `the PPF starting rate reads back on a German phone`() {
+        val saved = Locale.getDefault()
+        Locale.setDefault(Locale.GERMANY)
+        try {
+            val ok = ppfInput(PpfFields(), Locale.GERMANY) as InputResult.Ok
+            assertEquals(4_068_209.22, ok.value.maturity, 0.005)
+        } finally {
+            Locale.setDefault(saved)
+        }
+    }
 }
