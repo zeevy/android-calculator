@@ -4,6 +4,25 @@ A modern, fully-offline, multi-purpose calculator for Android - inspired by Mi C
 
 > Status: **v1** - shipping. See [CHANGELOG.md](CHANGELOG.md) for releases and [REQUIREMENTS.md](REQUIREMENTS.md) for the full product spec.
 
+## Screenshots
+
+The images follow your GitHub theme: light or dark.
+
+<table>
+  <tr>
+    <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/dark/basic.png"><img src="assets/screenshots/light/basic.png" alt="Basic calculator with the inline tape" width="180"></picture><br>Basic</td>
+    <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/dark/advanced.png"><img src="assets/screenshots/light/advanced.png" alt="Scientific keypad" width="180"></picture><br>Scientific</td>
+    <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/dark/tools.png"><img src="assets/screenshots/light/tools.png" alt="Tools menu with every calculator" width="180"></picture><br>Tools menu</td>
+    <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/dark/units.png"><img src="assets/screenshots/light/units.png" alt="Unit converter, metres to kilometres" width="180"></picture><br>Unit converter</td>
+  </tr>
+  <tr>
+    <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/dark/loan.png"><img src="assets/screenshots/light/loan.png" alt="Loan EMI estimator" width="180"></picture><br>Loan EMI</td>
+    <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/dark/deposits.png"><img src="assets/screenshots/light/deposits.png" alt="PPF maturity with the year-by-year table" width="180"></picture><br>FD, RD and PPF</td>
+    <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/dark/profit.png"><img src="assets/screenshots/light/profit.png" alt="Profit, markup and margin" width="180"></picture><br>Profit and markup</td>
+    <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/dark/cagr.png"><img src="assets/screenshots/light/cagr.png" alt="Investment CAGR mode" width="180"></picture><br>Investment CAGR</td>
+  </tr>
+</table>
+
 ## Features
 
 - Basic and scientific calculator with editable history and a running tape view
