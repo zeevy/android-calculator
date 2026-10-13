@@ -7,17 +7,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import com.calculator.R
 import com.calculator.core.common.format.NumberFormatter
+import com.calculator.core.common.input.InputResult
 import com.calculator.core.designsystem.component.LifeCalcCard
 import com.calculator.core.designsystem.component.LifeCalcNumberField
 import com.calculator.core.designsystem.component.LifeCalcOutputRow
 import com.calculator.core.designsystem.component.LifeCalcSectionLabel
 import com.calculator.core.designsystem.component.LifeCalcSegmented
 import com.calculator.core.designsystem.component.LifeCalculatorScaffold
-import com.calculator.core.domain.finance.InvestmentCalculator
+import com.calculator.core.designsystem.component.errorFor
 
 /**
  * Returns calculator for both SIP (monthly contribution) and lump-sum
@@ -34,23 +36,16 @@ import com.calculator.core.domain.finance.InvestmentCalculator
  */
 @Composable
 fun InvestmentScreen(onOpenMenu: () -> Unit) {
-    var mode by remember { mutableIntStateOf(0) } // 0 = SIP, 1 = lump-sum
-    var amount by remember { mutableStateOf("5000") }
-    var rate by remember { mutableStateOf("12") }
-    var years by remember { mutableStateOf("10") }
+    // Saveable, so the mode and typed values survive the app being
+    // killed in the background.
+    var mode by rememberSaveable { mutableIntStateOf(0) } // 0 = SIP, 1 = lump-sum
+    var amount by rememberSaveable { mutableStateOf("5000") }
+    var rate by rememberSaveable { mutableStateOf("12") }
+    var years by rememberSaveable { mutableStateOf("10") }
+    val lumpSum = mode == 1
+    val input = remember(lumpSum, amount, rate, years) { investmentInput(lumpSum, amount, rate, years) }
+    val amountLabel = investmentAmountLabel(lumpSum)
     val scheme = MaterialTheme.colorScheme
-
-    val result =
-        runCatching {
-            val a = requireNotNull(NumberFormatter.parseNumberInput(amount))
-            val r = requireNotNull(NumberFormatter.parseNumberInput(rate))
-            val y = requireNotNull(NumberFormatter.parseNumberInput(years))
-            if (mode == 0) {
-                InvestmentCalculator.sip(a, r, y)
-            } else {
-                InvestmentCalculator.lumpSum(a, r, y, timesPerYear = 1)
-            }
-        }.getOrNull()
 
     LifeCalculatorScaffold(
         title = stringResource(R.string.investment_title),
@@ -67,48 +62,52 @@ fun InvestmentScreen(onOpenMenu: () -> Unit) {
                 onSelect = { mode = it },
             )
             LifeCalcNumberField(
-                label = stringResource(
-                    if (mode == 0) R.string.investment_monthly else R.string.investment_principal,
-                ),
+                label = stringResource(amountLabel),
                 value = amount,
                 onValueChange = { amount = it },
+                error = input.errorFor(amountLabel),
             )
             LifeCalcNumberField(
                 label = stringResource(R.string.investment_rate),
                 value = rate,
                 onValueChange = { rate = it },
                 suffix = "%",
+                error = input.errorFor(R.string.investment_rate),
             )
             LifeCalcNumberField(
                 label = stringResource(R.string.investment_years),
                 value = years,
                 onValueChange = { years = it },
                 suffix = stringResource(R.string.investment_years_suffix),
+                error = input.errorFor(R.string.investment_years),
             )
         }
 
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.investment_section_result))
-            if (result == null) {
-                Text(
-                    text = stringResource(R.string.investment_error_invalid),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = scheme.error,
-                )
-            } else {
-                LifeCalcOutputRow(
-                    label = stringResource(R.string.investment_invested),
-                    value = NumberFormatter.money(result.invested),
-                )
-                LifeCalcOutputRow(
-                    label = stringResource(R.string.investment_gains),
-                    value = NumberFormatter.money(result.gains),
-                )
-                LifeCalcOutputRow(
-                    label = stringResource(R.string.investment_maturity),
-                    value = NumberFormatter.money(result.maturity),
-                    accent = true,
-                )
+            when (input) {
+                is InputResult.Invalid ->
+                    Text(
+                        text = stringResource(R.string.investment_error_invalid),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = scheme.error,
+                    )
+                is InputResult.Ok -> {
+                    val result = input.value
+                    LifeCalcOutputRow(
+                        label = stringResource(R.string.investment_invested),
+                        value = NumberFormatter.money(result.invested),
+                    )
+                    LifeCalcOutputRow(
+                        label = stringResource(R.string.investment_gains),
+                        value = NumberFormatter.money(result.gains),
+                    )
+                    LifeCalcOutputRow(
+                        label = stringResource(R.string.investment_maturity),
+                        value = NumberFormatter.money(result.maturity),
+                        accent = true,
+                    )
+                }
             }
         }
     }

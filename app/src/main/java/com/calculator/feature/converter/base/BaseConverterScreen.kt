@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
@@ -23,9 +24,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.calculator.R
+import com.calculator.core.common.input.InputResult
 import com.calculator.core.designsystem.component.LifeCalcCard
 import com.calculator.core.designsystem.component.LifeCalcSectionLabel
 import com.calculator.core.designsystem.component.LifeCalculatorScaffold
+import com.calculator.core.designsystem.component.errorFor
 import com.calculator.core.domain.math.BaseConverter
 
 /**
@@ -47,12 +50,14 @@ fun BaseConverterScreen(onOpenMenu: () -> Unit) {
     // Only the field the user is typing in keeps its raw text, so a
     // mid-edit string like "" or "1_0" shows back exactly as typed. The
     // other three are formatted from the last value that parsed.
-    var sourceText by remember { mutableStateOf("42") }
-    var lastEdited by remember { mutableIntStateOf(BaseConverter.DEC) }
-    var value by remember { mutableLongStateOf(DEFAULT_VALUE) }
-    val parsed = BaseConverter.parse(sourceText, lastEdited)
+    // Saveable, so typed values survive the app being killed in the
+    // background.
+    var sourceText by rememberSaveable { mutableStateOf("42") }
+    var lastEdited by rememberSaveable { mutableIntStateOf(BaseConverter.DEC) }
+    var value by rememberSaveable { mutableLongStateOf(DEFAULT_VALUE) }
+    val input = remember(sourceText, lastEdited) { baseConverterInput(sourceText, lastEdited) }
 
-    fun textFor(radix: Int) = if (radix == lastEdited) sourceText else BaseConverter.format(value, radix)
+    fun textFor(radix: Int) = baseFieldText(radix, lastEdited, sourceText, value)
 
     fun edit(
         radix: Int,
@@ -60,7 +65,7 @@ fun BaseConverterScreen(onOpenMenu: () -> Unit) {
     ) {
         sourceText = text
         lastEdited = radix
-        BaseConverter.parse(text, radix)?.let { value = it }
+        (baseConverterInput(text, radix) as? InputResult.Ok)?.let { value = it.value }
     }
 
     LifeCalculatorScaffold(
@@ -78,6 +83,7 @@ fun BaseConverterScreen(onOpenMenu: () -> Unit) {
                     edit(BaseConverter.DEC, it.filter { ch -> ch.isDigit() || ch == '_' })
                 },
                 keyboard = KeyboardType.Number,
+                error = input.errorFor(R.string.basecalc_dec),
             )
             BaseField(
                 label = stringResource(R.string.basecalc_hex),
@@ -86,6 +92,7 @@ fun BaseConverterScreen(onOpenMenu: () -> Unit) {
                     edit(BaseConverter.HEX, it.filter { ch -> ch.isLetterOrDigit() || ch == '_' }.uppercase())
                 },
                 keyboard = KeyboardType.Text,
+                error = input.errorFor(R.string.basecalc_hex),
                 monospace = true,
             )
             BaseField(
@@ -95,6 +102,7 @@ fun BaseConverterScreen(onOpenMenu: () -> Unit) {
                     edit(BaseConverter.OCT, it.filter { ch -> (ch in '0'..'7') || ch == '_' })
                 },
                 keyboard = KeyboardType.Number,
+                error = input.errorFor(R.string.basecalc_oct),
                 monospace = true,
             )
             BaseField(
@@ -104,15 +112,9 @@ fun BaseConverterScreen(onOpenMenu: () -> Unit) {
                     edit(BaseConverter.BIN, it.filter { ch -> ch == '0' || ch == '1' || ch == '_' })
                 },
                 keyboard = KeyboardType.Number,
+                error = input.errorFor(R.string.basecalc_bin),
                 monospace = true,
             )
-            if (parsed == null) {
-                Text(
-                    text = stringResource(R.string.basecalc_error_invalid),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
         }
     }
 }
@@ -120,7 +122,8 @@ fun BaseConverterScreen(onOpenMenu: () -> Unit) {
 /**
  * Label-above-value field with a monospace option for the bases where
  * column alignment helps the eye (bin/oct/hex). Decimal stays in the
- * normal weight so it doesn't read like code.
+ * normal weight so it doesn't read like code. [error] shows under the
+ * field when its text is wrong.
  */
 @Composable
 private fun BaseField(
@@ -128,6 +131,7 @@ private fun BaseField(
     value: String,
     onValueChange: (String) -> Unit,
     keyboard: KeyboardType,
+    error: String?,
     monospace: Boolean = false,
 ) {
     val scheme = MaterialTheme.colorScheme
@@ -153,6 +157,13 @@ private fun BaseField(
             keyboardOptions = KeyboardOptions(keyboardType = keyboard),
             cursorBrush = SolidColor(scheme.primary),
         )
+        if (error != null) {
+            Text(
+                text = error,
+                style = MaterialTheme.typography.bodySmall,
+                color = scheme.error,
+            )
+        }
     }
 }
 

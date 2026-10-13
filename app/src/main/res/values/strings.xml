@@ -253,7 +253,6 @@
     <string name="basecalc_hex">Hexadecimal</string>
     <string name="basecalc_oct">Octal</string>
     <string name="basecalc_bin">Binary</string>
-    <string name="basecalc_error_invalid">Value out of range or contains invalid digits.</string>
 
     <!-- Tape -->
     <string name="tape_title">Tape</string>
@@ -320,4 +319,5 @@
     <string name="input_error_min">Must be at least %1$s</string>
     <string name="input_error_max">Must be at most %1$s</string>
     <string name="input_error_too_large">The result is too large</string>
+    <string name="input_error_zero">Can\'t be 0</string>
 </resources>

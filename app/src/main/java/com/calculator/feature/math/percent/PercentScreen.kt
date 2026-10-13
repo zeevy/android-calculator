@@ -7,17 +7,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import com.calculator.R
 import com.calculator.core.common.format.NumberFormatter
+import com.calculator.core.common.input.InputResult
 import com.calculator.core.designsystem.component.LifeCalcCard
 import com.calculator.core.designsystem.component.LifeCalcNumberField
 import com.calculator.core.designsystem.component.LifeCalcOutputRow
 import com.calculator.core.designsystem.component.LifeCalcSectionLabel
 import com.calculator.core.designsystem.component.LifeCalcSegmented
 import com.calculator.core.designsystem.component.LifeCalculatorScaffold
-import com.calculator.core.domain.math.PercentCalculator
+import com.calculator.core.designsystem.component.errorFor
 import java.util.Locale
 import kotlin.math.absoluteValue
 
@@ -36,24 +38,13 @@ import kotlin.math.absoluteValue
  */
 @Composable
 fun PercentScreen(onOpenMenu: () -> Unit) {
-    var mode by remember { mutableIntStateOf(0) }
-    var a by remember { mutableStateOf("20") }
-    var b by remember { mutableStateOf("250") }
+    // Saveable, so the mode and typed values survive the app being
+    // killed in the background.
+    var mode by rememberSaveable { mutableIntStateOf(0) }
+    var a by rememberSaveable { mutableStateOf("20") }
+    var b by rememberSaveable { mutableStateOf("250") }
+    val input = remember(mode, a, b) { percentInput(mode, a, b) }
     val scheme = MaterialTheme.colorScheme
-
-    // Compute lazily per recompose - inputs are small and parsing
-    // cheap. runCatching swallows NaN / divide-by-zero (require()
-    // throwing IllegalArgumentException), surfaced via a null result.
-    val result =
-        runCatching {
-            val x = requireNotNull(NumberFormatter.parseNumberInput(a))
-            val y = requireNotNull(NumberFormatter.parseNumberInput(b))
-            when (mode) {
-                0 -> PercentCalculator.percentOf(x, y)
-                1 -> PercentCalculator.whatPercent(x, y)
-                else -> PercentCalculator.percentChange(x, y)
-            }
-        }.getOrNull()
 
     LifeCalculatorScaffold(
         title = stringResource(R.string.percent_title),
@@ -72,78 +63,51 @@ fun PercentScreen(onOpenMenu: () -> Unit) {
             )
             // Input labels change with mode; the value strings stay so
             // the user can flip between modes and keep their numbers.
-            val labels =
-                when (mode) {
-                    0 ->
-                        FieldLabels(
-                            labelA = stringResource(R.string.percent_label_percent),
-                            suffixA = "%",
-                            labelB = stringResource(R.string.percent_label_value),
-                            suffixB = null,
-                        )
-                    1 ->
-                        FieldLabels(
-                            labelA = stringResource(R.string.percent_label_part),
-                            suffixA = null,
-                            labelB = stringResource(R.string.percent_label_whole),
-                            suffixB = null,
-                        )
-                    else ->
-                        FieldLabels(
-                            labelA = stringResource(R.string.percent_label_from),
-                            suffixA = null,
-                            labelB = stringResource(R.string.percent_label_to),
-                            suffixB = null,
-                        )
-                }
+            val (labelA, labelB) = percentLabels(mode)
             LifeCalcNumberField(
-                label = labels.labelA,
+                label = stringResource(labelA),
                 value = a,
                 onValueChange = { a = it },
-                suffix = labels.suffixA,
+                suffix = if (mode == 0) "%" else null,
+                error = input.errorFor(labelA),
             )
             LifeCalcNumberField(
-                label = labels.labelB,
+                label = stringResource(labelB),
                 value = b,
                 onValueChange = { b = it },
-                suffix = labels.suffixB,
+                error = input.errorFor(labelB),
             )
         }
 
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.percent_section_result))
-            if (result == null || result.isNaN() || result.isInfinite()) {
-                Text(
-                    text = stringResource(R.string.percent_error_invalid),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = scheme.error,
-                )
-            } else {
-                val (label, formatted) =
-                    when (mode) {
-                        0 -> stringResource(R.string.percent_result_value) to plain(result)
-                        1 -> stringResource(R.string.percent_result_percent) to "${plain(result)} %"
-                        else -> {
-                            // Lead the change value with an explicit
-                            // +/- so direction reads at a glance.
-                            val sign = if (result >= 0) "+" else "-"
-                            stringResource(R.string.percent_result_change) to
-                                "$sign${plain(result.absoluteValue)} %"
+            when (input) {
+                is InputResult.Invalid ->
+                    Text(
+                        text = stringResource(R.string.percent_error_invalid),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = scheme.error,
+                    )
+                is InputResult.Ok -> {
+                    val result = input.value
+                    val (label, formatted) =
+                        when (mode) {
+                            0 -> stringResource(R.string.percent_result_value) to plain(result)
+                            1 -> stringResource(R.string.percent_result_percent) to "${plain(result)} %"
+                            else -> {
+                                // Lead the change value with an explicit
+                                // +/- so direction reads at a glance.
+                                val sign = if (result >= 0) "+" else "-"
+                                stringResource(R.string.percent_result_change) to
+                                    "$sign${plain(result.absoluteValue)} %"
+                            }
                         }
-                    }
-                LifeCalcOutputRow(label = label, value = formatted, accent = true)
+                    LifeCalcOutputRow(label = label, value = formatted, accent = true)
+                }
             }
         }
     }
 }
-
-/** Field labels for both inputs in the current percentage mode. */
-private data class FieldLabels(
-    val labelA: String,
-    val suffixA: String?,
-    val labelB: String,
-    val suffixB: String?,
-)
 
 // Plain-number formatter for the result: trims trailing .0 on whole
 // numbers, otherwise keeps two decimal places. Money formatting would

@@ -10,13 +10,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.calculator.R
-import com.calculator.core.common.format.NumberFormatter
+import com.calculator.core.common.input.InputResult
 import com.calculator.core.designsystem.component.DateField
 import com.calculator.core.designsystem.component.LifeCalcCard
 import com.calculator.core.designsystem.component.LifeCalcNumberField
@@ -24,6 +25,7 @@ import com.calculator.core.designsystem.component.LifeCalcOutputRow
 import com.calculator.core.designsystem.component.LifeCalcSectionLabel
 import com.calculator.core.designsystem.component.LifeCalcSegmented
 import com.calculator.core.designsystem.component.LifeCalculatorScaffold
+import com.calculator.core.designsystem.component.errorFor
 import com.calculator.core.domain.datetime.DateDiffCalculator
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -46,12 +48,15 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun DateDiffScreen(onOpenMenu: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
-    var mode by remember { mutableIntStateOf(0) } // 0 = two dates, 1 = date + offset
+    // Saveable, so the mode, dates and offset survive the app being
+    // killed in the background.
+    var mode by rememberSaveable { mutableIntStateOf(0) } // 0 = two dates, 1 = date + offset
     // Defaults seed a sample 1-year span so the result card has
     // something to display on first render.
-    var dateA by remember { mutableStateOf(LocalDate.now().minusYears(1)) }
-    var dateB by remember { mutableStateOf(LocalDate.now()) }
-    var offsetDays by remember { mutableStateOf("90") }
+    var dateA by rememberSaveable { mutableStateOf(LocalDate.now().minusYears(1)) }
+    var dateB by rememberSaveable { mutableStateOf(LocalDate.now()) }
+    var offsetDays by rememberSaveable { mutableStateOf("90") }
+    val offsetInput = remember(dateA, offsetDays) { dateOffsetInput(dateA, offsetDays) }
 
     LifeCalculatorScaffold(
         title = stringResource(R.string.datediff_title),
@@ -80,6 +85,7 @@ fun DateDiffScreen(onOpenMenu: () -> Unit) {
                     value = offsetDays,
                     onValueChange = { offsetDays = it },
                     suffix = stringResource(R.string.datediff_offset_unit),
+                    error = offsetInput.errorFor(R.string.datediff_offset),
                 )
             }
         }
@@ -111,10 +117,7 @@ fun DateDiffScreen(onOpenMenu: () -> Unit) {
                     ),
                 )
             } else {
-                val result =
-                    runCatching {
-                        DateDiffCalculator.addOffset(dateA, requireNotNull(NumberFormatter.parseWholeNumberInput(offsetDays)))
-                    }.getOrNull()
+                val result = (offsetInput as? InputResult.Ok)?.value
                 if (result == null) {
                     Text(
                         text = stringResource(R.string.datediff_error_invalid_offset),

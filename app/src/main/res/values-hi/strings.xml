@@ -239,4 +239,5 @@
     <string name="input_error_min">कम से कम %1$s होना चाहिए</string>
     <string name="input_error_max">अधिक से अधिक %1$s होना चाहिए</string>
     <string name="input_error_too_large">परिणाम बहुत बड़ा है</string>
+    <string name="input_error_zero">0 नहीं हो सकता</string>
 </resources>

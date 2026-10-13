@@ -6,7 +6,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import com.calculator.R
@@ -33,7 +33,8 @@ import java.time.LocalDate
 @Composable
 fun AgeScreen(onOpenMenu: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
-    var dob by remember { mutableStateOf(LocalDate.of(DEFAULT_DOB_YEAR, 1, DEFAULT_DOB_DAY)) }
+    // LocalDate is Serializable, so the saved state keeps it as is.
+    var dob by rememberSaveable { mutableStateOf(LocalDate.of(DEFAULT_DOB_YEAR, 1, DEFAULT_DOB_DAY)) }
     // Cached for this composition. The result card recomputes when
     // either `dob` or `today` changes; since `today` only changes when
     // recomposition happens past midnight, reading it once is fine for
@@ -49,7 +50,7 @@ fun AgeScreen(onOpenMenu: () -> Unit) {
             DateField(date = dob, onDateChange = { dob = it })
         }
 
-        val result = runCatching { AgeCalculator.compute(dob, today) }.getOrNull()
+        val result = if (dob.isAfter(today)) null else AgeCalculator.compute(dob, today)
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.age_section_result))
             if (result == null) {

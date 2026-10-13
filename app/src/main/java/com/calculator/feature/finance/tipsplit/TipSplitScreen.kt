@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,12 +27,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.calculator.R
 import com.calculator.core.common.format.NumberFormatter
+import com.calculator.core.common.input.InputResult
 import com.calculator.core.designsystem.component.LifeCalcCard
 import com.calculator.core.designsystem.component.LifeCalcNumberField
 import com.calculator.core.designsystem.component.LifeCalcOutputRow
 import com.calculator.core.designsystem.component.LifeCalcSectionLabel
 import com.calculator.core.designsystem.component.LifeCalculatorScaffold
-import com.calculator.core.domain.finance.TipSplitCalculator
+import com.calculator.core.designsystem.component.errorFor
 
 /**
  * Tip + bill-split calculator.
@@ -47,21 +49,14 @@ import com.calculator.core.domain.finance.TipSplitCalculator
  */
 @Composable
 fun TipSplitScreen(onOpenMenu: () -> Unit) {
-    var bill by remember { mutableStateOf("1000") }
-    var tipAmount by remember { mutableStateOf("100") }
-    var people by remember { mutableIntStateOf(2) }
-    var roundUp by remember { mutableStateOf(false) }
+    // Saveable, so typed values survive the app being killed in the
+    // background.
+    var bill by rememberSaveable { mutableStateOf("1000") }
+    var tipAmount by rememberSaveable { mutableStateOf("100") }
+    var people by rememberSaveable { mutableIntStateOf(2) }
+    var roundUp by rememberSaveable { mutableStateOf(false) }
+    val input = remember(bill, tipAmount, people, roundUp) { tipSplitInput(bill, tipAmount, people, roundUp) }
     val scheme = MaterialTheme.colorScheme
-
-    val result =
-        runCatching {
-            TipSplitCalculator.compute(
-                bill = requireNotNull(NumberFormatter.parseNumberInput(bill)),
-                tipAmount = requireNotNull(NumberFormatter.parseNumberInput(tipAmount)),
-                people = people,
-                roundUpPerPerson = roundUp,
-            )
-        }.getOrNull()
 
     LifeCalculatorScaffold(
         title = stringResource(R.string.tipsplit_title),
@@ -73,11 +68,13 @@ fun TipSplitScreen(onOpenMenu: () -> Unit) {
                 label = stringResource(R.string.tipsplit_bill),
                 value = bill,
                 onValueChange = { bill = it },
+                error = input.errorFor(R.string.tipsplit_bill),
             )
             LifeCalcNumberField(
                 label = stringResource(R.string.tipsplit_tip_amount_input),
                 value = tipAmount,
                 onValueChange = { tipAmount = it },
+                error = input.errorFor(R.string.tipsplit_tip_amount_input),
             )
             PeopleStepper(
                 people = people,
@@ -88,26 +85,29 @@ fun TipSplitScreen(onOpenMenu: () -> Unit) {
 
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.tipsplit_section_result))
-            if (result == null) {
-                Text(
-                    text = stringResource(R.string.tipsplit_error_invalid),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = scheme.error,
-                )
-            } else {
-                LifeCalcOutputRow(
-                    label = stringResource(R.string.tipsplit_tip_amount),
-                    value = NumberFormatter.money(result.tip),
-                )
-                LifeCalcOutputRow(
-                    label = stringResource(R.string.tipsplit_total),
-                    value = NumberFormatter.money(result.total),
-                )
-                LifeCalcOutputRow(
-                    label = stringResource(R.string.tipsplit_per_person),
-                    value = NumberFormatter.money(result.perPerson),
-                    accent = true,
-                )
+            when (input) {
+                is InputResult.Invalid ->
+                    Text(
+                        text = stringResource(R.string.tipsplit_error_invalid),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = scheme.error,
+                    )
+                is InputResult.Ok -> {
+                    val result = input.value
+                    LifeCalcOutputRow(
+                        label = stringResource(R.string.tipsplit_tip_amount),
+                        value = NumberFormatter.money(result.tip),
+                    )
+                    LifeCalcOutputRow(
+                        label = stringResource(R.string.tipsplit_total),
+                        value = NumberFormatter.money(result.total),
+                    )
+                    LifeCalcOutputRow(
+                        label = stringResource(R.string.tipsplit_per_person),
+                        value = NumberFormatter.money(result.perPerson),
+                        accent = true,
+                    )
+                }
             }
         }
     }

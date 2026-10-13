@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Typed values in every tool survive the app being closed in the background (for example while you switch to another app), and a launcher shortcut no longer jumps back to its tool after such a restart.
+- Tool screens say which field is wrong (for example "Must be from 0 to 11.99" under inches) instead of one general message, and BMI rejects inches of 12 or more. A loan tenure above 600 months is rejected instead of slowing the app down.
 - The floating calculator and the home-screen widget follow the same rules as the app: `2 + 3 × 4 =` gives 14 everywhere (the floating calculator gave 20), the widget no longer accepts `5++` or `1..2`, and both use the precision from Settings. The floating calculator shows the whole expression while you type and a readable error message.
 - Number fields accept the decimal separator of the phone's language, so `10,5` works in German or French. A number with misplaced group separators (such as `10.5` in German) shows an error instead of being read as 105.
 - Money amounts use lakh and crore grouping (`12,34,567.89`) on phones set to English (India) or Hindi, in every tool.

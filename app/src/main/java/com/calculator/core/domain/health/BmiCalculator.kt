@@ -5,36 +5,62 @@ import kotlin.math.round
 /**
  * Body Mass Index = mass(kg) / height(m)².
  *
- * The calculator accepts inputs in either [UnitSystem.Metric]
- * (kilograms + centimetres) or [UnitSystem.Imperial] (pounds +
- * feet/inches). Output is unit-agnostic BMI (kg/m²) plus a [Category]
- * label using the WHO reference ranges.
+ * Height and weight each come in their own unit ([Height], [Weight]),
+ * so feet and inches can be mixed with kilograms. Output is BMI in
+ * kg/m² plus a [Category] label using the WHO reference ranges.
  */
 object BmiCalculator {
-    /**
-     * Metric input.
-     * @param heightCm Height in centimetres (> 0).
-     * @param weightKg Weight in kilograms (> 0).
-     */
-    fun metric(heightCm: Double, weightKg: Double): BmiResult {
-        require(heightCm > 0) { "height must be > 0" }
-        require(weightKg > 0) { "weight must be > 0" }
-        val heightM = heightCm / 100.0
-        return computeFromMetric(heightM, weightKg)
+    /** Height in one of the units the BMI screen offers. */
+    sealed interface Height {
+        /** Height in centimetres. */
+        data class Cm(
+            val cm: Double,
+        ) : Height
+
+        /** Height as whole [feet] plus [inches] from 0 up to, but not including, 12. */
+        data class FeetInches(
+            val feet: Int,
+            val inches: Double,
+        ) : Height
+    }
+
+    /** Weight in one of the units the BMI screen offers. */
+    sealed interface Weight {
+        /** Weight in kilograms. */
+        data class Kg(
+            val kg: Double,
+        ) : Weight
+
+        /** Weight in pounds. */
+        data class Lb(
+            val lb: Double,
+        ) : Weight
     }
 
     /**
-     * Imperial input.
-     * @param heightFeet Whole feet portion of height.
-     * @param heightInches Inches portion (0..11.999).
-     * @param weightLb Weight in pounds (> 0).
+     * BMI for [height] and [weight].
+     *
+     * @throws IllegalArgumentException when the height or the weight is
+     *   not more than 0, or the feet or inches are out of range.
      */
-    fun imperial(heightFeet: Int, heightInches: Double, weightLb: Double): BmiResult {
-        require(heightFeet >= 0) { "feet must be >= 0" }
-        require(heightInches in 0.0..MAX_INCHES_FRACTION) { "inches must be in [0, 12)" }
-        require(weightLb > 0) { "weight must be > 0" }
-        val heightM = (heightFeet * INCHES_PER_FOOT + heightInches) * INCH_IN_METRES
-        val weightKg = weightLb * KG_PER_POUND
+    fun compute(height: Height, weight: Weight): BmiResult {
+        val heightM =
+            when (height) {
+                is Height.Cm -> height.cm / 100.0
+                is Height.FeetInches -> {
+                    require(height.feet >= 0) { "feet must be >= 0" }
+                    require(height.inches >= 0.0 && height.inches < INCHES_PER_FOOT) { "inches must be in [0, 12)" }
+                    // Double maths, so a very large feet value cannot overflow Int.
+                    (height.feet.toDouble() * INCHES_PER_FOOT + height.inches) * INCH_IN_METRES
+                }
+            }
+        val weightKg =
+            when (weight) {
+                is Weight.Kg -> weight.kg
+                is Weight.Lb -> weight.lb * KG_PER_POUND
+            }
+        require(heightM > 0) { "height must be > 0" }
+        require(weightKg > 0) { "weight must be > 0" }
         return computeFromMetric(heightM, weightKg)
     }
 
@@ -61,13 +87,9 @@ object BmiCalculator {
         Obese("Obese"),
     }
 
-    enum class UnitSystem { Metric, Imperial }
-
     private const val INCHES_PER_FOOT = 12
 
-    // Largest fractional inches accepted (12.0 would overflow into the
-    // next foot, but anything strictly less is valid).
-    private const val MAX_INCHES_FRACTION = 11.999
+    // Exact conversion factors (NIST).
     private const val INCH_IN_METRES = 0.0254
     private const val KG_PER_POUND = 0.45359237
 
