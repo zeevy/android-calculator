@@ -6,9 +6,9 @@
 
 [versions]
 # Build toolchain
-agp = "9.3.2"
+agp = "9.4.1"
 kotlin = "2.4.10"
-ksp = "2.3.11"
+ksp = "2.3.12"
 java-toolchain = "17"
 
 # Android SDK
@@ -17,16 +17,16 @@ min-sdk = "31"
 target-sdk = "36"
 
 # Compose
-compose-bom = "2026.08.00"
+compose-bom = "2026.09.00"
 
 # AndroidX
-androidx-core-ktx = "1.19.0"
+androidx-core-ktx = "1.19.1"
 androidx-activity-compose = "1.13.0"
 androidx-lifecycle = "2.11.0"
-androidx-navigation-compose = "2.9.8"
+androidx-navigation-compose = "2.10.2"
 androidx-splashscreen = "1.2.0"
 androidx-datastore = "1.2.1"
-androidx-room = "2.8.4"
+androidx-room = "2.8.5"
 androidx-glance = "1.1.1"
 androidx-startup = "1.2.0"
 
@@ -50,8 +50,8 @@ android-junit5-plugin = "2.0.1"
 junit4 = "4.13.2"
 turbine = "1.2.1"
 mockk = "1.14.11"
-robolectric = "4.16.1"
-kotest = "6.2.4"
+robolectric = "4.17"
+kotest = "6.2.5"
 
 [libraries]
 # Compose BOM keeps all Compose artifacts in sync; do not pin individual versions.
