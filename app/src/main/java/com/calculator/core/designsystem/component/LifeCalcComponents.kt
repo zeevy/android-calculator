@@ -36,7 +36,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -172,38 +171,43 @@ fun LifeCalcNumberField(
 ) {
     val scheme = MaterialTheme.colorScheme
     Column {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = scheme.onSurfaceVariant,
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle =
+                MaterialTheme.typography.headlineMedium.copy(
+                    color = scheme.onSurface,
+                    fontWeight = FontWeight.Bold,
+                ),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            cursorBrush = androidx.compose.ui.graphics
+                .SolidColor(scheme.primary),
+            modifier = Modifier.fillMaxWidth(),
+            // The label and unit are drawn inside the field, so screen
+            // readers read them with the typed value as one edit box.
+            decorationBox = { innerTextField ->
+                Column {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = scheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.size(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.weight(1f)) { innerTextField() }
+                        if (suffix != null) {
+                            Text(
+                                text = suffix,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = scheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 8.dp),
+                            )
+                        }
+                    }
+                }
+            },
         )
-        Spacer(Modifier.size(4.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                singleLine = true,
-                textStyle =
-                    MaterialTheme.typography.headlineMedium.copy(
-                        color = scheme.onSurface,
-                        fontWeight = FontWeight.Bold,
-                    ),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                cursorBrush = androidx.compose.ui.graphics
-                    .SolidColor(scheme.primary),
-                // The visible label is a separate Text, so screen readers
-                // get it from here when the field is focused.
-                modifier = Modifier.weight(1f).semantics { contentDescription = label },
-            )
-            if (suffix != null) {
-                Text(
-                    text = suffix,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = scheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
-            }
-        }
         if (error != null) {
             Text(
                 text = error,

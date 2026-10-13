@@ -1,8 +1,8 @@
 package com.calculator.feature.finance.gst
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
@@ -38,7 +38,7 @@ class GstScreenSmokeTest {
 
     @Test
     fun invalidNetAmountShowsTheFieldError() {
-        composeRule.onNode(hasSetTextAction() and hasContentDescription("Net amount")).performTextReplacement("12abc")
+        composeRule.onNode(hasSetTextAction() and hasText("Net amount")).performTextReplacement("12abc")
 
         composeRule.onNodeWithText("Not a valid number").performScrollTo().assertIsDisplayed()
     }

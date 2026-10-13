@@ -1,8 +1,8 @@
 package com.calculator.feature.health.bmi
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -40,7 +40,7 @@ class BmiScreenSmokeTest {
     @Test
     fun inchesAboveElevenShowTheRangeError() {
         composeRule.onNodeWithText("ft·in").performClick()
-        composeRule.onNode(hasSetTextAction() and hasContentDescription("Height (inches)")).performTextReplacement("15")
+        composeRule.onNode(hasSetTextAction() and hasText("Height (inches)")).performTextReplacement("15")
 
         composeRule.onNodeWithText("Must be from 0 to 11.99").performScrollTo().assertIsDisplayed()
     }

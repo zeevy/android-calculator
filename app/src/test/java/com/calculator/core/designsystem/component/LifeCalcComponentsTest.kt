@@ -4,7 +4,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -23,8 +22,9 @@ class LifeCalcComponentsTest {
 
     @Test
     fun numberFieldCarriesItsLabelOnTheEditBox() {
-        composeRule.setContent { LifeCalcNumberField(label = "Amount", value = "20", onValueChange = {}) }
-        composeRule.onNode(hasSetTextAction() and hasContentDescription("Amount")).assertExists()
+        composeRule.setContent { LifeCalcNumberField(label = "Amount", value = "20", onValueChange = {}, suffix = "kg") }
+        // One edit box holds the label, the typed value and the unit.
+        composeRule.onNode(hasSetTextAction() and hasText("Amount") and hasText("20") and hasText("kg")).assertExists()
     }
 
     @Test

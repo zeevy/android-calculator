@@ -58,7 +58,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -89,7 +89,6 @@ import com.calculator.core.math.AngleMode
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-import kotlin.math.roundToInt
 
 /**
  * Top-level composable for the basic calculator screen.
@@ -674,12 +673,33 @@ internal fun Keypad(
     //   5. belowTallPlusRow: `⌫ 0 . =`.
     // Columns 4 of rows 2-5 (÷ × - + =) form the single orange operator
     // column down the right edge.
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        if (scientific) {
-            scientificRows.forEach { spec ->
+    val configuration = LocalConfiguration.current
+    val minKeyHeight = minKeyHeightDp(configuration.screenWidthDp, configuration.screenHeightDp, scientific).dp
+    CompositionLocalProvider(LocalMinKeyHeight provides minKeyHeight) {
+        Column(
+            modifier = modifier,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            if (scientific) {
+                scientificRows.forEach { spec ->
+                    KeypadRow(
+                        row = spec.keys,
+                        aspectRatio =
+                            if (spec.compact) BUTTON_ASPECT_RATIO_COMPACT else BUTTON_ASPECT_RATIO,
+                        compact = spec.compact,
+                        modifier = Modifier.fillMaxWidth(),
+                        onEvent = onEvent,
+                    )
+                }
+            }
+            KeypadRow(
+                row = memoryRow.keys,
+                aspectRatio = BUTTON_ASPECT_RATIO_COMPACT,
+                compact = true,
+                modifier = Modifier.fillMaxWidth(),
+                onEvent = onEvent,
+            )
+            aboveTallPlusRows.forEach { spec ->
                 KeypadRow(
                     row = spec.keys,
                     aspectRatio =
@@ -689,32 +709,15 @@ internal fun Keypad(
                     onEvent = onEvent,
                 )
             }
-        }
-        KeypadRow(
-            row = memoryRow.keys,
-            aspectRatio = BUTTON_ASPECT_RATIO_COMPACT,
-            compact = true,
-            modifier = Modifier.fillMaxWidth(),
-            onEvent = onEvent,
-        )
-        aboveTallPlusRows.forEach { spec ->
+            TallPlusBlock(onEvent = onEvent)
             KeypadRow(
-                row = spec.keys,
-                aspectRatio =
-                    if (spec.compact) BUTTON_ASPECT_RATIO_COMPACT else BUTTON_ASPECT_RATIO,
-                compact = spec.compact,
+                row = belowTallPlusRow.keys,
+                aspectRatio = BUTTON_ASPECT_RATIO,
+                compact = false,
                 modifier = Modifier.fillMaxWidth(),
                 onEvent = onEvent,
             )
         }
-        TallPlusBlock(onEvent = onEvent)
-        KeypadRow(
-            row = belowTallPlusRow.keys,
-            aspectRatio = BUTTON_ASPECT_RATIO,
-            compact = false,
-            modifier = Modifier.fillMaxWidth(),
-            onEvent = onEvent,
-        )
     }
 }
 
@@ -777,20 +780,6 @@ private fun TallPlusBlock(onEvent: (BasicCalculatorEvent) -> Unit) {
     }
 }
 
-/**
- * Key height from the row width and [aspectRatio] (width / height), but
- * never below [MIN_TOUCH_TARGET], so the short compact rows stay large
- * enough for a finger. `aspectRatio` alone cannot do this: it ignores a
- * minimum height that does not fit its ratio.
- */
-private fun Modifier.keySize(aspectRatio: Float): Modifier =
-    layout { measurable, constraints ->
-        val width = constraints.maxWidth
-        val height = maxOf((width / aspectRatio).roundToInt(), MIN_TOUCH_TARGET.roundToPx())
-        val placeable = measurable.measure(Constraints.fixed(width, height))
-        layout(width, height) { placeable.place(0, 0) }
-    }
-
 /** A keypad row + per-row layout hints. [compact] uses a wider aspect ratio so the row is shorter. */
 private data class KeypadRowSpec(val keys: List<Key>, val compact: Boolean = false)
 
@@ -802,6 +791,7 @@ private fun KeypadRow(
     modifier: Modifier,
     onEvent: (BasicCalculatorEvent) -> Unit,
 ) {
+    val minKeyHeight = LocalMinKeyHeight.current
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -810,7 +800,7 @@ private fun KeypadRow(
             if (key is Key.Empty) {
                 // Reserve the slot so the row's remaining buttons stay
                 // the same width as a fully-populated row.
-                Spacer(modifier = Modifier.weight(1f).keySize(aspectRatio))
+                Spacer(modifier = Modifier.weight(1f).keySize(aspectRatio, minKeyHeight))
             } else {
                 KeyButton(
                     key = key,
@@ -819,7 +809,7 @@ private fun KeypadRow(
                     modifier =
                         Modifier
                             .weight(1f)
-                            .keySize(aspectRatio),
+                            .keySize(aspectRatio, minKeyHeight),
                 )
             }
         }
@@ -1321,17 +1311,14 @@ private const val KEY_GREY_FRACTION_MODIFIER = 0.65f
 // "horizontal rectangle" silhouette - wider than tall by ~60%, the
 // shape physical desk calculators use. Tweaking this is the single
 // knob for "make keys taller / shorter" without touching layout code.
-private const val BUTTON_ASPECT_RATIO = 1.6f
+internal const val BUTTON_ASPECT_RATIO = 1.6f
 
 // Wider aspect ratio for scientific-function and memory rows: same
 // width, smaller height, so those rows are visibly less prominent
 // than the digit/operator rows and free up vertical space for the
 // display. 2.2 (vs the old 2.6) bumps the top two rows about 5dp
 // taller so the labels - MC/MR/M+/M-, ÷/%/±/× - aren't cramped.
-private const val BUTTON_ASPECT_RATIO_COMPACT = 2.2f
-
-// Smallest key height a finger (and Android's accessibility guidance) needs.
-private val MIN_TOUCH_TARGET = 48.dp
+internal const val BUTTON_ASPECT_RATIO_COMPACT = 2.2f
 
 // iOS palette tokens, used by both the keypad and the tools sheet so
 // the calculator reads as a single visual system. Literal colors rather

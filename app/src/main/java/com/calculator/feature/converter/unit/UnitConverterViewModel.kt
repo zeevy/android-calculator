@@ -275,7 +275,7 @@ class UnitConverterViewModel
  * leading zeros or unreadably long.
  */
 internal fun formatResult(value: Double, significantFigures: Int): String {
-    if (value == 0.0 || !value.isFinite()) return if (value.isFinite()) "0" else ""
+    if (value == 0.0 || !value.isFinite()) return if (value.isFinite()) "0" else "∞"
     val absValue = abs(value)
     val sigFigs = significantFigures.coerceIn(1, MAX_SIG_FIGS)
     val useScientific = absValue < SCIENTIFIC_LOWER_BOUND || absValue >= SCIENTIFIC_UPPER_BOUND
