@@ -2,8 +2,8 @@ package com.calculator.core.designsystem.component
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -11,10 +11,13 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -31,12 +34,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.calculator.R
 import com.calculator.core.common.input.InputResult
 
@@ -180,15 +184,16 @@ fun LifeCalcNumberField(
                 onValueChange = onValueChange,
                 singleLine = true,
                 textStyle =
-                    TextStyle(
+                    MaterialTheme.typography.headlineMedium.copy(
                         color = scheme.onSurface,
-                        fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                     ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 cursorBrush = androidx.compose.ui.graphics
                     .SolidColor(scheme.primary),
-                modifier = Modifier.weight(1f),
+                // The visible label is a separate Text, so screen readers
+                // get it from here when the field is focused.
+                modifier = Modifier.weight(1f).semantics { contentDescription = label },
             )
             if (suffix != null) {
                 Text(
@@ -282,24 +287,30 @@ fun LifeCalcSegmented(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
                 .background(scheme.surfaceContainerHigh)
-                .padding(4.dp),
+                .padding(4.dp)
+                .selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         options.forEachIndexed { idx, opt ->
             val selected = idx == selectedIndex
-            Text(
-                text = opt,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (selected) scheme.onPrimary else scheme.onSurface,
-                textAlign = TextAlign.Center,
+            Box(
                 modifier =
                     Modifier
                         .weight(1f)
+                        .heightIn(min = 48.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(if (selected) scheme.primary else Color.Transparent)
-                        .clickable { onSelect(idx) }
-                        .padding(vertical = 10.dp),
-            )
+                        // Read as one radio button of a group, with its state.
+                        .selectable(selected = selected, role = Role.RadioButton) { onSelect(idx) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = opt,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (selected) scheme.onPrimary else scheme.onSurface,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }

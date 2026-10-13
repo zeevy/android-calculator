@@ -1,11 +1,13 @@
 package com.calculator.feature.finance.gst
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -16,9 +18,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -183,24 +187,28 @@ fun GstScreen(
 private fun RatePresets(selected: String, onSelect: (String) -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         listOf("5", "12", "18", "28").forEach { rate ->
             val isSelected = rate == selected
-            Text(
-                text = "$rate%",
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (isSelected) scheme.onPrimary else scheme.onSurface,
-                textAlign = TextAlign.Center,
+            Box(
                 modifier =
                     Modifier
                         .weight(1f)
+                        .heightIn(min = 48.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(if (isSelected) scheme.primary else scheme.surfaceContainerHigh)
-                        .clickable { onSelect(rate) }
-                        .padding(vertical = 10.dp),
-            )
+                        .selectable(selected = isSelected, role = Role.RadioButton) { onSelect(rate) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "$rate%",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isSelected) scheme.onPrimary else scheme.onSurface,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }

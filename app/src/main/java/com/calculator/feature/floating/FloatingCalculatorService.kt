@@ -23,6 +23,7 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
 import com.calculator.R
+import com.calculator.core.common.format.messageRes
 import com.calculator.core.data.di.SettingsEntryPoint
 import com.calculator.core.data.settings.UserSettings
 import com.calculator.core.math.EvaluationResult
@@ -235,7 +236,7 @@ class FloatingCalculatorService : Service() {
                 expression = ExpressionEditor.resultText(result.value)
                 afterEquals = true
             }
-            is EvaluationResult.Error -> errorText = getString(errorMessage(result))
+            is EvaluationResult.Error -> errorText = getString(result.messageRes())
         }
         renderDisplay()
     }
@@ -332,12 +333,3 @@ class FloatingCalculatorService : Service() {
         }
     }
 }
-
-/** The message shown for an engine error. */
-private fun errorMessage(error: EvaluationResult.Error): Int =
-    when (error) {
-        EvaluationResult.Error.DivisionByZero -> R.string.basic_error_division_by_zero
-        is EvaluationResult.Error.Syntax -> R.string.basic_error_syntax
-        is EvaluationResult.Error.UnknownToken -> R.string.basic_error_unknown_token
-        is EvaluationResult.Error.Domain -> R.string.basic_error_domain
-    }

@@ -20,7 +20,6 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.background
-import androidx.glance.color.ColorProvider
 import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
@@ -38,7 +37,6 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
-import androidx.glance.unit.ColorProvider
 import com.calculator.core.data.di.SettingsEntryPoint
 import com.calculator.core.math.AngleMode
 import com.calculator.core.math.EvaluationResult
@@ -48,7 +46,6 @@ import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
 import java.math.MathContext
 import java.math.RoundingMode
-import androidx.compose.ui.graphics.Color as ComposeColor
 
 /**
  * A pocket-calculator-shaped home-screen widget.
@@ -94,13 +91,6 @@ private val ExpressionKey = stringPreferencesKey("widget.expression")
 // digit starts over (the same rule as the app's keypad).
 private val AfterEqualsKey = booleanPreferencesKey("widget.afterEquals")
 
-private val OperatorColor = ComposeColor(0xFFFF9F0A)
-private val OnOperatorColor = ComposeColor.White
-private val DigitColor = ComposeColor(0xFF505050)
-private val ModifierColor = ComposeColor(0xFFA5A5A5)
-private val DisplayBackground = ComposeColor(0xFF1C1C1E)
-private val WidgetBackground = ComposeColor.Black
-
 @androidx.compose.runtime.Composable
 private fun WidgetContent() {
     val prefs = currentState<Preferences>()
@@ -110,7 +100,9 @@ private fun WidgetContent() {
         modifier =
             GlanceModifier
                 .fillMaxSize()
-                .background(WidgetBackground)
+                // Theme roles, so the widget follows light/dark mode and the
+                // wallpaper colours like the app does.
+                .background(GlanceTheme.colors.widgetBackground)
                 .cornerRadius(20.dp)
                 .padding(8.dp),
         verticalAlignment = Alignment.Top,
@@ -123,7 +115,7 @@ private fun WidgetContent() {
                     .fillMaxWidth()
                     .height(56.dp)
                     .cornerRadius(12.dp)
-                    .background(DisplayBackground)
+                    .background(GlanceTheme.colors.surfaceVariant)
                     .padding(horizontal = 12.dp),
             contentAlignment = Alignment.CenterEnd,
         ) {
@@ -132,7 +124,7 @@ private fun WidgetContent() {
                 maxLines = 1,
                 style =
                     TextStyle(
-                        color = ColorProvider(ComposeColor.White),
+                        color = GlanceTheme.colors.onSurfaceVariant,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.End,
@@ -170,12 +162,12 @@ private data class WKey(val label: String, val kind: KeyKind)
 
 @androidx.compose.runtime.Composable
 private fun KeyBox(key: WKey) {
+    val colors = GlanceTheme.colors
     val (bg, fg) =
         when (key.kind) {
-            KeyKind.Digit -> DigitColor to ComposeColor.White
-            KeyKind.Operator -> OperatorColor to OnOperatorColor
-            KeyKind.Modifier -> ModifierColor to ComposeColor.Black
-            KeyKind.Equals -> OperatorColor to OnOperatorColor
+            KeyKind.Digit -> colors.secondaryContainer to colors.onSecondaryContainer
+            KeyKind.Operator, KeyKind.Equals -> colors.primary to colors.onPrimary
+            KeyKind.Modifier -> colors.tertiaryContainer to colors.onTertiaryContainer
         }
     Box(
         modifier =
@@ -197,7 +189,7 @@ private fun KeyBox(key: WKey) {
             text = key.label,
             style =
                 TextStyle(
-                    color = ColorProvider(fg),
+                    color = fg,
                     fontSize = 18.sp,
                     fontWeight =
                         if (key.kind == KeyKind.Equals) FontWeight.Bold else FontWeight.Medium,

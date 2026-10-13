@@ -7,18 +7,18 @@ package com.calculator.core.domain.converter
  * order here is the order tabs render in the UI - common categories
  * first (length, area, mass) and information/physics categories last.
  *
- * @property displayName Short human-readable label.
+ * The UI maps each one to a translated label.
  */
-enum class UnitCategory(val displayName: String) {
-    Length("Length"),
-    Area("Area"),
-    Volume("Volume"),
-    Mass("Mass"),
-    Temperature("Temperature"),
-    Speed("Speed"),
-    Time("Time"),
-    Data("Data"),
-    Pressure("Pressure"),
-    Energy("Energy"),
-    Power("Power"),
+enum class UnitCategory {
+    Length,
+    Area,
+    Volume,
+    Mass,
+    Temperature,
+    Speed,
+    Time,
+    Data,
+    Pressure,
+    Energy,
+    Power,
 }

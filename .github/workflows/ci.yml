@@ -66,6 +66,15 @@ jobs:
             fi
           done
           exit $fail
+      # User text lives in strings.xml so it can be translated.
+      - name: Check for hard-coded user text
+        run: |
+          if grep -rnE '(text|label|contentDescription|title|description|message)\s*=\s*"[A-Za-z][a-z]|Text\("[A-Za-z][a-z]' \
+            app/src/main/java/com/calculator/feature app/src/main/java/com/calculator/core/domain \
+            app/src/main/java/com/calculator/core/designsystem app/src/main/java/com/calculator/navigation; then
+            echo "::error::Move the text above to strings.xml (English and Hindi)."
+            exit 1
+          fi
       - name: Upload ktlint report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v7

@@ -1,5 +1,6 @@
 package com.calculator.feature.health.bmi
 
+import androidx.annotation.StringRes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -164,7 +165,7 @@ fun BmiScreen(
                     )
                     LifeCalcOutputRow(
                         label = stringResource(R.string.bmi_category),
-                        value = result.category.label,
+                        value = stringResource(result.category.labelRes()),
                     )
                 }
                 is InputResult.Invalid ->
@@ -177,3 +178,13 @@ fun BmiScreen(
         }
     }
 }
+
+/** Translated label of a WHO BMI category. */
+@StringRes
+private fun BmiCalculator.Category.labelRes(): Int =
+    when (this) {
+        BmiCalculator.Category.Underweight -> R.string.bmi_category_underweight
+        BmiCalculator.Category.Normal -> R.string.bmi_category_normal
+        BmiCalculator.Category.Overweight -> R.string.bmi_category_overweight
+        BmiCalculator.Category.Obese -> R.string.bmi_category_obese
+    }

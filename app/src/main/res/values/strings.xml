@@ -5,13 +5,13 @@
   Conventions:
     - Keep keys descriptive: `feature_action_modifier` (e.g. `basic_button_clear`).
     - One file in `values/` (default English); translations live alongside in
-      `values-<locale>/strings.xml` (e.g. `values-hi/strings.xml`).
+      `values-<locale>/strings.xml` (e.g. `values-hi/strings.xml`). Lint fails
+      on a string with no Hindi translation; mark symbols, names and codes
+      that never change `translatable="false"` instead.
     - Mark format strings with `xliff:g` so translators know not to alter
       placeholders (added when the first formatted string is introduced).
 -->
-<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2"
-    xmlns:tools="http://schemas.android.com/tools"
-    tools:ignore="MissingTranslation">
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="app_name">Calculator</string>
 
     <!-- Basic calculator -->
@@ -71,7 +71,7 @@
     <string name="settings_section_about">About</string>
     <string name="settings_about_version">Version</string>
     <string name="settings_about_license">License</string>
-    <string name="settings_about_github">GitHub</string>
+    <string name="settings_about_github" translatable="false">GitHub</string>
 
     <!-- History sheet -->
     <string name="history_title">History</string>
@@ -181,12 +181,12 @@
     <string name="history_copied_toast">Copied to clipboard</string>
 
     <!-- Loan extras -->
-    <string name="loan_rate_suffix">%</string>
+    <string name="loan_rate_suffix" translatable="false">%</string>
     <string name="loan_error_empty">Enter a loan amount, rate, and tenure to see your EMI.</string>
 
     <!-- GST extras -->
     <string name="gst_section_result">Result</string>
-    <string name="gst_rate_suffix">%</string>
+    <string name="gst_rate_suffix" translatable="false">%</string>
     <string name="gst_error_invalid">Enter a valid amount and rate.</string>
     <string name="gst_label_net">Net</string>
     <string name="gst_label_gross">Gross</string>
@@ -196,7 +196,7 @@
 
     <!-- Discount extras -->
     <string name="discount_section_result">Result</string>
-    <string name="discount_percent_suffix">%</string>
+    <string name="discount_percent_suffix" translatable="false">%</string>
     <string name="discount_error_invalid">Enter valid numbers (final must be in 0..MRP).</string>
 
     <!-- Tip & split -->
@@ -216,7 +216,7 @@
     <string name="investment_title">Investment</string>
     <string name="investment_section_mode">Mode</string>
     <string name="investment_section_result">Result</string>
-    <string name="investment_mode_sip">SIP</string>
+    <string name="investment_mode_sip" translatable="false">SIP</string>
     <string name="investment_mode_lumpsum">Lump sum</string>
     <string name="investment_monthly">Monthly amount</string>
     <string name="investment_principal">Principal</string>
@@ -304,12 +304,12 @@
     <string name="ovulation_error_invalid">Pick an LMP date and a cycle length between 21 and 35 days.</string>
     <string name="ovulation_error_future">The last period can\'t start in the future.</string>
     <string name="ovulation_cycle_days_format"><xliff:g id="days" example="28">%1$d</xliff:g> days</string>
-    <string name="ovulation_fertile_window_format"><xliff:g id="start" example="Mon">%1$s</xliff:g> – <xliff:g id="end" example="Sat">%2$s</xliff:g></string>
+    <string name="ovulation_fertile_window_format"><xliff:g id="start" example="Mon">%1$s</xliff:g> - <xliff:g id="end" example="Sat">%2$s</xliff:g></string>
 
     <!-- Settings extras -->
     <string name="settings_precision_description">Trades precision for speed - at 6 digits a result like 1/3 reads as 0.333333; at 16 it reads 0.3333333333333333. Engine default is 12.</string>
-    <string name="settings_about_license_value">Apache 2.0</string>
-    <string name="settings_about_github_value">zeevy/android-calculator</string>
+    <string name="settings_about_license_value" translatable="false">Apache 2.0</string>
+    <string name="settings_about_github_value" translatable="false">zeevy/android-calculator</string>
     <!-- Number field errors, shown under the field -->
     <string name="input_error_required">Enter a value</string>
     <string name="input_error_invalid">Not a valid number</string>
@@ -321,4 +321,151 @@
     <string name="input_error_max">Must be at most %1$s</string>
     <string name="input_error_too_large">The result is too large</string>
     <string name="input_error_zero">Can\'t be 0</string>
+    <!-- Unit converter: category and unit names -->
+    <string name="unit_category_length">Length</string>
+    <string name="unit_category_area">Area</string>
+    <string name="unit_category_volume">Volume</string>
+    <string name="unit_category_mass">Mass</string>
+    <string name="unit_category_temperature">Temperature</string>
+    <string name="unit_category_speed">Speed</string>
+    <string name="unit_category_time">Time</string>
+    <string name="unit_category_data">Data</string>
+    <string name="unit_category_pressure">Pressure</string>
+    <string name="unit_category_energy">Energy</string>
+    <string name="unit_category_power">Power</string>
+    <string name="unit_meter">Meter</string>
+    <string name="unit_kilometer">Kilometer</string>
+    <string name="unit_centimeter">Centimeter</string>
+    <string name="unit_millimeter">Millimeter</string>
+    <string name="unit_micrometer">Micrometer</string>
+    <string name="unit_nanometer">Nanometer</string>
+    <string name="unit_mile">Mile</string>
+    <string name="unit_yard">Yard</string>
+    <string name="unit_foot">Foot</string>
+    <string name="unit_inch">Inch</string>
+    <string name="unit_nautical_mile">Nautical Mile</string>
+    <string name="unit_square_meter">Square Meter</string>
+    <string name="unit_square_kilometer">Square Kilometer</string>
+    <string name="unit_square_centimeter">Square Centimeter</string>
+    <string name="unit_square_millimeter">Square Millimeter</string>
+    <string name="unit_hectare">Hectare</string>
+    <string name="unit_acre">Acre</string>
+    <string name="unit_square_mile">Square Mile</string>
+    <string name="unit_square_yard">Square Yard</string>
+    <string name="unit_square_foot">Square Foot</string>
+    <string name="unit_square_inch">Square Inch</string>
+    <string name="unit_liter">Liter</string>
+    <string name="unit_milliliter">Milliliter</string>
+    <string name="unit_cubic_meter">Cubic Meter</string>
+    <string name="unit_cubic_centimeter">Cubic Centimeter</string>
+    <string name="unit_us_gallon">US Gallon</string>
+    <string name="unit_imperial_gallon">Imperial Gallon</string>
+    <string name="unit_us_quart">US Quart</string>
+    <string name="unit_us_pint">US Pint</string>
+    <string name="unit_us_cup">US Cup</string>
+    <string name="unit_us_fluid_ounce">US Fluid Ounce</string>
+    <string name="unit_cubic_inch">Cubic Inch</string>
+    <string name="unit_cubic_foot">Cubic Foot</string>
+    <string name="unit_kilogram">Kilogram</string>
+    <string name="unit_gram">Gram</string>
+    <string name="unit_milligram">Milligram</string>
+    <string name="unit_metric_ton">Metric Ton</string>
+    <string name="unit_pound">Pound</string>
+    <string name="unit_ounce">Ounce</string>
+    <string name="unit_stone">Stone</string>
+    <string name="unit_short_ton">Short Ton</string>
+    <string name="unit_long_ton">Long Ton</string>
+    <string name="unit_kelvin">Kelvin</string>
+    <string name="unit_celsius">Celsius</string>
+    <string name="unit_fahrenheit">Fahrenheit</string>
+    <string name="unit_meter_per_second">Meter per Second</string>
+    <string name="unit_kilometer_per_hour">Kilometer per Hour</string>
+    <string name="unit_mile_per_hour">Mile per Hour</string>
+    <string name="unit_foot_per_second">Foot per Second</string>
+    <string name="unit_knot">Knot</string>
+    <string name="unit_second">Second</string>
+    <string name="unit_millisecond">Millisecond</string>
+    <string name="unit_microsecond">Microsecond</string>
+    <string name="unit_nanosecond">Nanosecond</string>
+    <string name="unit_minute">Minute</string>
+    <string name="unit_hour">Hour</string>
+    <string name="unit_day">Day</string>
+    <string name="unit_week">Week</string>
+    <string name="unit_month">Month (30 d)</string>
+    <string name="unit_year">Year (365.25 d)</string>
+    <string name="unit_byte">Byte</string>
+    <string name="unit_kilobyte">Kilobyte</string>
+    <string name="unit_megabyte">Megabyte</string>
+    <string name="unit_gigabyte">Gigabyte</string>
+    <string name="unit_terabyte">Terabyte</string>
+    <string name="unit_petabyte">Petabyte</string>
+    <string name="unit_bit">Bit</string>
+    <string name="unit_pascal">Pascal</string>
+    <string name="unit_kilopascal">Kilopascal</string>
+    <string name="unit_megapascal">Megapascal</string>
+    <string name="unit_bar">Bar</string>
+    <string name="unit_atmosphere">Atmosphere</string>
+    <string name="unit_millimeter_of_mercury">Millimeter of Mercury</string>
+    <string name="unit_pound_per_square_inch">Pound per Square Inch</string>
+    <string name="unit_torr">Torr</string>
+    <string name="unit_joule">Joule</string>
+    <string name="unit_kilojoule">Kilojoule</string>
+    <string name="unit_calorie">Calorie</string>
+    <string name="unit_kilocalorie">Kilocalorie</string>
+    <string name="unit_watt_hour">Watt-hour</string>
+    <string name="unit_kilowatt_hour">Kilowatt-hour</string>
+    <string name="unit_electron_volt">Electron Volt</string>
+    <string name="unit_british_thermal_unit">British Thermal Unit</string>
+    <string name="unit_watt">Watt</string>
+    <string name="unit_kilowatt">Kilowatt</string>
+    <string name="unit_megawatt">Megawatt</string>
+    <string name="unit_horsepower">Horsepower (mech.)</string>
+    <string name="unit_btu_per_hour">BTU per Hour</string>
+    <!-- Calculator errors for out-of-domain input -->
+    <string name="basic_error_sqrt">Can\'t take √ of a negative number</string>
+    <string name="basic_error_cbrt">Cube root is undefined here</string>
+    <string name="basic_error_log">log needs a positive number</string>
+    <string name="basic_error_ln">ln needs a positive number</string>
+    <string name="basic_error_asin">asin needs a value from -1 to 1</string>
+    <string name="basic_error_acos">acos needs a value from -1 to 1</string>
+    <string name="basic_error_tan">tan is undefined at this angle</string>
+    <string name="basic_error_factorial_negative">Factorial needs a number that is not negative</string>
+    <string name="basic_error_factorial_whole">Factorial needs a whole number</string>
+    <string name="basic_error_factorial_large">Factorial is too large to compute</string>
+    <string name="basic_error_too_large">Result is too large</string>
+    <string name="basic_error_power">That power is not a real number</string>
+    <string name="units_category">Category</string>
+    <string name="basic_angle_degree">DEG</string>
+    <string name="basic_angle_radian">RAD</string>
+    <!-- Spoken names of keypad keys (TalkBack) -->
+    <string name="basic_key_plus">Plus</string>
+    <string name="basic_key_minus">Minus</string>
+    <string name="basic_key_multiply">Multiply</string>
+    <string name="basic_key_divide">Divide</string>
+    <string name="basic_key_percent">Percent</string>
+    <string name="basic_key_point">Decimal point</string>
+    <string name="basic_key_power">Power</string>
+    <string name="basic_key_pi">Pi</string>
+    <string name="basic_key_e">Euler\'s number e</string>
+    <string name="basic_key_left_paren">Open bracket</string>
+    <string name="basic_key_right_paren">Close bracket</string>
+    <string name="basic_key_memory_clear">Memory clear</string>
+    <string name="basic_key_memory_recall">Memory recall</string>
+    <string name="basic_key_memory_add">Memory add</string>
+    <string name="basic_key_memory_subtract">Memory subtract</string>
+    <string name="basic_key_sign">Change sign</string>
+    <string name="basic_key_factorial">Factorial</string>
+    <string name="basic_key_square">Square</string>
+    <string name="basic_key_cube">Cube</string>
+    <string name="basic_key_sin">Sine</string>
+    <string name="basic_key_cos">Cosine</string>
+    <string name="basic_key_tan">Tangent</string>
+    <string name="basic_key_asin">Inverse sine</string>
+    <string name="basic_key_acos">Inverse cosine</string>
+    <string name="basic_key_atan">Inverse tangent</string>
+    <string name="basic_key_sqrt">Square root</string>
+    <string name="basic_key_log">Log base 10</string>
+    <string name="basic_key_ln">Natural log</string>
+    <string name="basic_key_clear_all">Clear all</string>
+    <string name="floating_close">Close floating calculator</string>
 </resources>

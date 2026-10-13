@@ -40,10 +40,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.R
@@ -254,7 +252,7 @@ private fun ZonePickerSheet(
                 value = query,
                 onValueChange = { query = it },
                 singleLine = true,
-                textStyle = TextStyle(color = scheme.onSurface, fontSize = 16.sp),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = scheme.onSurface),
                 cursorBrush = androidx.compose.ui.graphics
                     .SolidColor(scheme.primary),
                 modifier =
@@ -270,7 +268,7 @@ private fun ZonePickerSheet(
                             Text(
                                 text = stringResource(R.string.tz_picker_search_hint),
                                 color = scheme.onSurfaceVariant,
-                                style = TextStyle(fontSize = 16.sp),
+                                style = MaterialTheme.typography.bodyLarge,
                             )
                         }
                         inner()

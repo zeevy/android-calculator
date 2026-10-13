@@ -58,7 +58,6 @@
     <string name="settings_section_about">के बारे में</string>
     <string name="settings_about_version">संस्करण</string>
     <string name="settings_about_license">लाइसेंस</string>
-    <string name="settings_about_github">GitHub</string>
 
     <!-- History sheet -->
     <string name="history_title">इतिहास</string>
@@ -166,12 +165,10 @@
     <string name="history_copied_toast">क्लिपबोर्ड पर कॉपी किया गया</string>
 
     <!-- Loan extras -->
-    <string name="loan_rate_suffix">%</string>
     <string name="loan_error_empty">ईएमआई देखने के लिए ऋण राशि, दर और अवधि दर्ज करें.</string>
 
     <!-- GST extras -->
     <string name="gst_section_result">परिणाम</string>
-    <string name="gst_rate_suffix">%</string>
     <string name="gst_error_invalid">वैध राशि और दर दर्ज करें.</string>
     <string name="gst_label_net">शुद्ध</string>
     <string name="gst_label_gross">सकल</string>
@@ -181,7 +178,6 @@
 
     <!-- Discount extras -->
     <string name="discount_section_result">परिणाम</string>
-    <string name="discount_percent_suffix">%</string>
     <string name="discount_error_invalid">मान्य संख्याएँ दर्ज करें (अंतिम 0..एमआरपी के बीच होना चाहिए).</string>
 
     <!-- BMI extras -->
@@ -220,12 +216,10 @@
     <string name="ovulation_error_invalid">एलएमपी तिथि और 21 से 35 दिनों के बीच चक्र अवधि चुनें.</string>
     <string name="ovulation_error_future">पिछली माहवारी भविष्य में शुरू नहीं हो सकती।</string>
     <string name="ovulation_cycle_days_format"><xliff:g id="days" example="28">%1$d</xliff:g> दिन</string>
-    <string name="ovulation_fertile_window_format"><xliff:g id="start" example="Mon">%1$s</xliff:g> – <xliff:g id="end" example="Sat">%2$s</xliff:g></string>
+    <string name="ovulation_fertile_window_format"><xliff:g id="start" example="Mon">%1$s</xliff:g> - <xliff:g id="end" example="Sat">%2$s</xliff:g></string>
 
     <!-- Settings extras -->
     <string name="settings_precision_description">सटीकता और गति के बीच समझौता - 6 अंक पर 1/3 का परिणाम 0.333333 दिखता है; 16 पर 0.3333333333333333 दिखता है. इंजन डिफ़ॉल्ट 12 है.</string>
-    <string name="settings_about_license_value">Apache 2.0</string>
-    <string name="settings_about_github_value">zeevy/android-calculator</string>
 
     <!-- Tape extras -->
     <string name="tape_copy_line">पंक्ति कॉपी करें</string>
@@ -241,4 +235,219 @@
     <string name="input_error_max">अधिक से अधिक %1$s होना चाहिए</string>
     <string name="input_error_too_large">परिणाम बहुत बड़ा है</string>
     <string name="input_error_zero">0 नहीं हो सकता</string>
+    <!-- Unit converter: category and unit names -->
+    <string name="unit_category_length">लंबाई</string>
+    <string name="unit_category_area">क्षेत्रफल</string>
+    <string name="unit_category_volume">आयतन</string>
+    <string name="unit_category_mass">द्रव्यमान</string>
+    <string name="unit_category_temperature">तापमान</string>
+    <string name="unit_category_speed">गति</string>
+    <string name="unit_category_time">समय</string>
+    <string name="unit_category_data">डेटा</string>
+    <string name="unit_category_pressure">दाब</string>
+    <string name="unit_category_energy">ऊर्जा</string>
+    <string name="unit_category_power">शक्ति</string>
+    <string name="unit_meter">मीटर</string>
+    <string name="unit_kilometer">किलोमीटर</string>
+    <string name="unit_centimeter">सेंटीमीटर</string>
+    <string name="unit_millimeter">मिलीमीटर</string>
+    <string name="unit_micrometer">माइक्रोमीटर</string>
+    <string name="unit_nanometer">नैनोमीटर</string>
+    <string name="unit_mile">मील</string>
+    <string name="unit_yard">गज</string>
+    <string name="unit_foot">फुट</string>
+    <string name="unit_inch">इंच</string>
+    <string name="unit_nautical_mile">समुद्री मील</string>
+    <string name="unit_square_meter">वर्ग मीटर</string>
+    <string name="unit_square_kilometer">वर्ग किलोमीटर</string>
+    <string name="unit_square_centimeter">वर्ग सेंटीमीटर</string>
+    <string name="unit_square_millimeter">वर्ग मिलीमीटर</string>
+    <string name="unit_hectare">हेक्टेयर</string>
+    <string name="unit_acre">एकड़</string>
+    <string name="unit_square_mile">वर्ग मील</string>
+    <string name="unit_square_yard">वर्ग गज</string>
+    <string name="unit_square_foot">वर्ग फुट</string>
+    <string name="unit_square_inch">वर्ग इंच</string>
+    <string name="unit_liter">लीटर</string>
+    <string name="unit_milliliter">मिलीलीटर</string>
+    <string name="unit_cubic_meter">घन मीटर</string>
+    <string name="unit_cubic_centimeter">घन सेंटीमीटर</string>
+    <string name="unit_us_gallon">अमेरिकी गैलन</string>
+    <string name="unit_imperial_gallon">इंपीरियल गैलन</string>
+    <string name="unit_us_quart">अमेरिकी क्वार्ट</string>
+    <string name="unit_us_pint">अमेरिकी पिंट</string>
+    <string name="unit_us_cup">अमेरिकी कप</string>
+    <string name="unit_us_fluid_ounce">अमेरिकी द्रव औंस</string>
+    <string name="unit_cubic_inch">घन इंच</string>
+    <string name="unit_cubic_foot">घन फुट</string>
+    <string name="unit_kilogram">किलोग्राम</string>
+    <string name="unit_gram">ग्राम</string>
+    <string name="unit_milligram">मिलीग्राम</string>
+    <string name="unit_metric_ton">मीट्रिक टन</string>
+    <string name="unit_pound">पाउंड</string>
+    <string name="unit_ounce">औंस</string>
+    <string name="unit_stone">स्टोन</string>
+    <string name="unit_short_ton">शॉर्ट टन</string>
+    <string name="unit_long_ton">लॉन्ग टन</string>
+    <string name="unit_kelvin">केल्विन</string>
+    <string name="unit_celsius">सेल्सियस</string>
+    <string name="unit_fahrenheit">फ़ारेनहाइट</string>
+    <string name="unit_meter_per_second">मीटर प्रति सेकंड</string>
+    <string name="unit_kilometer_per_hour">किलोमीटर प्रति घंटा</string>
+    <string name="unit_mile_per_hour">मील प्रति घंटा</string>
+    <string name="unit_foot_per_second">फुट प्रति सेकंड</string>
+    <string name="unit_knot">नॉट</string>
+    <string name="unit_second">सेकंड</string>
+    <string name="unit_millisecond">मिलीसेकंड</string>
+    <string name="unit_microsecond">माइक्रोसेकंड</string>
+    <string name="unit_nanosecond">नैनोसेकंड</string>
+    <string name="unit_minute">मिनट</string>
+    <string name="unit_hour">घंटा</string>
+    <string name="unit_day">दिन</string>
+    <string name="unit_week">सप्ताह</string>
+    <string name="unit_month">महीना (30 दिन)</string>
+    <string name="unit_year">वर्ष (365.25 दिन)</string>
+    <string name="unit_byte">बाइट</string>
+    <string name="unit_kilobyte">किलोबाइट</string>
+    <string name="unit_megabyte">मेगाबाइट</string>
+    <string name="unit_gigabyte">गीगाबाइट</string>
+    <string name="unit_terabyte">टेराबाइट</string>
+    <string name="unit_petabyte">पेटाबाइट</string>
+    <string name="unit_bit">बिट</string>
+    <string name="unit_pascal">पास्कल</string>
+    <string name="unit_kilopascal">किलोपास्कल</string>
+    <string name="unit_megapascal">मेगापास्कल</string>
+    <string name="unit_bar">बार</string>
+    <string name="unit_atmosphere">वायुमंडल</string>
+    <string name="unit_millimeter_of_mercury">पारे का मिलीमीटर</string>
+    <string name="unit_pound_per_square_inch">पाउंड प्रति वर्ग इंच</string>
+    <string name="unit_torr">टॉर</string>
+    <string name="unit_joule">जूल</string>
+    <string name="unit_kilojoule">किलोजूल</string>
+    <string name="unit_calorie">कैलोरी</string>
+    <string name="unit_kilocalorie">किलोकैलोरी</string>
+    <string name="unit_watt_hour">वाट-घंटा</string>
+    <string name="unit_kilowatt_hour">किलोवाट-घंटा</string>
+    <string name="unit_electron_volt">इलेक्ट्रॉन वोल्ट</string>
+    <string name="unit_british_thermal_unit">ब्रिटिश थर्मल यूनिट</string>
+    <string name="unit_watt">वाट</string>
+    <string name="unit_kilowatt">किलोवाट</string>
+    <string name="unit_megawatt">मेगावाट</string>
+    <string name="unit_horsepower">अश्वशक्ति (यांत्रिक)</string>
+    <string name="unit_btu_per_hour">BTU प्रति घंटा</string>
+    <!-- Calculator errors for out-of-domain input -->
+    <string name="basic_error_sqrt">ऋणात्मक संख्या का √ नहीं निकाल सकते</string>
+    <string name="basic_error_cbrt">यहाँ घनमूल परिभाषित नहीं है</string>
+    <string name="basic_error_log">log के लिए धनात्मक संख्या चाहिए</string>
+    <string name="basic_error_ln">ln के लिए धनात्मक संख्या चाहिए</string>
+    <string name="basic_error_asin">asin के लिए -1 से 1 तक का मान चाहिए</string>
+    <string name="basic_error_acos">acos के लिए -1 से 1 तक का मान चाहिए</string>
+    <string name="basic_error_tan">इस कोण पर tan परिभाषित नहीं है</string>
+    <string name="basic_error_factorial_negative">फ़ैक्टोरियल के लिए ऐसी संख्या चाहिए जो ऋणात्मक न हो</string>
+    <string name="basic_error_factorial_whole">फ़ैक्टोरियल के लिए पूर्ण संख्या चाहिए</string>
+    <string name="basic_error_factorial_large">फ़ैक्टोरियल गणना के लिए बहुत बड़ा है</string>
+    <string name="basic_error_too_large">परिणाम बहुत बड़ा है</string>
+    <string name="basic_error_power">यह घात वास्तविक संख्या नहीं है</string>
+    <!-- Strings added with the tools that came after the first Hindi pass -->
+    <string name="basic_copied">क्लिपबोर्ड पर कॉपी किया गया</string>
+    <string name="basic_paste_no_number">क्लिपबोर्ड पर कोई संख्या नहीं मिली</string>
+    <string name="tool_home">होम</string>
+    <string name="tool_tipsplit">टिप और बँटवारा</string>
+    <string name="tool_investment">निवेश</string>
+    <string name="tool_percent">प्रतिशत</string>
+    <string name="tool_basecalc">आधार</string>
+    <string name="tool_tape">टेप</string>
+    <string name="settings_section_floating">फ़्लोटिंग कैलकुलेटर</string>
+    <string name="settings_floating_launch">दूसरे ऐप्स के ऊपर खोलें</string>
+    <string name="settings_floating_desc">एक छोटा कैलकुलेटर खोलता है जिसे खिसका सकते हैं और जो दूसरे ऐप्स इस्तेमाल करते समय स्क्रीन पर रहता है। पहली बार टैप करने पर ओवरले की अनुमति देने के लिए सिस्टम सेटिंग्स खुलती हैं। इसे सूचना पैनल से बंद करने के लिए सूचनाओं की अनुमति दें।</string>
+    <string name="shortcut_floating_short">फ़्लोट</string>
+    <string name="shortcut_floating_long">फ़्लोटिंग कैलकुलेटर</string>
+    <string name="tipsplit_title">टिप और बँटवारा</string>
+    <string name="tipsplit_section_inputs">इनपुट</string>
+    <string name="tipsplit_section_result">परिणाम</string>
+    <string name="tipsplit_bill">बिल राशि</string>
+    <string name="tipsplit_tip_amount_input">टिप राशि</string>
+    <string name="tipsplit_people">लोग</string>
+    <string name="tipsplit_round_up">प्रति व्यक्ति राशि ऊपर पूर्णांक करें</string>
+    <string name="tipsplit_tip_amount">टिप राशि</string>
+    <string name="tipsplit_total">कुल</string>
+    <string name="tipsplit_per_person">प्रति व्यक्ति</string>
+    <string name="tipsplit_error_invalid">मान्य बिल और टिप राशि दर्ज करें।</string>
+    <string name="investment_title">निवेश</string>
+    <string name="investment_section_mode">मोड</string>
+    <string name="investment_section_result">परिणाम</string>
+    <string name="investment_mode_lumpsum">एकमुश्त</string>
+    <string name="investment_monthly">मासिक राशि</string>
+    <string name="investment_principal">मूलधन</string>
+    <string name="investment_rate">वार्षिक दर</string>
+    <string name="investment_years">अवधि</string>
+    <string name="investment_years_suffix">वर्ष</string>
+    <string name="investment_invested">कुल निवेश</string>
+    <string name="investment_gains">अनुमानित लाभ</string>
+    <string name="investment_maturity">परिपक्वता मूल्य</string>
+    <string name="investment_error_invalid">धनात्मक राशि, दर और अवधि दर्ज करें।</string>
+    <string name="percent_title">प्रतिशत</string>
+    <string name="percent_section_mode">मोड</string>
+    <string name="percent_section_result">परिणाम</string>
+    <string name="percent_mode_of">Y का X%</string>
+    <string name="percent_mode_what">Y का X कितना % है</string>
+    <string name="percent_mode_change">A → B बदलाव</string>
+    <string name="percent_label_percent">प्रतिशत</string>
+    <string name="percent_label_value">मान</string>
+    <string name="percent_label_part">भाग</string>
+    <string name="percent_label_whole">पूरा</string>
+    <string name="percent_label_from">से</string>
+    <string name="percent_label_to">तक</string>
+    <string name="percent_result_value">परिणाम</string>
+    <string name="percent_result_percent">प्रतिशत</string>
+    <string name="percent_result_change">बदलाव</string>
+    <string name="percent_error_invalid">दो मान्य संख्याएँ दर्ज करें (भाजक 0 नहीं हो सकता)।</string>
+    <string name="basecalc_title">संख्या आधार</string>
+    <string name="basecalc_section_values">मान</string>
+    <string name="basecalc_dec">दशमलव</string>
+    <string name="basecalc_hex">षोडशाधारी</string>
+    <string name="basecalc_oct">अष्टाधारी</string>
+    <string name="basecalc_bin">द्विआधारी</string>
+    <string name="tape_title">टेप</string>
+    <string name="tape_empty">अभी कोई गणना नहीं। साधारण कैलकुलेटर पर कुछ गणनाएँ करें, वे यहाँ दिखेंगी।</string>
+    <string name="tape_clear">टेप साफ़ करें</string>
+    <string name="floating_header">कैलकुलेटर</string>
+    <string name="floating_channel_name">फ़्लोटिंग कैलकुलेटर</string>
+    <string name="floating_notif_title">फ़्लोटिंग कैलकुलेटर</string>
+    <string name="floating_notif_body">पूरा कैलकुलेटर खोलने के लिए टैप करें। बंद करने के लिए फ़्लोटिंग विंडो पर X दबाएँ।</string>
+    <string name="floating_notif_stop">रोकें</string>
+    <string name="units_category">श्रेणी</string>
+    <string name="basic_angle_degree">डिग्री</string>
+    <string name="basic_angle_radian">रेडियन</string>
+    <!-- Spoken names of keypad keys (TalkBack) -->
+    <string name="basic_key_plus">जोड़</string>
+    <string name="basic_key_minus">घटाव</string>
+    <string name="basic_key_multiply">गुणा</string>
+    <string name="basic_key_divide">भाग</string>
+    <string name="basic_key_percent">प्रतिशत</string>
+    <string name="basic_key_point">दशमलव बिंदु</string>
+    <string name="basic_key_power">घात</string>
+    <string name="basic_key_pi">पाई</string>
+    <string name="basic_key_e">ऑयलर संख्या e</string>
+    <string name="basic_key_left_paren">कोष्ठक खोलें</string>
+    <string name="basic_key_right_paren">कोष्ठक बंद करें</string>
+    <string name="basic_key_memory_clear">मेमोरी साफ़ करें</string>
+    <string name="basic_key_memory_recall">मेमोरी दिखाएँ</string>
+    <string name="basic_key_memory_add">मेमोरी में जोड़ें</string>
+    <string name="basic_key_memory_subtract">मेमोरी से घटाएँ</string>
+    <string name="basic_key_sign">चिह्न बदलें</string>
+    <string name="basic_key_factorial">फ़ैक्टोरियल</string>
+    <string name="basic_key_square">वर्ग</string>
+    <string name="basic_key_cube">घन</string>
+    <string name="basic_key_sin">साइन</string>
+    <string name="basic_key_cos">कोसाइन</string>
+    <string name="basic_key_tan">टैंजेंट</string>
+    <string name="basic_key_asin">व्युत्क्रम साइन</string>
+    <string name="basic_key_acos">व्युत्क्रम कोसाइन</string>
+    <string name="basic_key_atan">व्युत्क्रम टैंजेंट</string>
+    <string name="basic_key_sqrt">वर्गमूल</string>
+    <string name="basic_key_log">लॉग आधार 10</string>
+    <string name="basic_key_ln">प्राकृतिक लॉग</string>
+    <string name="basic_key_clear_all">सब साफ़ करें</string>
+    <string name="floating_close">फ़्लोटिंग कैलकुलेटर बंद करें</string>
 </resources>

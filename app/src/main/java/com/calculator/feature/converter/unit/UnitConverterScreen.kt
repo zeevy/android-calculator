@@ -37,12 +37,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calculator.R
@@ -176,7 +174,7 @@ private fun CategoryDropdown(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         Text(
-            text = selected.displayName,
+            text = stringResource(selected.labelRes()),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
@@ -200,7 +198,7 @@ private fun CategoryDropdown(
         ) {
             Column(modifier = Modifier.padding(bottom = 16.dp)) {
                 Text(
-                    text = "Category",
+                    text = stringResource(R.string.units_category),
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.SemiBold,
@@ -221,7 +219,7 @@ private fun CategoryDropdown(
                                 }.padding(horizontal = 24.dp, vertical = 14.dp),
                     ) {
                         Text(
-                            text = category.displayName,
+                            text = stringResource(category.labelRes()),
                             style = MaterialTheme.typography.bodyLarge,
                             color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.weight(1f),
@@ -261,9 +259,8 @@ private fun FromCard(
                 onValueChange = onValueChange,
                 singleLine = true,
                 textStyle =
-                    TextStyle(
+                    MaterialTheme.typography.displaySmall.copy(
                         color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.End,
                     ),
@@ -319,9 +316,8 @@ private fun ToCard(
                 onValueChange = onValueChange,
                 singleLine = true,
                 textStyle =
-                    TextStyle(
+                    MaterialTheme.typography.displaySmall.copy(
                         color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.End,
                     ),
@@ -387,7 +383,7 @@ private fun UnitChooser(
             modifier = Modifier.weight(1f),
         )
         Text(
-            text = unit?.let { "${it.displayName} (${it.symbol})" } ?: "",
+            text = unit?.let { "${stringResource(it.labelRes())} (${it.symbol})" } ?: "",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.primary,
         )
@@ -428,7 +424,7 @@ private fun UnitPickerSheet(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = unit.displayName,
+                        text = stringResource(unit.labelRes()),
                         style = MaterialTheme.typography.bodyLarge,
                         color =
                             if (unit.symbol == currentSymbol) {

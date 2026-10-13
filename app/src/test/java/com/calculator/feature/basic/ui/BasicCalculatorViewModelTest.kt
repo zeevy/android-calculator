@@ -1,6 +1,7 @@
 package com.calculator.feature.basic.ui
 
 import androidx.lifecycle.SavedStateHandle
+import com.calculator.R
 import com.calculator.core.data.settings.UserSettings
 import com.calculator.core.math.AngleMode
 import com.calculator.testing.FakeSettingsRepository
@@ -425,7 +426,7 @@ class BasicCalculatorViewModelTest {
         fun `division by zero surfaces a typed message`() {
             type("5", "÷", "0")
             equals()
-            assertEquals("Can't divide by zero", state.errorMessage)
+            assertEquals(R.string.basic_error_division_by_zero, state.errorMessage)
         }
 
         @Test
@@ -433,7 +434,7 @@ class BasicCalculatorViewModelTest {
             // Unmatched `)` cannot be auto-fixed (auto-close only adds `)`).
             type("1", "+", "2", ")")
             equals()
-            assertEquals("Check your expression", state.errorMessage)
+            assertEquals(R.string.basic_error_syntax, state.errorMessage)
         }
 
         @Test
@@ -474,7 +475,7 @@ class BasicCalculatorViewModelTest {
             type("5", "÷", "0")
             equals()
             val restored = basicCalculatorViewModel(savedStateHandle)
-            assertEquals("Can't divide by zero", restored.state.value.errorMessage)
+            assertEquals(R.string.basic_error_division_by_zero, restored.state.value.errorMessage)
         }
 
         @Test

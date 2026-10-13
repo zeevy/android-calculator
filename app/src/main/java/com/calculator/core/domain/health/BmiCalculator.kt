@@ -80,11 +80,12 @@ object BmiCalculator {
             else -> Category.Obese
         }
 
-    enum class Category(val label: String) {
-        Underweight("Underweight"),
-        Normal("Normal"),
-        Overweight("Overweight"),
-        Obese("Obese"),
+    /** WHO BMI category. The UI maps it to a translated label. */
+    enum class Category {
+        Underweight,
+        Normal,
+        Overweight,
+        Obese,
     }
 
     private const val INCHES_PER_FOOT = 12

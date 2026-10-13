@@ -18,11 +18,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.calculator.R
 import com.calculator.core.common.input.InputResult
 import com.calculator.core.designsystem.component.LifeCalcCard
@@ -147,9 +145,8 @@ private fun BaseField(
             onValueChange = onValueChange,
             singleLine = true,
             textStyle =
-                TextStyle(
+                MaterialTheme.typography.headlineSmall.copy(
                     color = scheme.onSurface,
-                    fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily =
                         if (monospace) androidx.compose.ui.text.font.FontFamily.Monospace else null,

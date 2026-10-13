@@ -2,6 +2,7 @@ package com.calculator.feature.basic.ui
 
 import android.media.AudioManager
 import android.media.ToneGenerator
+import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -57,7 +58,14 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onLongClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -81,6 +89,7 @@ import com.calculator.core.math.AngleMode
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import kotlin.math.roundToInt
 
 /**
  * Top-level composable for the basic calculator screen.
@@ -228,7 +237,7 @@ private fun DisplaySection(
             Display(
                 expression = state.expression,
                 preview = state.liveResult,
-                error = state.errorMessage,
+                error = state.errorMessage?.let { stringResource(it) },
                 lastCommittedExpression = state.lastCommittedExpression,
                 lastValidPreview = state.lastValidPreview,
                 onCopyResult = { text ->
@@ -270,7 +279,19 @@ private fun DisplaySection(
             if (state.scientific) {
                 AssistChip(
                     onClick = { onEvent(BasicCalculatorEvent.ToggleAngleMode) },
-                    label = { Text(if (state.angleMode == AngleMode.Degree) "DEG" else "RAD") },
+                    label = {
+                        Text(
+                            stringResource(
+                                if (state.angleMode ==
+                                    AngleMode.Degree
+                                ) {
+                                    R.string.basic_angle_degree
+                                } else {
+                                    R.string.basic_angle_radian
+                                },
+                            ),
+                        )
+                    },
                 )
             }
             if (state.memory != BigDecimal.ZERO) {
@@ -756,6 +777,20 @@ private fun TallPlusBlock(onEvent: (BasicCalculatorEvent) -> Unit) {
     }
 }
 
+/**
+ * Key height from the row width and [aspectRatio] (width / height), but
+ * never below [MIN_TOUCH_TARGET], so the short compact rows stay large
+ * enough for a finger. `aspectRatio` alone cannot do this: it ignores a
+ * minimum height that does not fit its ratio.
+ */
+private fun Modifier.keySize(aspectRatio: Float): Modifier =
+    layout { measurable, constraints ->
+        val width = constraints.maxWidth
+        val height = maxOf((width / aspectRatio).roundToInt(), MIN_TOUCH_TARGET.roundToPx())
+        val placeable = measurable.measure(Constraints.fixed(width, height))
+        layout(width, height) { placeable.place(0, 0) }
+    }
+
 /** A keypad row + per-row layout hints. [compact] uses a wider aspect ratio so the row is shorter. */
 private data class KeypadRowSpec(val keys: List<Key>, val compact: Boolean = false)
 
@@ -775,7 +810,7 @@ private fun KeypadRow(
             if (key is Key.Empty) {
                 // Reserve the slot so the row's remaining buttons stay
                 // the same width as a fully-populated row.
-                Spacer(modifier = Modifier.weight(1f).aspectRatio(aspectRatio))
+                Spacer(modifier = Modifier.weight(1f).keySize(aspectRatio))
             } else {
                 KeyButton(
                     key = key,
@@ -784,7 +819,7 @@ private fun KeypadRow(
                     modifier =
                         Modifier
                             .weight(1f)
-                            .aspectRatio(aspectRatio),
+                            .keySize(aspectRatio),
                 )
             }
         }
@@ -1027,12 +1062,31 @@ private fun KeyButton(
                 Modifier.combinedClickable(onClick = click, onLongClick = longClick)
             else -> Modifier.clickable(onClick = click)
         }
+    // TalkBack, Switch Access and Voice Access see each key as a button
+    // with a spoken name, and can press it even though the repeating keys
+    // only read raw pointer input.
+    val description = key.descriptionRes()?.let { stringResource(it) } ?: key.label
+    val clearAllLabel = stringResource(R.string.basic_key_clear_all)
     Box(
         modifier =
             modifier
+                // Compact rows are shorter than a finger needs.
                 .clip(keyShape)
                 .background(containerColor)
-                .then(clickModifier),
+                .semantics(mergeDescendants = true) {
+                    role = Role.Button
+                    contentDescription = description
+                    onClick {
+                        click()
+                        true
+                    }
+                    if (longClick != null) {
+                        onLongClick(label = clearAllLabel) {
+                            longClick()
+                            true
+                        }
+                    }
+                }.then(clickModifier),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -1042,6 +1096,54 @@ private fun KeyButton(
         )
     }
 }
+
+private val SymbolNames =
+    mapOf(
+        "+" to R.string.basic_key_plus,
+        "-" to R.string.basic_key_minus,
+        "×" to R.string.basic_key_multiply,
+        "÷" to R.string.basic_key_divide,
+        "%" to R.string.basic_key_percent,
+        "." to R.string.basic_key_point,
+        "^" to R.string.basic_key_power,
+        "π" to R.string.basic_key_pi,
+        "e" to R.string.basic_key_e,
+    )
+
+private val FunctionNames =
+    mapOf(
+        "sin" to R.string.basic_key_sin,
+        "cos" to R.string.basic_key_cos,
+        "tan" to R.string.basic_key_tan,
+        "asin" to R.string.basic_key_asin,
+        "acos" to R.string.basic_key_acos,
+        "atan" to R.string.basic_key_atan,
+        "sqrt" to R.string.basic_key_sqrt,
+        "log" to R.string.basic_key_log,
+        "ln" to R.string.basic_key_ln,
+    )
+
+/** Spoken name of a key, or null when its label already reads well (digits). */
+@StringRes
+private fun Key.descriptionRes(): Int? =
+    when (this) {
+        is Key.Symbol -> SymbolNames[label]
+        is Key.Function -> FunctionNames[keyword]
+        Key.LeftParen -> R.string.basic_key_left_paren
+        Key.RightParen -> R.string.basic_key_right_paren
+        Key.Clear -> R.string.basic_button_clear
+        Key.Backspace -> R.string.basic_button_backspace
+        Key.Equals -> R.string.basic_button_equals
+        Key.MemoryClear -> R.string.basic_key_memory_clear
+        Key.MemoryRecall -> R.string.basic_key_memory_recall
+        Key.MemoryAdd -> R.string.basic_key_memory_add
+        Key.MemorySubtract -> R.string.basic_key_memory_subtract
+        Key.SignFlip -> R.string.basic_key_sign
+        Key.Factorial -> R.string.basic_key_factorial
+        Key.Squared -> R.string.basic_key_square
+        Key.Cubed -> R.string.basic_key_cube
+        Key.Empty -> null
+    }
 
 /**
  * Auto-repeating clickable. Fires [onClick] immediately on press, then
@@ -1228,6 +1330,9 @@ private const val BUTTON_ASPECT_RATIO = 1.6f
 // taller so the labels - MC/MR/M+/M-, ÷/%/±/× - aren't cramped.
 private const val BUTTON_ASPECT_RATIO_COMPACT = 2.2f
 
+// Smallest key height a finger (and Android's accessibility guidance) needs.
+private val MIN_TOUCH_TARGET = 48.dp
+
 // iOS palette tokens, used by both the keypad and the tools sheet so
 // the calculator reads as a single visual system. Literal colors rather
 // than theme roles because the iOS feel is recognisable specifically by
@@ -1281,7 +1386,7 @@ private fun BasicCalculatorErrorPreview() {
                 state =
                     BasicCalculatorUiState(
                         expression = "5 ÷ 0",
-                        errorMessage = "Can't divide by zero",
+                        errorMessage = R.string.basic_error_division_by_zero,
                     ),
                 onEvent = {},
             )

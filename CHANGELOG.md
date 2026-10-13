@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Hindi users see Hindi everywhere: error messages, BMI categories, unit and category names, and the tools added after the first translation (percentage, investment, tip split, bases, tape, floating calculator).
+- TalkBack, Switch Access and Voice Access can use the keypad: every key is a button with a spoken name (for example "Divide", "Memory recall"), and backspace offers "Clear all" as its long-press action. Number fields are read with their label, and mode switches are read as radio buttons with their state.
+- Keys and switches are at least 48dp tall, including the short rows of the scientific keypad and the floating calculator.
+- The home-screen widget follows the light or dark theme and wallpaper colours.
 - Typed values in every tool survive the app being closed in the background (for example while you switch to another app), and a launcher shortcut no longer jumps back to its tool after such a restart.
 - Tool screens say which field is wrong (for example "Must be from 0 to 11.99" under inches) instead of one general message, and BMI rejects inches of 12 or more. A loan tenure above 600 months is rejected instead of slowing the app down.
 - The floating calculator and the home-screen widget follow the same rules as the app: `2 + 3 × 4 =` gives 14 everywhere (the floating calculator gave 20), the widget no longer accepts `5++` or `1..2`, and both use the precision from Settings. The floating calculator shows the whole expression while you type and a readable error message.

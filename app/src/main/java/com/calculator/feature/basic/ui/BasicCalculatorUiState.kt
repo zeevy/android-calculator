@@ -1,5 +1,6 @@
 package com.calculator.feature.basic.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
 import com.calculator.core.math.AngleMode
 import java.math.BigDecimal
@@ -15,14 +16,14 @@ import java.math.BigDecimal
  *   in display form (e.g. `12 × 3 + 4`).
  * @property liveResult Live preview of the result if the expression is
  *   currently evaluable, otherwise `null`. Shown beneath the expression.
- * @property errorMessage Human-readable error string, or `null` for the
- *   happy path. Surfaces division-by-zero, mismatched parens etc.
+ * @property errorMessage String resource of the error to show, or `null`
+ *   for the happy path. Surfaces division-by-zero, mismatched parens etc.
  */
 @Immutable
 data class BasicCalculatorUiState(
     val expression: String = "",
     val liveResult: String? = null,
-    val errorMessage: String? = null,
+    @param:StringRes val errorMessage: Int? = null,
     /**
      * Trailing `op + operand` from the most recent successful evaluation.
      *
