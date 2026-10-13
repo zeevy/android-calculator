@@ -163,7 +163,7 @@ These come from the user's global preferences and apply to every commit, file, a
 - **Locale decimal separator.** Parse and render numbers per-locale (`,` in many EU locales, `.` in US/IN). The math engine accepts both via a locale-aware formatter at the UI boundary - the engine itself works on canonical `.`-separated strings.
 - **Crash reporting is opt-in.** Default off, disclosed in settings. Do not wire up Crashlytics or Firebase without an explicit user toggle.
 - **No analytics in v1.** Do not add Firebase Analytics, no third-party SDKs that phone home.
-- **Backups.** Android Auto Backup is on; nothing sensitive is stored, but `backup_rules.xml` is authored explicitly so the policy is reviewable.
+- **Backups.** Android Auto Backup is on; nothing sensitive is stored, but `data_extraction_rules.xml` is authored explicitly so the policy is reviewable (the old `backup_rules.xml` was ignored on API 31+ and is gone). Health tools such as ovulation are never saved as recent tools.
 
 ## Working with the requirements doc
 

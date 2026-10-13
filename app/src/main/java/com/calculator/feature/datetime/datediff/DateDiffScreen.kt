@@ -7,7 +7,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -52,7 +51,7 @@ fun DateDiffScreen(onOpenMenu: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     // Saveable, so the mode, dates and offset survive the app being
     // killed in the background.
-    var mode by rememberSaveable { mutableIntStateOf(0) } // 0 = two dates, 1 = date + offset
+    var offsetMode by rememberSaveable { mutableStateOf(false) } // false = two dates
     // Defaults seed a sample 1-year span so the result card has
     // something to display on first render.
     var dateA by rememberSaveable { mutableStateOf(LocalDate.now(clock).minusYears(1)) }
@@ -71,10 +70,10 @@ fun DateDiffScreen(onOpenMenu: () -> Unit) {
                     stringResource(R.string.datediff_mode_two),
                     stringResource(R.string.datediff_mode_offset),
                 ),
-                selectedIndex = mode,
-                onSelect = { mode = it },
+                selectedIndex = if (offsetMode) 1 else 0,
+                onSelect = { offsetMode = it == 1 },
             )
-            if (mode == 0) {
+            if (!offsetMode) {
                 LifeCalcSectionLabel(stringResource(R.string.datediff_from))
                 DateField(date = dateA, onDateChange = { dateA = it })
                 LifeCalcSectionLabel(stringResource(R.string.datediff_to_label))
@@ -94,7 +93,7 @@ fun DateDiffScreen(onOpenMenu: () -> Unit) {
 
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.datediff_section_result))
-            if (mode == 0) {
+            if (!offsetMode) {
                 val diff = DateDiffCalculator.difference(dateA, dateB)
                 LifeCalcOutputRow(
                     label = stringResource(R.string.datediff_label_difference),

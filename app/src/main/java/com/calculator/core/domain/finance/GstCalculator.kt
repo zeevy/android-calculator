@@ -16,6 +16,12 @@ package com.calculator.core.domain.finance
  * rate field.
  */
 object GstCalculator {
+    /**
+     * Tax on a [net] amount at [ratePercent] (18.0 for 18%).
+     *
+     * @param intraState True within one state (CGST + SGST), false between states (IGST).
+     * @throws IllegalArgumentException when [net] or [ratePercent] is negative.
+     */
     fun forward(net: Double, ratePercent: Double, intraState: Boolean): GstResult {
         require(net >= 0) { "net must be >= 0" }
         require(ratePercent >= 0) { "rate must be >= 0" }
@@ -23,6 +29,12 @@ object GstCalculator {
         return splitResult(net, gross = net + tax, tax, intraState)
     }
 
+    /**
+     * Net amount and tax inside a [gross] amount that includes GST at [ratePercent].
+     *
+     * @param intraState True within one state (CGST + SGST), false between states (IGST).
+     * @throws IllegalArgumentException when [gross] or [ratePercent] is negative.
+     */
     fun reverse(gross: Double, ratePercent: Double, intraState: Boolean): GstResult {
         require(gross >= 0) { "gross must be >= 0" }
         require(ratePercent >= 0) { "rate must be >= 0" }
@@ -50,6 +62,15 @@ object GstCalculator {
         }
 }
 
+/**
+ * Result of [GstCalculator], in the bill's currency.
+ *
+ * @property net Amount before tax.
+ * @property gross Amount including tax.
+ * @property cgst Central GST; half the tax within a state, else 0.
+ * @property sgst State GST; half the tax within a state, else 0.
+ * @property igst Integrated GST; all the tax between states, else 0.
+ */
 data class GstResult(
     val net: Double,
     val gross: Double,

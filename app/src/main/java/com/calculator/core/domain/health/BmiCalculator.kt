@@ -100,4 +100,10 @@ object BmiCalculator {
     private const val OVERWEIGHT_MAX = 30.0
 }
 
+/**
+ * Result of [BmiCalculator.compute].
+ *
+ * @property bmi Body mass index in kg/m².
+ * @property category WHO category for [bmi].
+ */
 data class BmiResult(val bmi: Double, val category: BmiCalculator.Category)

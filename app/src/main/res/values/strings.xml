@@ -27,7 +27,6 @@
     <string name="basic_paste_no_number">No number found on clipboard</string>
 
     <!-- Tools menu tile labels -->
-    <string name="tool_home">Home</string>
     <string name="tool_basic">Basic</string>
     <string name="tool_advanced">Advanced</string>
     <string name="tool_history">History</string>
@@ -84,8 +83,6 @@
     <string name="history_empty">No history yet. Calculations show up here when you press =.</string>
 
     <!-- Common -->
-    <string name="action_back">Back</string>
-    <string name="action_refresh">Refresh</string>
     <string name="action_ok">OK</string>
     <string name="action_cancel">Cancel</string>
 
@@ -138,7 +135,6 @@
     <string name="bmi_category_obese">Obese</string>
 
     <string name="age_title">Age</string>
-    <string name="age_dob">Date of birth</string>
     <string name="age_weekday">Weekday of birth</string>
     <string name="age_to_next">Days to next birthday</string>
     <string name="age_to_next_today">Today!</string>
@@ -170,9 +166,6 @@
     <string name="ovulation_disclaimer">Estimator only. Cycles vary; this is not medical advice and not a contraception tool.</string>
 
     <!-- Launcher shortcuts -->
-    <string name="shortcut_new_calc_short">New calc</string>
-    <string name="shortcut_new_calc_long">New calculation</string>
-    <string name="shortcut_units_short">Units</string>
     <string name="shortcut_units_long">Unit converter</string>
     <string name="shortcut_floating_short">Float</string>
     <string name="shortcut_floating_long">Floating calculator</string>

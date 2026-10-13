@@ -65,6 +65,15 @@ object OvulationCalculator {
     }
 }
 
+/**
+ * Result of [OvulationCalculator.compute]; every date is an estimate.
+ *
+ * @property ovulation Estimated ovulation day.
+ * @property fertileStart First day of the fertile window.
+ * @property fertileEnd Last day of the fertile window.
+ * @property nextPeriod Estimated start of the next period.
+ * @property estimatedDueDate Due date if conception happens this cycle.
+ */
 data class OvulationResult(
     val ovulation: LocalDate,
     val fertileStart: LocalDate,

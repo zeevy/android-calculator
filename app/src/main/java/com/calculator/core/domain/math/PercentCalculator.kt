@@ -1,5 +1,7 @@
 package com.calculator.core.domain.math
 
+import kotlin.math.abs
+
 /**
  * Pure-Kotlin helpers for the three percentage scenarios most people
  * reach for: scaling a value by a percent, deriving a percent from two
@@ -9,7 +11,11 @@ object PercentCalculator {
     /** `percent`% of `value` (e.g. 20% of 250 = 50). */
     fun percentOf(percent: Double, value: Double): Double = percent / 100.0 * value
 
-    /** What percent is `part` of `whole` (e.g. 30 of 120 = 25%). */
+    /**
+     * What percent is `part` of `whole` (e.g. 30 of 120 = 25%).
+     *
+     * @throws IllegalArgumentException when [whole] is 0.
+     */
     fun whatPercent(part: Double, whole: Double): Double {
         require(whole != 0.0) { "whole must not be zero" }
         return part / whole * 100.0
@@ -17,10 +23,16 @@ object PercentCalculator {
 
     /**
      * Percent change from `from` to `to` (e.g. 80 → 100 = +25%, 100 →
-     * 80 = -20%). The base for the percentage is the FROM side.
+     * 80 = -20%). The base is the size of the FROM side, so a fall from
+     * -100 to -150 is -50%, not +50%.
+     *
+     * @throws IllegalArgumentException when [from] is 0.
      */
-    fun percentChange(from: Double, to: Double): Double {
+    fun percentChange(
+        from: Double,
+        to: Double,
+    ): Double {
         require(from != 0.0) { "from must not be zero" }
-        return (to - from) / from * 100.0
+        return (to - from) / abs(from) * 100.0
     }
 }

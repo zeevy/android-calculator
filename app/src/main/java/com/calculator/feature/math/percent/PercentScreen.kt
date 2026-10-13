@@ -4,7 +4,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -40,7 +39,7 @@ import kotlin.math.absoluteValue
 fun PercentScreen(onOpenMenu: () -> Unit) {
     // Saveable, so the mode and typed values survive the app being
     // killed in the background.
-    var mode by rememberSaveable { mutableIntStateOf(0) }
+    var mode by rememberSaveable { mutableStateOf(PercentMode.PercentOf) }
     var a by rememberSaveable { mutableStateOf("20") }
     var b by rememberSaveable { mutableStateOf("250") }
     val input = remember(mode, a, b) { percentInput(mode, a, b) }
@@ -58,8 +57,8 @@ fun PercentScreen(onOpenMenu: () -> Unit) {
                     stringResource(R.string.percent_mode_what),
                     stringResource(R.string.percent_mode_change),
                 ),
-                selectedIndex = mode,
-                onSelect = { mode = it },
+                selectedIndex = mode.ordinal,
+                onSelect = { mode = PercentMode.entries[it] },
             )
             // Input labels change with mode; the value strings stay so
             // the user can flip between modes and keep their numbers.
@@ -68,7 +67,7 @@ fun PercentScreen(onOpenMenu: () -> Unit) {
                 label = stringResource(labelA),
                 value = a,
                 onValueChange = { a = it },
-                suffix = if (mode == 0) "%" else null,
+                suffix = if (mode == PercentMode.PercentOf) "%" else null,
                 error = input.errorFor(labelA),
             )
             LifeCalcNumberField(
@@ -92,9 +91,9 @@ fun PercentScreen(onOpenMenu: () -> Unit) {
                     val result = input.value
                     val (label, formatted) =
                         when (mode) {
-                            0 -> stringResource(R.string.percent_result_value) to plain(result)
-                            1 -> stringResource(R.string.percent_result_percent) to "${plain(result)} %"
-                            else -> {
+                            PercentMode.PercentOf -> stringResource(R.string.percent_result_value) to plain(result)
+                            PercentMode.WhatPercent -> stringResource(R.string.percent_result_percent) to "${plain(result)} %"
+                            PercentMode.Change -> {
                                 // Lead the change value with an explicit
                                 // +/- so direction reads at a glance.
                                 val sign = if (result >= 0) "+" else "-"

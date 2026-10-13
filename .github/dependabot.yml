@@ -11,14 +11,9 @@ updates:
       time: "08:00"
       timezone: Asia/Kolkata
     open-pull-requests-limit: 10
+    # A dependency joins the first group that matches, so the narrow
+    # androidx groups (compose, hilt) come before the catch-all androidx.
     groups:
-      androidx:
-        patterns:
-          - "androidx.*"
-      kotlin:
-        patterns:
-          - "org.jetbrains.kotlin*"
-          - "org.jetbrains.kotlinx*"
       compose:
         patterns:
           - "androidx.compose*"
@@ -26,10 +21,18 @@ updates:
         patterns:
           - "com.google.dagger:hilt-*"
           - "androidx.hilt:*"
+      androidx:
+        patterns:
+          - "androidx.*"
+      kotlin:
+        patterns:
+          - "org.jetbrains.kotlin*"
+          - "org.jetbrains.kotlinx*"
       test-libraries:
         patterns:
           - "org.junit*"
           - "io.mockk:*"
+          - "io.kotest:*"
           - "app.cash.turbine:*"
           - "org.robolectric:*"
     labels:

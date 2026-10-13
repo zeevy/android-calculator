@@ -32,6 +32,16 @@ object DateDiffCalculator {
     fun addOffset(date: LocalDate, days: Int): LocalDate = date.plusDays(days.toLong())
 }
 
+/**
+ * Result of [DateDiffCalculator.difference].
+ *
+ * @property years Whole years between the two dates.
+ * @property months Months after the whole years.
+ * @property days Days after the whole months.
+ * @property totalDays All days between the dates.
+ * @property totalWeeks Whole weeks in [totalDays].
+ * @property weekRemainderDays Days left after [totalWeeks].
+ */
 data class DateDiffResult(
     val years: Int,
     val months: Int,

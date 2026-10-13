@@ -17,7 +17,7 @@
                                    the user starts the overlay from Settings.
       Users opt in from Settings; SYSTEM_ALERT_WINDOW is granted through
       the system Settings flow we open on demand.
-    - Auto Backup is enabled (backupAgent rules in backup_rules.xml) so user
+    - Auto Backup is enabled (rules in data_extraction_rules.xml) so user
       preferences and history survive a reinstall.
     - The activity declares a Material 3 SplashScreen theme; the theme then
       transitions to the app theme inside MainActivity once Compose attaches.
@@ -34,7 +34,6 @@
         android:name=".CalculatorApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"

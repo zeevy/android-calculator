@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Android 12+ data extraction rules. Mirrors `backup_rules.xml` because
-  the calculator stores no PII; both cloud backup and device-to-device
-  transfer include the same data.
+  Backup rules (the app's minimum is Android 12, which reads only this
+  file). The app stores settings and per-tool choices (DataStore), history
+  and unit pairs (Room) and up to three recent tool ids (SharedPreferences;
+  health tools are never saved there). None of it is sensitive, so both
+  cloud backup and device-to-device transfer include all of it.
 
   See: https://developer.android.com/about/versions/12/backup-restore
 -->

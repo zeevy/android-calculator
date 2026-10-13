@@ -85,7 +85,8 @@ fun UnitConverterScreen(
         // From / Swap / To stack. Both fields are editable; the
         // ViewModel tracks `lastEdited` and rewrites the OTHER side
         // on every keystroke.
-        FromCard(
+        ConverterCard(
+            label = stringResource(R.string.units_from),
             unit = state.fromUnit,
             value = state.fromText,
             onValueChange = viewModel::setFromInput,
@@ -109,7 +110,8 @@ fun UnitConverterScreen(
             }
         }
         Spacer(Modifier.size(12.dp))
-        ToCard(
+        ConverterCard(
+            label = stringResource(R.string.units_to),
             unit = state.toUnit,
             value = state.toText,
             onValueChange = viewModel::setToInput,
@@ -239,12 +241,17 @@ private fun CategoryDropdown(
 }
 
 /**
- * Top "From" card with the editable number field. Custom
- * `decorationBox` paints a faded "0" placeholder when the field is
- * empty - BasicTextField doesn't expose Material's built-in placeholder.
+ * One side of the converter (From or To): unit chooser and an editable
+ * number field. Whichever side the user types into becomes the source;
+ * the ViewModel rewrites the other side. Custom `decorationBox` paints a
+ * faded "0" placeholder when the field is empty - BasicTextField doesn't
+ * expose Material's built-in placeholder.
+ *
+ * @param label "From" or "To", shown on the unit chooser.
  */
 @Composable
-private fun FromCard(
+private fun ConverterCard(
+    label: String,
     unit: ConverterUnit?,
     value: String,
     onValueChange: (String) -> Unit,
@@ -252,64 +259,7 @@ private fun FromCard(
 ) {
     UnitCard {
         Column(modifier = Modifier.padding(16.dp)) {
-            UnitChooser(unit = unit, onClick = onPickUnit, label = stringResource(R.string.units_from))
-            Spacer(Modifier.size(12.dp))
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                singleLine = true,
-                textStyle =
-                    MaterialTheme.typography.displaySmall.copy(
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.End,
-                    ),
-                keyboardOptions =
-                    KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                cursorBrush =
-                    androidx.compose.ui.graphics
-                        .SolidColor(MaterialTheme.colorScheme.primary),
-                modifier = Modifier.fillMaxWidth(),
-                decorationBox = { inner ->
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.CenterEnd,
-                    ) {
-                        if (value.isEmpty()) {
-                            Text(
-                                text = "0",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style =
-                                    MaterialTheme.typography.displayMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                    ),
-                            )
-                        }
-                        inner()
-                    }
-                },
-            )
-        }
-    }
-}
-
-/**
- * Symmetric to [FromCard]: same editable text field, same placeholder,
- * same styling. Whichever side the user types into becomes the source
- * for conversion - the ViewModel rewrites the other side on every
- * keystroke. The `decorationBox` paints the faded "0" placeholder
- * because BasicTextField doesn't expose Material's built-in one.
- */
-@Composable
-private fun ToCard(
-    unit: ConverterUnit?,
-    value: String,
-    onValueChange: (String) -> Unit,
-    onPickUnit: () -> Unit,
-) {
-    UnitCard {
-        Column(modifier = Modifier.padding(16.dp)) {
-            UnitChooser(unit = unit, onClick = onPickUnit, label = stringResource(R.string.units_to))
+            UnitChooser(unit = unit, onClick = onPickUnit, label = label)
             Spacer(Modifier.size(12.dp))
             BasicTextField(
                 value = value,

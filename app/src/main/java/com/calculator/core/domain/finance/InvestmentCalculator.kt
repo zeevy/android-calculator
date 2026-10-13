@@ -26,6 +26,13 @@ import kotlin.math.pow
  * is the display layer's responsibility.
  */
 object InvestmentCalculator {
+    /**
+     * Value of a monthly SIP of [monthlyAmount] for [years] at [annualRatePercent],
+     * each payment made at the start of its month.
+     *
+     * @throws IllegalArgumentException when an amount or rate is negative or [years] is not positive.
+     * @throws ResultTooLargeException when the value overflows a Double.
+     */
     fun sip(
         monthlyAmount: Double,
         annualRatePercent: Double,
@@ -53,6 +60,14 @@ object InvestmentCalculator {
         )
     }
 
+    /**
+     * Value of [principal] invested once for [years] at [annualRatePercent],
+     * compounded [timesPerYear] times a year.
+     *
+     * @throws IllegalArgumentException when an amount or rate is negative, [years] is not positive
+     *   or [timesPerYear] is below 1.
+     * @throws ResultTooLargeException when the value overflows a Double.
+     */
     fun lumpSum(
         principal: Double,
         annualRatePercent: Double,
@@ -74,6 +89,13 @@ object InvestmentCalculator {
     }
 }
 
+/**
+ * Result of [InvestmentCalculator], in the investment's currency.
+ *
+ * @property maturity Value at the end of the term.
+ * @property invested Total paid in.
+ * @property gains [maturity] minus [invested].
+ */
 data class InvestmentResult(
     val maturity: Double,
     val invested: Double,

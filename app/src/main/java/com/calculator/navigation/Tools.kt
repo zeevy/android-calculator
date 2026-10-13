@@ -32,6 +32,8 @@ import java.util.Locale
  * @property icon Tile icon.
  * @property indiaOnly True for a tool offered only on devices set up for
  *   India (see [isIndia]).
+ * @property keepOutOfRecents True for a tool whose use is private (health): never
+ *   saved as a recent tool or shown as a launcher shortcut.
  */
 internal data class Tool(
     val id: String,
@@ -40,6 +42,7 @@ internal data class Tool(
     @param:StringRes val longLabel: Int = label,
     val icon: ImageVector,
     val indiaOnly: Boolean = false,
+    val keepOutOfRecents: Boolean = false,
 )
 
 /**
@@ -75,7 +78,7 @@ internal val Tools: List<Tool> =
         Tool("age", AgeRoute, R.string.tool_age, icon = Icons.Filled.Cake),
         Tool("datediff", DateDiffRoute, R.string.tool_date_diff, icon = Icons.Filled.DateRange),
         Tool("timezone", TimezoneRoute, R.string.tool_timezone, icon = Icons.Filled.Public),
-        Tool("ovulation", OvulationRoute, R.string.tool_ovulation, icon = Icons.Filled.Favorite),
+        Tool("ovulation", OvulationRoute, R.string.tool_ovulation, icon = Icons.Filled.Favorite, keepOutOfRecents = true),
         Tool("tape", TapeRoute, R.string.tool_tape, icon = Icons.AutoMirrored.Filled.Notes),
     )
 

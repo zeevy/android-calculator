@@ -4,7 +4,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -38,11 +37,10 @@ import com.calculator.core.designsystem.component.errorFor
 fun InvestmentScreen(onOpenMenu: () -> Unit) {
     // Saveable, so the mode and typed values survive the app being
     // killed in the background.
-    var mode by rememberSaveable { mutableIntStateOf(0) } // 0 = SIP, 1 = lump-sum
+    var lumpSum by rememberSaveable { mutableStateOf(false) }
     var amount by rememberSaveable { mutableStateOf("5000") }
     var rate by rememberSaveable { mutableStateOf("12") }
     var years by rememberSaveable { mutableStateOf("10") }
-    val lumpSum = mode == 1
     val input = remember(lumpSum, amount, rate, years) { investmentInput(lumpSum, amount, rate, years) }
     val amountLabel = investmentAmountLabel(lumpSum)
     val scheme = MaterialTheme.colorScheme
@@ -58,8 +56,8 @@ fun InvestmentScreen(onOpenMenu: () -> Unit) {
                     stringResource(R.string.investment_mode_sip),
                     stringResource(R.string.investment_mode_lumpsum),
                 ),
-                selectedIndex = mode,
-                onSelect = { mode = it },
+                selectedIndex = if (lumpSum) 1 else 0,
+                onSelect = { lumpSum = it == 1 },
             )
             LifeCalcNumberField(
                 label = stringResource(amountLabel),

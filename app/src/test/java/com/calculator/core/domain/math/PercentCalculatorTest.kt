@@ -28,6 +28,9 @@ class PercentCalculatorTest {
     fun `percent change going down is negative`() {
         assertEquals(-20.0, PercentCalculator.percentChange(100.0, 80.0), 1e-9)
         assertEquals(-100.0, PercentCalculator.percentChange(50.0, 0.0), 1e-9)
+        // A fall from a negative start is still a fall.
+        assertEquals(-50.0, PercentCalculator.percentChange(-100.0, -150.0), 1e-9)
+        assertEquals(50.0, PercentCalculator.percentChange(-100.0, -50.0), 1e-9)
     }
 
     @Test

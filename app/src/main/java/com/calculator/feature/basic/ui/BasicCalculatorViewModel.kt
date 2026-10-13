@@ -229,8 +229,13 @@ class BasicCalculatorViewModel
                 ).also(::persist)
             }
 
-        private fun commit() =
+        private fun commit() {
+            // update() may run its block more than once when it races, so the
+            // block only computes the new state; the tape and history writes
+            // happen once, after it.
+            var record: (() -> Unit)? = null
             _state.update { current ->
+                record = null
                 if (current.expression.isBlank()) return@update current
 
                 val (toEvaluate, repeatToken) = buildEquationToEvaluate(current)
@@ -251,12 +256,14 @@ class BasicCalculatorViewModel
                         // none of those are identities.
                         val isIdentity = toEvaluate == canonicalResult
                         if (!isIdentity) {
-                            recordCommit(
-                                expression = toEvaluate,
-                                result = canonicalResult,
-                                scientific = current.scientific,
-                                isRepeat = current.pendingRepeat != null,
-                            )
+                            record = {
+                                recordCommit(
+                                    expression = toEvaluate,
+                                    result = canonicalResult,
+                                    scientific = current.scientific,
+                                    isRepeat = current.pendingRepeat != null,
+                                )
+                            }
                         }
                         current
                             .copy(
@@ -297,6 +304,8 @@ class BasicCalculatorViewModel
                             ).also(::persist)
                 }
             }
+            record?.invoke()
+        }
 
         /**
          * Fan a successful `=` out to the session tape and the durable

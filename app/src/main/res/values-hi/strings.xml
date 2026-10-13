@@ -70,8 +70,6 @@
     <string name="history_empty">अभी कोई इतिहास नहीं. = दबाने पर गणनाएँ यहाँ दिखेंगी.</string>
 
     <!-- Common -->
-    <string name="action_back">वापस</string>
-    <string name="action_refresh">ताज़ा करें</string>
     <string name="action_ok">ठीक है</string>
     <string name="action_cancel">रद्द करें</string>
 
@@ -124,7 +122,6 @@
     <string name="bmi_category_obese">मोटापा</string>
 
     <string name="age_title">आयु</string>
-    <string name="age_dob">जन्म तिथि</string>
     <string name="age_weekday">जन्म का दिन</string>
     <string name="age_to_next">अगले जन्मदिन तक</string>
     <string name="age_to_next_today">आज ही!</string>
@@ -156,9 +153,6 @@
     <string name="ovulation_disclaimer">केवल अनुमानक है. चक्र अलग-अलग होते हैं; यह चिकित्सीय सलाह नहीं है और गर्भनिरोधक उपकरण नहीं है.</string>
 
     <!-- Launcher shortcuts -->
-    <string name="shortcut_new_calc_short">नई गणना</string>
-    <string name="shortcut_new_calc_long">नई गणना</string>
-    <string name="shortcut_units_short">इकाइयाँ</string>
     <string name="shortcut_units_long">इकाई कनवर्टर</string>
 
     <!-- History extras -->
@@ -351,7 +345,6 @@
     <!-- Strings added with the tools that came after the first Hindi pass -->
     <string name="basic_copied">क्लिपबोर्ड पर कॉपी किया गया</string>
     <string name="basic_paste_no_number">क्लिपबोर्ड पर कोई संख्या नहीं मिली</string>
-    <string name="tool_home">होम</string>
     <string name="tool_tipsplit">टिप और बँटवारा</string>
     <string name="tool_investment">निवेश</string>
     <string name="tool_percent">प्रतिशत</string>

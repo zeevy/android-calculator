@@ -7,15 +7,12 @@ import com.calculator.core.common.input.valueOr
 import com.calculator.core.domain.math.PercentCalculator
 import java.util.Locale
 
-/**
- * Label ids of the first and second field for a percentage [mode]:
- * 0 is "X% of Y", 1 is "X of Y is what %", 2 is "% change A to B".
- */
-internal fun percentLabels(mode: Int): Pair<Int, Int> =
+/** Label ids of the first and second field for a percentage [mode]. */
+internal fun percentLabels(mode: PercentMode): Pair<Int, Int> =
     when (mode) {
-        0 -> R.string.percent_label_percent to R.string.percent_label_value
-        1 -> R.string.percent_label_part to R.string.percent_label_whole
-        else -> R.string.percent_label_from to R.string.percent_label_to
+        PercentMode.PercentOf -> R.string.percent_label_percent to R.string.percent_label_value
+        PercentMode.WhatPercent -> R.string.percent_label_part to R.string.percent_label_whole
+        PercentMode.Change -> R.string.percent_label_from to R.string.percent_label_to
     }
 
 /**
@@ -23,7 +20,7 @@ internal fun percentLabels(mode: Int): Pair<Int, Int> =
  * [mode], or says which field is wrong.
  */
 internal fun percentInput(
-    mode: Int,
+    mode: PercentMode,
     a: String,
     b: String,
     locale: Locale = Locale.getDefault(),
@@ -31,13 +28,13 @@ internal fun percentInput(
     val (labelA, labelB) = percentLabels(mode)
     val x = readNumber(a, labelA, locale).valueOr { return it }
     val y = readNumber(b, labelB, locale).valueOr { return it }
-    // Mode 1 divides by the whole and mode 2 by the starting value, so
+    // WhatPercent divides by the whole and Change by the starting value, so
     // that field can't be 0. A null result means it was 0.
     val (result, baseLabel) =
         when (mode) {
-            0 -> PercentCalculator.percentOf(x, y) to labelB
-            1 -> (if (y == 0.0) null else PercentCalculator.whatPercent(x, y)) to labelB
-            else -> (if (x == 0.0) null else PercentCalculator.percentChange(x, y)) to labelA
+            PercentMode.PercentOf -> PercentCalculator.percentOf(x, y) to labelB
+            PercentMode.WhatPercent -> (if (y == 0.0) null else PercentCalculator.whatPercent(x, y)) to labelB
+            PercentMode.Change -> (if (x == 0.0) null else PercentCalculator.percentChange(x, y)) to labelA
         }
     return when {
         result == null -> InputResult.Invalid(baseLabel, R.string.input_error_zero)

@@ -252,17 +252,15 @@ class FloatingCalculatorService : Service() {
 
     private fun startForegroundCompat() {
         val nm = getSystemService(NotificationManager::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // IMPORTANCE_LOW: silent / no heads-up; the notification is
-            // here for the system requirement, not the user.
-            val channel = NotificationChannel(
-                NOTIFICATION_CHANNEL,
-                getString(R.string.floating_channel_name),
-                NotificationManager.IMPORTANCE_LOW,
-            )
-            channel.setShowBadge(false)
-            nm.createNotificationChannel(channel)
-        }
+        // IMPORTANCE_LOW: silent / no heads-up; the notification is
+        // here for the system requirement, not the user.
+        val channel = NotificationChannel(
+            NOTIFICATION_CHANNEL,
+            getString(R.string.floating_channel_name),
+            NotificationManager.IMPORTANCE_LOW,
+        )
+        channel.setShowBadge(false)
+        nm.createNotificationChannel(channel)
 
         // Resolves to the app's launcher activity, so this feature does
         // not depend on the activity class.

@@ -13,6 +13,11 @@ import java.time.temporal.ChronoUnit
  * (dob, today), so the unit test can pass an explicit "today".
  */
 object AgeCalculator {
+    /**
+     * Age on [today] of someone born on [dob].
+     *
+     * @throws IllegalArgumentException when [dob] is after [today].
+     */
     fun compute(dob: LocalDate, today: LocalDate): AgeResult {
         require(!dob.isAfter(today)) { "date of birth is in the future" }
         val period = Period.between(dob, today)
@@ -27,24 +32,30 @@ object AgeCalculator {
     }
 
     /**
-     * Next anniversary of [dob] on or after [today]. Special-cases Feb
-     * 29 birthdays in non-leap years by mapping to Feb 28 - matches
-     * what most calendar apps do.
+     * Next anniversary of [dob] on or after [today]. A Feb 29 birthday
+     * falls on Feb 28 in years that are not leap years (as most calendar
+     * apps do), and on Feb 29 again in leap years.
      */
-    private fun nextBirthdayOnOrAfter(dob: LocalDate, today: LocalDate): LocalDate {
-        val candidate =
-            try {
-                dob.withYear(today.year)
-            } catch (_: java.time.DateTimeException) {
-                // Feb 29 in a non-leap year -> fall back to Feb 28.
-                dob.withYear(today.year).withDayOfMonth(FEB_LAST_DAY_NON_LEAP)
-            }
-        return if (!candidate.isBefore(today)) candidate else candidate.plusYears(1)
+    private fun nextBirthdayOnOrAfter(
+        dob: LocalDate,
+        today: LocalDate,
+    ): LocalDate {
+        // Pick the year first; withYear() then moves Feb 29 to Feb 28 only
+        // when that year has no Feb 29.
+        val thisYear = dob.withYear(today.year)
+        return if (!thisYear.isBefore(today)) thisYear else dob.withYear(today.year + 1)
     }
-
-    private const val FEB_LAST_DAY_NON_LEAP = 28
 }
 
+/**
+ * Result of [AgeCalculator.compute].
+ *
+ * @property years Whole years since birth.
+ * @property months Months after the whole years.
+ * @property days Days after the whole months.
+ * @property weekdayOfBirth Day of the week the person was born on.
+ * @property daysToNextBirthday Days until the next birthday; 0 on the birthday.
+ */
 data class AgeResult(
     val years: Int,
     val months: Int,
