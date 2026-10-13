@@ -26,15 +26,16 @@ class EmiCalculatorTest {
 
     @Test
     fun `amortisation balance lands at zero on the last row`() {
-        val r = EmiCalculator.emi(principal = 50_000.0, annualRatePercent = 12.0, months = 24)
-        assertEquals(0.0, r.amortisation.last().balanceAfter, 1e-6)
+        val rows = EmiCalculator.schedule(principal = 50_000.0, annualRatePercent = 12.0, months = 24)
+        assertEquals(0.0, rows.last().balanceAfter, 1e-6)
     }
 
     @Test
     fun `amortisation rows sum to the total payment within rounding`() {
         val r = EmiCalculator.emi(principal = 200_000.0, annualRatePercent = 7.5, months = 60)
+        val rows = EmiCalculator.schedule(principal = 200_000.0, annualRatePercent = 7.5, months = 60)
         val sumPaid =
-            r.amortisation.sumOf { it.principalPaid + it.interestPaid }
+            rows.sumOf { it.principalPaid + it.interestPaid }
         assertTrue(abs(sumPaid - r.totalPayment) < 1.0) {
             "sum=$sumPaid total=${r.totalPayment}"
         }

@@ -44,9 +44,9 @@ class MainActivity : ComponentActivity() {
 
         // Launcher shortcuts pass an extra here so the nav host can
         // jump straight to that destination instead of starting on the
-        // basic calculator. Reading once at onCreate is enough because
-        // shortcuts always relaunch the task (singleTask in the manifest).
-        val shortcut = intent?.getStringExtra(SHORTCUT_DESTINATION)
+        // basic calculator. Only on a fresh start: after the process was
+        // killed, the restored back stack already shows where the user was.
+        val shortcut = if (savedInstanceState == null) intent?.getStringExtra(SHORTCUT_DESTINATION) else null
 
         setContent {
             ThemedCalculatorRoot(startDestinationHint = shortcut, viewModel = settingsViewModel)

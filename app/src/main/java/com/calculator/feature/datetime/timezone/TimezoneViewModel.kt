@@ -1,5 +1,6 @@
 package com.calculator.feature.datetime.timezone
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.calculator.core.data.settings.SettingsRepository
@@ -36,14 +37,23 @@ class TimezoneViewModel
     @Inject
     constructor(
         private val settings: SettingsRepository,
+        private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
         private val _state =
             MutableStateFlow(
                 // Seed with `now` so the screen renders a useful conversion on
                 // first frame instead of midnight. Both sides start at the
                 // same instant but in different zones - recompute() will
-                // restore consistency on first emit.
-                TimezoneUiState(fromTime = LocalDateTime.now(), toTime = LocalDateTime.now()),
+                // restore consistency on first emit. Times the user picked
+                // come back from SavedStateHandle after process death; the
+                // zones come back from settings in init.
+                TimezoneUiState(
+                    fromTime = savedStateHandle[KEY_FROM_TIME] ?: LocalDateTime.now(),
+                    toTime = savedStateHandle[KEY_TO_TIME] ?: LocalDateTime.now(),
+                    lastEdited =
+                        savedStateHandle.get<String>(KEY_LAST_EDITED)?.let { TimezoneUiState.Side.valueOf(it) }
+                            ?: TimezoneUiState.Side.From,
+                ),
             )
         val state: StateFlow<TimezoneUiState> = _state.asStateFlow()
 
@@ -152,6 +162,14 @@ class TimezoneViewModel
          * [TimezoneUiState.toTime]; otherwise convert in reverse.
          */
         private fun recompute() {
+            recomputeState()
+            val saved = _state.value
+            savedStateHandle[KEY_FROM_TIME] = saved.fromTime
+            savedStateHandle[KEY_TO_TIME] = saved.toTime
+            savedStateHandle[KEY_LAST_EDITED] = saved.lastEdited.name
+        }
+
+        private fun recomputeState() {
             _state.update { current ->
                 val fromZone = runCatching { ZoneId.of(current.fromZone) }.getOrNull() ?: return@update current
                 val toZone = runCatching { ZoneId.of(current.toZone) }.getOrNull() ?: return@update current
@@ -166,5 +184,11 @@ class TimezoneViewModel
                     }
                 }
             }
+        }
+
+        private companion object {
+            const val KEY_FROM_TIME = "timezone.fromTime"
+            const val KEY_TO_TIME = "timezone.toTime"
+            const val KEY_LAST_EDITED = "timezone.lastEdited"
         }
     }

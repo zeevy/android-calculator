@@ -1,5 +1,6 @@
 package com.calculator.feature.converter.unit
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.calculator.core.common.format.NumberFormatter
@@ -41,8 +42,20 @@ class UnitConverterViewModel
     constructor(
         private val repository: UnitConverterRepository,
         private val settings: SettingsRepository,
+        private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
-        private val _state = MutableStateFlow(UnitConverterUiState())
+        // Typed text survives process death through SavedStateHandle; the
+        // category and unit pair come back from settings and Room in init.
+        private val _state =
+            MutableStateFlow(
+                UnitConverterUiState(
+                    fromText = savedStateHandle[KEY_FROM_TEXT] ?: "",
+                    toText = savedStateHandle[KEY_TO_TEXT] ?: "",
+                    lastEdited =
+                        savedStateHandle.get<String>(KEY_LAST_EDITED)?.let { UnitConverterUiState.PickerSide.valueOf(it) }
+                            ?: UnitConverterUiState.PickerSide.From,
+                ),
+            )
         val state: StateFlow<UnitConverterUiState> = _state.asStateFlow()
 
         init {
@@ -211,6 +224,14 @@ class UnitConverterViewModel
          *   (after swap), so its formatted text is not parsed back.
          */
         private fun recompute(sourceValue: Double? = null) {
+            recomputeState(sourceValue)
+            val saved = _state.value
+            savedStateHandle[KEY_FROM_TEXT] = saved.fromText
+            savedStateHandle[KEY_TO_TEXT] = saved.toText
+            savedStateHandle[KEY_LAST_EDITED] = saved.lastEdited.name
+        }
+
+        private fun recomputeState(sourceValue: Double?) {
             _state.update { current ->
                 val from = current.fromUnit
                 val to = current.toUnit
@@ -238,6 +259,12 @@ class UnitConverterViewModel
                     }
                 }
             }
+        }
+
+        private companion object {
+            const val KEY_FROM_TEXT = "units.fromText"
+            const val KEY_TO_TEXT = "units.toText"
+            const val KEY_LAST_EDITED = "units.lastEdited"
         }
     }
 

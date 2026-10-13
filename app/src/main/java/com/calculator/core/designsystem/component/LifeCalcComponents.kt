@@ -1,5 +1,6 @@
 package com.calculator.core.designsystem.component
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -37,6 +38,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.calculator.R
+import com.calculator.core.common.input.InputResult
 
 /**
  * Shared page shell for every tool screen: themed canvas, a title row
@@ -154,6 +156,7 @@ fun LifeCalcSectionLabel(text: String) {
  * @param onValueChange Invoked on each keystroke with the new string.
  * @param suffix Optional trailing unit (e.g. "kg", "%"). Rendered to the
  *   right of the field at smaller weight so the number reads as primary.
+ * @param error Message shown under the field when its value is wrong.
  */
 @Composable
 fun LifeCalcNumberField(
@@ -161,6 +164,7 @@ fun LifeCalcNumberField(
     value: String,
     onValueChange: (String) -> Unit,
     suffix: String? = null,
+    error: String? = null,
 ) {
     val scheme = MaterialTheme.colorScheme
     Column {
@@ -195,8 +199,28 @@ fun LifeCalcNumberField(
                 )
             }
         }
+        if (error != null) {
+            Text(
+                text = error,
+                style = MaterialTheme.typography.bodySmall,
+                color = scheme.error,
+            )
+        }
     }
 }
+
+/**
+ * The message for [field] when this result says that field is wrong,
+ * or null. Pass it as a number field's `error`.
+ */
+@Suppress("SpreadOperator") // copies at most two format arguments, only while a field is wrong
+@Composable
+fun InputResult<*>.errorFor(
+    @StringRes field: Int,
+): String? =
+    (this as? InputResult.Invalid)
+        ?.takeIf { it.field == field }
+        ?.let { stringResource(it.message, *it.args.toTypedArray()) }
 
 /**
  * "Label .... value" output line; used in result cards.

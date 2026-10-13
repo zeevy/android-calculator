@@ -310,4 +310,14 @@
     <string name="settings_precision_description">Trades precision for speed - at 6 digits a result like 1/3 reads as 0.333333; at 16 it reads 0.3333333333333333. Engine default is 12.</string>
     <string name="settings_about_license_value">Apache 2.0</string>
     <string name="settings_about_github_value">zeevy/android-calculator</string>
+    <!-- Number field errors, shown under the field -->
+    <string name="input_error_required">Enter a value</string>
+    <string name="input_error_invalid">Not a valid number</string>
+    <string name="input_error_whole">Enter a whole number</string>
+    <string name="input_error_positive">Must be more than 0</string>
+    <string name="input_error_negative">Can\'t be negative</string>
+    <string name="input_error_range">Must be from %1$s to %2$s</string>
+    <string name="input_error_min">Must be at least %1$s</string>
+    <string name="input_error_max">Must be at most %1$s</string>
+    <string name="input_error_too_large">The result is too large</string>
 </resources>

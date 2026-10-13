@@ -1,7 +1,6 @@
 package com.calculator.core.domain.finance
 
 import kotlin.math.pow
-import kotlin.math.round
 
 /**
  * Equated Monthly Installment (EMI) for a fixed-rate amortising loan.
@@ -29,29 +28,41 @@ object EmiCalculator {
      * @throws IllegalArgumentException for a non-positive principal or tenure, or a negative rate.
      * @throws ResultTooLargeException when the EMI overflows a Double.
      */
-    fun emi(principal: Double, annualRatePercent: Double, months: Int): EmiResult {
+    fun emi(
+        principal: Double,
+        annualRatePercent: Double,
+        months: Int,
+    ): EmiResult {
         require(principal > 0) { "principal must be > 0" }
         require(months > 0) { "months must be > 0" }
         require(annualRatePercent >= 0) { "rate must be >= 0" }
-        if (annualRatePercent == 0.0) {
-            val flat = principal / months
-            return EmiResult(
-                emi = flat,
-                totalInterest = 0.0,
-                totalPayment = principal,
-                amortisation = flatAmortisation(principal, months, flat),
-            )
-        }
-        val r = annualRatePercent / 100.0 / MONTHS_PER_YEAR
-        val pow = (1.0 + r).pow(months)
-        val emi = (principal * r * pow / (pow - 1.0)).requireFinite()
-        return EmiResult(
-            emi = emi,
-            totalInterest = emi * months - principal,
-            totalPayment = emi * months,
-            amortisation = amortisation(principal, r, months, emi),
-        )
+        val emi =
+            if (annualRatePercent == 0.0) {
+                principal / months
+            } else {
+                val r = monthlyRate(annualRatePercent)
+                val pow = (1.0 + r).pow(months)
+                (principal * r * pow / (pow - 1.0)).requireFinite()
+            }
+        return EmiResult(emi = emi, totalInterest = emi * months - principal, totalPayment = emi * months)
     }
+
+    /**
+     * Month-by-month repayment schedule for the same loan as [emi], one
+     * row per month (index 1 is the first payment). Builds a list of
+     * [months] rows, so call it only when the schedule is shown.
+     *
+     * @throws IllegalArgumentException for the same inputs [emi] rejects.
+     * @throws ResultTooLargeException when the EMI overflows a Double.
+     */
+    fun schedule(
+        principal: Double,
+        annualRatePercent: Double,
+        months: Int,
+    ): List<AmortisationRow> =
+        amortisation(principal, monthlyRate(annualRatePercent), months, emi(principal, annualRatePercent, months).emi)
+
+    private fun monthlyRate(annualRatePercent: Double) = annualRatePercent / 100.0 / MONTHS_PER_YEAR
 
     private fun amortisation(
         principal: Double,
@@ -80,40 +91,33 @@ object EmiCalculator {
         }
     }
 
-    private fun flatAmortisation(
-        principal: Double,
-        months: Int,
-        flat: Double,
-    ): List<AmortisationRow> {
-        var balance = principal
-        return List(months) { idx ->
-            val pay = if (idx == months - 1) balance else flat
-            balance -= pay
-            AmortisationRow(
-                monthIndex = idx + 1,
-                principalPaid = pay,
-                interestPaid = 0.0,
-                balanceAfter = if (idx == months - 1) 0.0 else balance,
-            )
-        }
-    }
-
     private const val MONTHS_PER_YEAR = 12.0
 }
 
+/**
+ * Result of [EmiCalculator.emi], in the loan's currency.
+ *
+ * @property emi Monthly payment.
+ * @property totalInterest Interest paid over the whole tenure.
+ * @property totalPayment Principal plus interest.
+ */
 data class EmiResult(
     val emi: Double,
     val totalInterest: Double,
     val totalPayment: Double,
-    val amortisation: List<AmortisationRow>,
 )
 
+/**
+ * One month of [EmiCalculator.schedule].
+ *
+ * @property monthIndex Payment number, starting at 1.
+ * @property principalPaid Part of the payment that reduces the balance.
+ * @property interestPaid Part of the payment that is interest.
+ * @property balanceAfter Balance left after this payment; 0 after the last.
+ */
 data class AmortisationRow(
     val monthIndex: Int,
     val principalPaid: Double,
     val interestPaid: Double,
     val balanceAfter: Double,
 )
-
-/** Round to two decimals; visible in tests for stable assertions. */
-internal fun Double.round2(): Double = round(this * 100) / 100

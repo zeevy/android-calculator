@@ -229,4 +229,14 @@
     <!-- Tape extras -->
     <string name="tape_copy_line">पंक्ति कॉपी करें</string>
     <string name="tape_delete_line">पंक्ति हटाएँ</string>
+    <!-- Number field errors, shown under the field -->
+    <string name="input_error_required">मान दर्ज करें</string>
+    <string name="input_error_invalid">यह मान्य संख्या नहीं है</string>
+    <string name="input_error_whole">पूर्ण संख्या दर्ज करें</string>
+    <string name="input_error_positive">0 से अधिक होना चाहिए</string>
+    <string name="input_error_negative">ऋणात्मक नहीं हो सकता</string>
+    <string name="input_error_range">%1$s से %2$s के बीच होना चाहिए</string>
+    <string name="input_error_min">कम से कम %1$s होना चाहिए</string>
+    <string name="input_error_max">अधिक से अधिक %1$s होना चाहिए</string>
+    <string name="input_error_too_large">परिणाम बहुत बड़ा है</string>
 </resources>

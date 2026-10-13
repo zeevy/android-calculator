@@ -1,5 +1,6 @@
 package com.calculator.feature.converter.unit
 
+import androidx.lifecycle.SavedStateHandle
 import com.calculator.core.data.converter.UnitConverterRepository
 import com.calculator.core.data.settings.UserSettings
 import com.calculator.core.domain.converter.ConversionTable
@@ -35,7 +36,7 @@ class UnitConverterViewModelTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(dispatcher)
-        viewModel = UnitConverterViewModel(repo, settings)
+        viewModel = UnitConverterViewModel(repo, settings, SavedStateHandle())
     }
 
     @AfterEach
@@ -146,6 +147,20 @@ class UnitConverterViewModelTest {
             } finally {
                 Locale.setDefault(saved)
             }
+        }
+
+    @Test
+    fun `typed text comes back after process death`() =
+        runTest(dispatcher) {
+            viewModel.selectCategory(UnitCategory.Length)
+            viewModel.setFromInput("2500")
+            advanceUntilIdle()
+
+            val handle = SavedStateHandle(mapOf("units.fromText" to "2500", "units.lastEdited" to "From"))
+            val restored = UnitConverterViewModel(repo, settings, handle)
+            advanceUntilIdle()
+            assertEquals("2500", restored.state.value.fromText)
+            assertEquals("2.5", restored.state.value.toText)
         }
 
     @Test
