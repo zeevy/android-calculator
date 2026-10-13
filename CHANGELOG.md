@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-13
+
 ### Added
 
 - CAGR mode on the Investment screen: start value, end value and years give the yearly growth rate, the absolute return and the gain.
@@ -23,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The GST calculator is shown only on devices set up for India (an Indian locale, or India's time zone), in the tools menu and in launcher shortcuts.
 
 - History keeps the newest 1000 calculations. Older ones are removed when a new one is saved, so the History sheet stays fast.
+
+- AndroidX, Compose and the build tools are updated to their latest stable versions.
 
 ### Fixed
 
