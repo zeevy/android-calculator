@@ -8,7 +8,7 @@
 # Build toolchain
 agp = "9.3.2"
 kotlin = "2.4.10"
-ksp = "2.3.11"
+ksp = "2.3.12"
 java-toolchain = "17"
 
 # Android SDK
