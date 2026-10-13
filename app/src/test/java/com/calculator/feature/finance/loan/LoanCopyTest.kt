@@ -46,7 +46,23 @@ class LoanCopyTest {
     }
 
     private companion object {
-        val BANNED = listOf("apply", "qualify", "lender", "borrow", "loan us", "get a loan", "eligib", "approval")
+        val BANNED =
+            listOf(
+                "apply",
+                "qualify",
+                "lender",
+                "borrow",
+                "loan us",
+                "get a loan",
+                "eligib",
+                "approval",
+                // Hindi: apply, borrow, lender, eligible, approved.
+                "आवेदन",
+                "उधार",
+                "ऋणदाता",
+                "पात्र",
+                "स्वीकृत",
+            )
 
         private val StringEntry = Regex("""<string name="([^"]+)"[^>]*>(.*?)</string>""", RegexOption.DOT_MATCHES_ALL)
 

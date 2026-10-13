@@ -86,6 +86,16 @@ internal object RecentToolsRegistry {
 
     private fun refreshNow(app: Context) {
         val prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        // A private tool saved by an older version is dropped from the file
+        // too, so it does not stay in backups. Tools that are only hidden
+        // here (GST outside India) stay saved for when they come back.
+        val saved = prefs
+            .getString(KEY_LIST, "")
+            .orEmpty()
+            .split(",")
+            .filter { it.isNotBlank() }
+        val withoutPrivate = saved.filterNot { id -> Tools.any { it.id == id && it.keepOutOfRecents } }
+        if (withoutPrivate != saved) prefs.edit().putString(KEY_LIST, withoutPrivate.joinToString(",")).apply()
         syncShortcuts(app, readRecents(prefs))
     }
 
