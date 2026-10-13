@@ -85,9 +85,9 @@ fun ToolsMenuOverlay(
         scope.launch { sheetState.hide() }
         onDismiss()
     }
-    val calculator = rememberBasicCalculatorViewModel(navController)
-    val calculatorState by calculator.state.collectAsStateWithLifecycle()
     val currentEntry by navController.currentBackStackEntryAsState()
+    val calculator = rememberBasicCalculatorViewModel(navController, currentEntry)
+    val calculatorState by calculator.state.collectAsStateWithLifecycle()
     val launchFloating = rememberFloatingCalculatorLauncher()
     val locale = LocalConfiguration.current.locales[0]
     ModalBottomSheet(

@@ -10,6 +10,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
@@ -115,8 +116,8 @@ fun CalculatorNavHost(startDestinationHint: String? = null) {
         composable<BaseConverterRoute> {
             BaseConverterScreen(onOpenMenu = openMenu)
         }
-        composable<TapeRoute> {
-            val calculator = rememberBasicCalculatorViewModel(navController)
+        composable<TapeRoute> { entry ->
+            val calculator = rememberBasicCalculatorViewModel(navController, entry)
             TapeScreen(
                 onOpenMenu = openMenu,
                 onReuseExpression = { expr ->
@@ -156,11 +157,16 @@ fun CalculatorNavHost(startDestinationHint: String? = null) {
  * [BasicCalculatorRoute] is the start destination and [openTool] never
  * pops it, so the entry is always on the back stack. Tool pages use this
  * to hand an expression or a mode change to the calculator directly.
+ *
+ * @param current The entry on screen; looked up again when it changes.
  */
 @Composable
-internal fun rememberBasicCalculatorViewModel(navController: NavController): BasicCalculatorViewModel {
-    val entry = remember(navController) { navController.getBackStackEntry<BasicCalculatorRoute>() }
-    return hiltViewModel(entry)
+internal fun rememberBasicCalculatorViewModel(
+    navController: NavController,
+    current: NavBackStackEntry?,
+): BasicCalculatorViewModel {
+    val basicEntry = remember(current) { navController.getBackStackEntry<BasicCalculatorRoute>() }
+    return hiltViewModel(basicEntry)
 }
 
 /**
