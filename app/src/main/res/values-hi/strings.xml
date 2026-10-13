@@ -218,6 +218,7 @@
     <!-- Ovulation extras -->
     <string name="ovulation_section_estimates">अनुमान</string>
     <string name="ovulation_error_invalid">एलएमपी तिथि और 21 से 35 दिनों के बीच चक्र अवधि चुनें.</string>
+    <string name="ovulation_error_future">पिछली माहवारी भविष्य में शुरू नहीं हो सकती।</string>
     <string name="ovulation_cycle_days_format"><xliff:g id="days" example="28">%1$d</xliff:g> दिन</string>
     <string name="ovulation_fertile_window_format"><xliff:g id="start" example="Mon">%1$s</xliff:g> – <xliff:g id="end" example="Sat">%2$s</xliff:g></string>
 

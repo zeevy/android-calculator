@@ -36,14 +36,10 @@ object EmiCalculator {
         require(principal > 0) { "principal must be > 0" }
         require(months > 0) { "months must be > 0" }
         require(annualRatePercent >= 0) { "rate must be >= 0" }
-        val emi =
-            if (annualRatePercent == 0.0) {
-                principal / months
-            } else {
-                val r = monthlyRate(annualRatePercent)
-                val pow = (1.0 + r).pow(months)
-                (principal * r * pow / (pow - 1.0)).requireFinite()
-            }
+        val r = monthlyRate(annualRatePercent)
+        val pow = (1.0 + r).pow(months)
+        // A rate so small that 1 + r rounds to 1 behaves like no interest.
+        val emi = if (pow == 1.0) principal / months else (principal * r * pow / (pow - 1.0)).requireFinite()
         return EmiResult(emi = emi, totalInterest = emi * months - principal, totalPayment = emi * months)
     }
 

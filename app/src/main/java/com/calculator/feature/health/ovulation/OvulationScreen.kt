@@ -91,15 +91,14 @@ fun OvulationScreen(onOpenMenu: () -> Unit) {
         }
 
         // The last period cannot start in the future.
-        val valid =
-            !lmp.isAfter(LocalDate.now()) &&
-                cycleDays in OvulationCalculator.MIN_CYCLE_DAYS..OvulationCalculator.MAX_CYCLE_DAYS
+        val lmpInFuture = lmp.isAfter(LocalDate.now())
+        val valid = !lmpInFuture && cycleDays in OvulationCalculator.MIN_CYCLE_DAYS..OvulationCalculator.MAX_CYCLE_DAYS
         val result = if (valid) OvulationCalculator.compute(lmp, cycleDays) else null
         LifeCalcCard {
             LifeCalcSectionLabel(stringResource(R.string.ovulation_section_estimates))
             if (result == null) {
                 Text(
-                    text = stringResource(R.string.ovulation_error_invalid),
+                    text = stringResource(if (lmpInFuture) R.string.ovulation_error_future else R.string.ovulation_error_invalid),
                     style = MaterialTheme.typography.bodyMedium,
                     color = scheme.error,
                 )

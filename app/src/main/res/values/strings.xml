@@ -302,6 +302,7 @@
     <!-- Ovulation extras -->
     <string name="ovulation_section_estimates">Estimates</string>
     <string name="ovulation_error_invalid">Pick an LMP date and a cycle length between 21 and 35 days.</string>
+    <string name="ovulation_error_future">The last period can\'t start in the future.</string>
     <string name="ovulation_cycle_days_format"><xliff:g id="days" example="28">%1$d</xliff:g> days</string>
     <string name="ovulation_fertile_window_format"><xliff:g id="start" example="Mon">%1$s</xliff:g> – <xliff:g id="end" example="Sat">%2$s</xliff:g></string>
 

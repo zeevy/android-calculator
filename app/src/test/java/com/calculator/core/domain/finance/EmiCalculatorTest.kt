@@ -61,4 +61,10 @@ class EmiCalculatorTest {
             EmiCalculator.emi(principal = 100_000.0, annualRatePercent = 10.0, months = 1_000_000)
         }
     }
+
+    @Test
+    fun `a rate too small to change 1 + r gives the no-interest EMI`() {
+        val r = EmiCalculator.emi(principal = 120_000.0, annualRatePercent = 1e-13, months = 12)
+        assertEquals(10_000.0, r.emi, 1e-6)
+    }
 }
