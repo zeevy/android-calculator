@@ -163,25 +163,22 @@ class UnitConverterViewModel
         }
 
         /**
-         * Swap the From and To units. Carries the previous "result"
-         * (whichever side was the non-source) across to the new From
-         * field, and resets the source to From so the new To recomputes
-         * from it. So `1000 m → 1 km`, after swap: `1 km → 1,000 m`,
+         * Swap the From and To units. The To value moves to the new From
+         * field with its unit, and the source resets to From so the new To
+         * recomputes from it. So `1000 m → 1 km`, after swap: `1 km → 1,000 m`,
          * which is what the user expects when they tap the swap arrow
          * mid-conversion.
          */
         fun swap() {
-            val carried = _state.value.lastResult
+            // The old To unit becomes the From unit, so the old To text (the
+            // result, or what the user typed there) moves with it. Only a
+            // computed To side has an exact number to carry.
+            val carried = _state.value.lastResult.takeIf { _state.value.lastEdited == UnitConverterUiState.PickerSide.From }
             _state.update {
-                val previousResultText =
-                    when (it.lastEdited) {
-                        UnitConverterUiState.PickerSide.From -> it.toText
-                        UnitConverterUiState.PickerSide.To -> it.fromText
-                    }
                 it.copy(
                     fromUnit = it.toUnit,
                     toUnit = it.fromUnit,
-                    fromText = previousResultText,
+                    fromText = it.toText,
                     toText = "",
                     lastEdited = UnitConverterUiState.PickerSide.From,
                 )

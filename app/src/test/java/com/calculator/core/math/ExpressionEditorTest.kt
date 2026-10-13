@@ -37,6 +37,9 @@ class ExpressionEditorTest {
         assertEquals("9", ExpressionEditor.append("14", "9", afterEquals = true))
         assertEquals("14+", ExpressionEditor.append("14", "+", afterEquals = true))
         assertEquals("0.", ExpressionEditor.append("14", ".", afterEquals = true))
+        assertEquals("100%", ExpressionEditor.append("100", "%", afterEquals = true))
+        assertEquals("5!", ExpressionEditor.append("5", "!", afterEquals = true))
+        assertEquals("3^2", ExpressionEditor.append("3", "^2", afterEquals = true))
     }
 
     @Test

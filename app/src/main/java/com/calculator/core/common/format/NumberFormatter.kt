@@ -40,7 +40,7 @@ object NumberFormatter {
         minFractionDigits: Int = 0,
         maxFractionDigits: Int = 6,
     ): String {
-        if (value.isFinite() && locale.country == "IN" && locale.language in setOf("en", "hi")) {
+        if (value.isFinite() && usesIndianGrouping(locale)) {
             // Lakh / crore grouping (2-2-3 from the right). Java's
             // DecimalFormat only supports a single groupingSize, so the
             // integer half is grouped by hand. ICU on Android would also
@@ -62,10 +62,11 @@ object NumberFormatter {
         maxFractionDigits: Int,
     ): String {
         val symbols = DecimalFormatSymbols.getInstance(locale)
-        // Round once on the exact value (HALF_EVEN, like NumberFormat), so
-        // a fraction that rounds up carries into the integer part and
-        // values beyond the Long range keep every digit.
-        val rounded = BigDecimal(value).abs().setScale(maxFractionDigits, RoundingMode.HALF_EVEN)
+        // Round once on the shortest decimal form of the value (HALF_EVEN,
+        // like Android's NumberFormat), so a fraction that rounds up
+        // carries into the integer part and values beyond the Long range
+        // keep every digit.
+        val rounded = BigDecimal.valueOf(value).abs().setScale(maxFractionDigits, RoundingMode.HALF_EVEN)
         val plain = rounded.toPlainString()
         val intStr = plain.substringBefore('.')
         val frac = plain.substringAfter('.', "").trimEnd('0').padEnd(minFractionDigits, '0')
@@ -136,6 +137,10 @@ object NumberFormatter {
         // no-break space or use a different minus sign.
         if (symbols.groupingSeparator.isWhitespace()) input = input.replace(' ', symbols.groupingSeparator)
         if (symbols.minusSign != '-') input = input.replace('-', symbols.minusSign)
+        // Android's parser is lenient about stray separators; allow only
+        // digits, this locale's separators, the minus sign and bidi marks.
+        val allowed = setOf(symbols.decimalSeparator, symbols.groupingSeparator, symbols.minusSign, '\u061C', '\u200E', '\u200F')
+        if (input.any { !it.isDigit() && it !in allowed }) return null
         if (!hasValidGrouping(input, symbols, locale)) return null
         val position = ParsePosition(0)
         val number = NumberFormat.getNumberInstance(locale).parse(input, position) ?: return null
@@ -163,7 +168,7 @@ object NumberFormatter {
         val integerPart = input.substringBefore(symbols.decimalSeparator).removePrefix(symbols.minusSign.toString())
         val groups = integerPart.split(symbols.groupingSeparator)
         if (groups.size == 1) return true
-        val indian = locale.country == "IN" && locale.language in setOf("en", "hi")
+        val indian = usesIndianGrouping(locale)
         val middleSize = if (indian) 2 else WESTERN_GROUP
         return groups.first().length in 1..middleSize &&
             groups.drop(1).dropLast(1).all { it.length == middleSize } &&
@@ -173,7 +178,7 @@ object NumberFormatter {
     /**
      * Pull the first number out of pasted text and return it in the
      * engine's canonical form (`.` decimal, no grouping), for example
-     * `"₹1,234.50"` to `"1234.50"` in en-US or `"1.234,50 €"` to `"1234.50"`
+     * `"₹1,234.50"` to `"1234.5"` in en-US or `"1.234,50 €"` to `"1234.5"`
      * in de-DE. Currency symbols and units around it are skipped.
      *
      * @return the canonical number, or null if the text holds none.
@@ -182,16 +187,19 @@ object NumberFormatter {
         text: String,
         locale: Locale = Locale.getDefault(),
     ): String? {
-        val symbols = DecimalFormatSymbols.getInstance(locale)
-        val group = Regex.escape(symbols.groupingSeparator.toString())
-        val decimal = Regex.escape(symbols.decimalSeparator.toString())
-        val match = Regex("""-?\d(?:[\d ]|$group(?=\d))*(?:$decimal\d+)?""").find(text) ?: return null
-        val canonical =
-            match.value
-                .filterNot { it == ' ' || it == symbols.groupingSeparator }
-                .replace(symbols.decimalSeparator, '.')
-        return canonical.toBigDecimalOrNull()?.toPlainString()
+        // Digits with any common separators between them. The candidate is
+        // then read in the device locale; if that fails (for example
+        // "0.25" in de-DE, the form this app itself copies), it is read in
+        // the engine's own form.
+        val candidate = Regex("""-?\d(?:[\d.,' \u00A0\u202F]*\d)?""").find(text)?.value ?: return null
+        parseNumberInput(candidate, locale)?.let { return BigDecimal.valueOf(it).stripTrailingZeros().toPlainString() }
+        return candidate.takeIf { CanonicalNumber.matches(it) }
     }
+
+    /** True for India, where grouping is 2-2-3 (lakh and crore) in every Indian language. */
+    private fun usesIndianGrouping(locale: Locale) = locale.country == "IN"
+
+    private val CanonicalNumber = Regex("""-?\d+(?:\.\d+)?""")
 
     private const val INDIAN_LAST_GROUP = 3
     private const val WESTERN_GROUP = 3

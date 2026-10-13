@@ -16,8 +16,8 @@ import java.math.BigDecimal
  *  - Only one decimal point per number segment.
  *  - A leading `.` is auto-prefixed with `0`, so `.5` reads as `0.5`.
  *  - A lone leading `0` is replaced by the next digit.
- *  - After `=`, a digit starts a fresh expression and an operator chains
- *    on the result.
+ *  - After `=`, a digit starts a fresh expression; an operator, `%`, `!`
+ *    or `^2` chains on the result.
  *  - On `=`, open parentheses are closed and a trailing operator is
  *    completed with the number before it (`1 + =` is `1 + 1`).
  */
@@ -105,9 +105,11 @@ object ExpressionEditor {
         symbol: String,
     ): String {
         val isOperator = symbol.length == 1 && symbol[0] in ArithmeticOperators
+        // `%`, `!` and `^2` act on the result, so they chain too.
+        val actsOnResult = symbol.first() in "%!^"
         val startsFunction = symbol.length > 1 && symbol.last() == '('
         return when {
-            isOperator -> expr + symbol
+            isOperator || actsOnResult -> expr + symbol
             startsFunction -> symbol
             symbol == "." -> "0."
             else -> symbol

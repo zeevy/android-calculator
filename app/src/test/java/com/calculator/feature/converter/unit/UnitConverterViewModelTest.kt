@@ -133,6 +133,27 @@ class UnitConverterViewModelTest {
     }
 
     @Test
+    fun `swap after typing in the to field keeps the typed value with its unit`() =
+        runTest(dispatcher) {
+            advanceUntilIdle()
+            viewModel.selectCategory(UnitCategory.Length)
+            advanceUntilIdle()
+            viewModel.setToInput("1")
+            advanceUntilIdle()
+            assertEquals("1,000", viewModel.state.value.fromText)
+
+            viewModel.swap()
+            advanceUntilIdle()
+            assertEquals(
+                "km",
+                viewModel.state.value.fromUnit
+                    ?.symbol,
+            )
+            assertEquals("1", viewModel.state.value.fromText)
+            assertEquals("1,000", viewModel.state.value.toText)
+        }
+
+    @Test
     fun `a decimal comma reads as a decimal in de-DE`() =
         runTest(dispatcher) {
             val saved = Locale.getDefault()

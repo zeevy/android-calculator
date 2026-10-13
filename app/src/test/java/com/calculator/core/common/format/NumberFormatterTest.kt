@@ -101,8 +101,8 @@ class NumberFormatterTest {
 
     @Test
     fun `extractPastedNumber reads the number in the device locale`() {
-        assertEquals("1234.50", NumberFormatter.extractPastedNumber("Total ₹1,234.50 only", Locale.US))
-        assertEquals("1234.50", NumberFormatter.extractPastedNumber("1.234,50 €", Locale.GERMANY))
+        assertEquals("1234.5", NumberFormatter.extractPastedNumber("Total ₹1,234.50 only", Locale.US))
+        assertEquals("1234.5", NumberFormatter.extractPastedNumber("1.234,50 €", Locale.GERMANY))
         assertEquals("-7", NumberFormatter.extractPastedNumber("-7 apples", Locale.US))
         assertNull(NumberFormatter.extractPastedNumber("no digits", Locale.US))
     }
@@ -111,5 +111,29 @@ class NumberFormatterTest {
     fun `negative sign respects locale`() {
         val us = NumberFormatter.format(-1_234.5, Locale.US, maxFractionDigits = 1)
         assertEquals("-1,234.5", us)
+    }
+
+    @Test
+    fun `paste reads the app's own copied form in a comma-decimal locale`() {
+        assertEquals("0.25", NumberFormatter.extractPastedNumber("0.25", Locale.GERMANY))
+        assertEquals("1.5", NumberFormatter.extractPastedNumber("1.5+2 = 3.5", Locale.GERMANY))
+        assertEquals("1234.5", NumberFormatter.extractPastedNumber("1.234,5", Locale.GERMANY))
+    }
+
+    @Test
+    fun `en-IN rounds money like the other locales on a device`() {
+        assertEquals("2.68", NumberFormatter.money(2.675, Locale.forLanguageTag("en-IN")))
+    }
+
+    @Test
+    fun `every Indian locale accepts lakh grouping`() {
+        assertEquals(100000.0, NumberFormatter.parseNumberInput("1,00,000", Locale.forLanguageTag("ta-IN")))
+        assertEquals("1,00,000", NumberFormatter.format(100_000.0, Locale.forLanguageTag("ta-IN")))
+    }
+
+    @Test
+    fun `stray characters are rejected`() {
+        assertNull(NumberFormatter.parseNumberInput("1 0", Locale.US))
+        assertNull(NumberFormatter.parseNumberInput("1'000", Locale.US))
     }
 }
