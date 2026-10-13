@@ -29,6 +29,7 @@ import com.calculator.feature.finance.discount.DiscountScreen
 import com.calculator.feature.finance.gst.GstScreen
 import com.calculator.feature.finance.investment.InvestmentScreen
 import com.calculator.feature.finance.loan.LoanScreen
+import com.calculator.feature.finance.profit.ProfitScreen
 import com.calculator.feature.finance.tipsplit.TipSplitScreen
 import com.calculator.feature.health.bmi.BmiScreen
 import com.calculator.feature.health.ovulation.OvulationScreen
@@ -104,6 +105,9 @@ fun CalculatorNavHost(startDestinationHint: String? = null) {
         }
         composable<DiscountRoute> {
             DiscountScreen(onOpenMenu = openMenu)
+        }
+        composable<ProfitRoute> {
+            ProfitScreen(onOpenMenu = openMenu)
         }
         composable<TipSplitRoute> {
             TipSplitScreen(onOpenMenu = openMenu)

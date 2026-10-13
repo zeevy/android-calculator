@@ -3,6 +3,7 @@ package com.calculator.navigation
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Notes
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Cake
@@ -71,6 +72,7 @@ internal val Tools: List<Tool> =
         Tool("loan", LoanRoute, R.string.tool_loan, icon = Icons.Filled.AccountBalance),
         Tool("gst", GstRoute, R.string.tool_gst, icon = Icons.Filled.Receipt, indiaOnly = true),
         Tool("discount", DiscountRoute, R.string.tool_discount, icon = Icons.Filled.LocalOffer),
+        Tool("profit", ProfitRoute, R.string.tool_profit, R.string.shortcut_profit_long, Icons.AutoMirrored.Filled.TrendingUp),
         Tool("tipsplit", TipSplitRoute, R.string.tool_tipsplit, icon = Icons.Filled.Restaurant),
         Tool("investment", InvestmentRoute, R.string.tool_investment, icon = Icons.Filled.Savings),
         Tool(

@@ -85,6 +85,7 @@ Each is a focused screen with its own inputs and outputs. All of them open from 
 - **Loan / EMI** - principal, rate, tenure → EMI, total interest, amortisation table.
 - **GST** (India) - amount + rate (5/12/18/28% presets) → CGST, SGST/IGST, net & gross. Shown only on devices set up for India (section 11).
 - **Discount** - MRP + discount % → savings + final price; reverse calc (final + MRP → %).
+- **Profit** - cost price + selling price → profit or loss, markup % (on cost), margin % (on selling price); or cost + markup % / margin % → selling price and profit. A loss shows as "Loss" with loss % on cost; a margin of 100 % or more is an input error.
 - **Tip & split** - bill + tip + number of people → tip, total, per-person share, with an option to round up.
 - **Investment** - SIP (monthly amount) or lump sum + annual rate + tenure → total invested, estimated gains, maturity value; CAGR mode: start value + end value + tenure → CAGR %, absolute return %, gain.
 - **Deposits** (India) - FD (amount, rate, years + months, compounding monthly/quarterly/half-yearly/yearly), RD (monthly deposit, rate, months) and PPF (yearly deposit 500 to 1,50,000, rate, 15 years) → maturity, total interest, total deposited; PPF also shows a year-by-year table. FD follows the bank rules: simple interest below 6 months and for the months after the last full period. RD compounds every quarter. PPF assumes each deposit by 5 April. Shown only on devices set up for India (section 11).

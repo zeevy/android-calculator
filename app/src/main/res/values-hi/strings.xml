@@ -30,6 +30,7 @@
     <string name="tool_loan">ऋण</string>
     <string name="tool_gst">जीएसटी</string>
     <string name="tool_discount">छूट</string>
+    <string name="tool_profit">लाभ</string>
     <string name="tool_bmi">बीएमआई</string>
     <string name="tool_age">आयु</string>
     <string name="tool_date_diff">तिथि अंतर</string>
@@ -152,6 +153,7 @@
     <!-- Launcher shortcuts -->
     <string name="shortcut_units_long">इकाई कनवर्टर</string>
     <string name="shortcut_deposit_long">FD, RD और PPF</string>
+    <string name="shortcut_profit_long">लाभ और मार्कअप</string>
 
     <!-- History extras -->
     <string name="history_copied_toast">क्लिपबोर्ड पर कॉपी किया गया</string>
@@ -171,6 +173,25 @@
     <!-- Discount extras -->
     <string name="discount_section_result">परिणाम</string>
     <string name="discount_error_invalid">मान्य संख्याएँ दर्ज करें (अंतिम 0..एमआरपी के बीच होना चाहिए).</string>
+
+    <!-- Profit and markup -->
+    <string name="profit_title">लाभ और मार्कअप</string>
+    <string name="profit_section_mode">मोड</string>
+    <string name="profit_section_result">परिणाम</string>
+    <string name="profit_mode_prices">मूल्य</string>
+    <string name="profit_mode_markup">मार्कअप</string>
+    <string name="profit_mode_margin">मार्जिन</string>
+    <string name="profit_cost">लागत मूल्य</string>
+    <string name="profit_selling">विक्रय मूल्य</string>
+    <string name="profit_markup_input">लागत पर मार्कअप</string>
+    <string name="profit_margin_input">विक्रय मूल्य पर मार्जिन</string>
+    <string name="profit_profit">लाभ</string>
+    <string name="profit_loss">हानि</string>
+    <string name="profit_markup">मार्कअप %</string>
+    <string name="profit_margin">मार्जिन %</string>
+    <string name="profit_loss_percent">हानि %</string>
+    <string name="profit_selling_result">विक्रय मूल्य</string>
+    <string name="profit_error_invalid">मान्य मूल्य और प्रतिशत दर्ज करें।</string>
 
     <!-- BMI extras -->
     <string name="bmi_section_result">परिणाम</string>
@@ -227,6 +248,7 @@
     <string name="input_error_max">अधिक से अधिक %1$s होना चाहिए</string>
     <string name="input_error_too_large">परिणाम बहुत बड़ा है</string>
     <string name="input_error_zero">0 नहीं हो सकता</string>
+    <string name="input_error_below">%1$s से कम होना चाहिए</string>
     <!-- Unit converter: category and unit names -->
     <string name="unit_category_length">लंबाई</string>
     <string name="unit_category_area">क्षेत्रफल</string>

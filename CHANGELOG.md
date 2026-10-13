@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - CAGR mode on the Investment screen: start value, end value and years give the yearly growth rate, the absolute return and the gain.
+- Profit and markup tool: profit or loss, markup and margin from two prices, or the selling price from a markup or a margin.
 - Deposits tool for FD, RD and PPF (on devices set up for India). FD follows the bank rules for short and part periods, RD compounds every quarter like banks and India Post, and PPF shows a year-by-year table.
 
 ### Removed
