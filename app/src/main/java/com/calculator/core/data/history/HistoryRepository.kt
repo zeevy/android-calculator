@@ -11,10 +11,9 @@ import javax.inject.Singleton
 /**
  * Mediates between the Room DAO and the rest of the app.
  *
- * Keeps the engine/feature layers free of Room types ([HistoryEntity] is
- * private to the data package) and gives us a place to add caching or
- * cross-feature wiring later (e.g. emitting an "M chip" derivation when
- * a memory-bearing entry lands).
+ * Features use only [HistoryEntry]; [HistoryEntity] is the Room row and
+ * by convention stays inside core/data (it is public only because Hilt
+ * and Room code in this single module need to see it).
  */
 interface HistoryRepository {
     /** Newest first; replays the latest list to every new subscriber. */

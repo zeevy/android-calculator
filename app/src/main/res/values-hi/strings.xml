@@ -52,9 +52,6 @@
     <string name="settings_sound_desc">कुंजी दबाने पर DTMF टोन बजाएँ.</string>
     <string name="settings_section_precision">गणित सटीकता</string>
     <string name="settings_precision_label">महत्वपूर्ण अंक</string>
-    <string name="settings_section_privacy">गोपनीयता</string>
-    <string name="settings_crash">क्रैश रिपोर्टिंग</string>
-    <string name="settings_crash_desc">अनाम क्रैश रिपोर्ट. डिफ़ॉल्ट रूप से बंद. आपकी सहमति बिना कुछ नहीं भेजा जाएगा.</string>
     <string name="settings_section_about">के बारे में</string>
     <string name="settings_about_version">संस्करण</string>
     <string name="settings_about_license">लाइसेंस</string>

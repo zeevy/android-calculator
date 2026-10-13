@@ -14,7 +14,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -72,13 +71,5 @@ class SettingsViewModelTest {
             viewModel.setPrecision(8)
             advanceUntilIdle()
             assertEquals(8, repo.snapshot.value.precision)
-        }
-
-    @Test
-    fun `setCrashOptIn propagates to the repository`() =
-        runTest(dispatcher) {
-            viewModel.setCrashOptIn(true)
-            advanceUntilIdle()
-            assertTrue(repo.snapshot.value.crashOptIn)
         }
 }

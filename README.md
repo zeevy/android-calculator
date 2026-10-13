@@ -28,7 +28,7 @@ A modern, fully-offline, multi-purpose calculator for Android - inspired by Mi C
 | DI | Hilt |
 | Async | Coroutines + Flow |
 | Persistence | Room + DataStore |
-| Network | None - fully offline, no permissions for network |
+| Network | None - fully offline, no network calls |
 | Widgets | Jetpack Glance |
 | Build | Gradle Kotlin DSL, Version Catalogs |
 | Testing | JUnit5 (unit), JUnit4 + AndroidX Test + Compose UI Test, Turbine, MockK, Robolectric, Kotest (property tests) |
@@ -42,15 +42,14 @@ Everything ships from a single Gradle module (`:app`); `feature/` and `core/` ar
 app/
   src/main/java/com/calculator/
     feature/        # User-facing features: basic, math, converter, finance,
-                    #   health, datetime, lifecalc, history, tape, shortcuts,
-                    #   floating, settings
+                    #   health, datetime, history, tape, floating, settings
     core/
       math/         # Expression parser + evaluator (pure Kotlin, no Android deps)
       designsystem/ # Theme, colors, typography, shared Compose components
       data/         # Room + DataStore
       domain/       # Cross-feature use-cases (pure Kotlin)
       common/       # Utilities, formatters, locale helpers
-      widget/       # Jetpack Glance home-screen widget
+      widget/       # Glance home-screen widget + Quick Settings tile
     navigation/     # Type-safe Navigation Compose host
     CalculatorApplication.kt
     MainActivity.kt
@@ -60,9 +59,11 @@ app/
 
 ### Prerequisites
 
-- **JDK 17** (or newer)
-- **Android Studio** - latest stable, compatible with Android Gradle Plugin 9.x
-- **Android SDK** with platform 36 (Android 16) installed
+- **Android SDK Platform 37** (compileSdk 37, targetSdk 36, minSdk 31)
+- **Android Studio** - a version that supports Android Gradle Plugin 9.3 (see [Android Studio releases](https://developer.android.com/studio/releases))
+- **JDK 21** to run Gradle (`gradle/gradle-daemon-jvm.properties` asks for 21). The JDK bundled with Android Studio works. The build downloads JDK 17 for compiling through the Foojay toolchain resolver.
+
+The project uses Android Gradle Plugin 9.3.2 and Gradle 9.7.0. The Gradle wrapper is checked in; use `./gradlew` and never regenerate it.
 
 ### First-time setup
 
@@ -77,7 +78,7 @@ cd calculator
 # Install on a connected device or emulator
 ./gradlew :app:installDebug
 
-# Run unit tests
+# Run unit and Compose UI tests (JVM, no emulator needed)
 ./gradlew test
 
 # Static analysis

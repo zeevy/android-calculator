@@ -4,7 +4,7 @@ Project-level guidance for Claude Code when working in this repository. Read thi
 
 ## Project overview
 
-An **open-source Android calculator** inspired by Mi Calculator (`com.miui.calculator` by Xiaomi Inc.). Goal: a modern, fully-offline, multi-purpose calculator with basic + scientific math, a unit converter, and life calculators (loan/EMI, GST, BMI, age, discount, date diff). Ad-free, no analytics, no network calls, no permissions declared. Apache 2.0 licensed, published to GitHub.
+An **open-source Android calculator** inspired by Mi Calculator (`com.miui.calculator` by Xiaomi Inc.). Goal: a modern, fully-offline, multi-purpose calculator with basic + scientific math, a unit converter, and life calculators (loan/EMI, GST, BMI, age, discount, date diff). Ad-free, no analytics, no network calls. It declares only the floating calculator permissions (see **Permissions declared** under [Things to know](#things-to-know-gotchas)). Apache 2.0 licensed, published to GitHub.
 
 See [REQUIREMENTS.md](REQUIREMENTS.md) for the full product specification - it is the source of truth for scope and non-functional targets.
 
@@ -22,7 +22,7 @@ See [REQUIREMENTS.md](REQUIREMENTS.md) for the full product specification - it i
 | DI | Hilt |
 | Async | Kotlin Coroutines + Flow |
 | Persistence | Room (history, recent unit pairs) + DataStore Preferences (user settings and per-tool memory) |
-| Network | None. App is fully offline; no permissions declared. |
+| Network | None. App is fully offline; no `INTERNET` permission. It declares only the floating calculator permissions (see [Things to know](#things-to-know-gotchas)). |
 | Math engine | Custom evaluator: `BigDecimal` for arithmetic, bounded `Double` with rounding for transcendentals (sin/cos/log/exp). Revisit BigMath-style libs only if precision bugs appear. |
 | Build | Gradle Kotlin DSL, **Version Catalogs** (`gradle/libs.versions.toml`), R8 minification + resource shrinking on release |
 | Performance | AndroidX Startup for lightweight init |
@@ -154,14 +154,14 @@ These come from the user's global preferences and apply to every commit, file, a
 
 - **GST calculator is India-specific.** It is offered only when the locale country is IN or the time zone is India's (`isIndia` in `navigation/Tools.kt`, the one tool list for the menu and launcher shortcuts). Never hardcode it as universally available; new India-only tools use the same check.
 - **Loan/EMI calculator: use neutral language.** Google Play's personal-loans policy bans wording that implies the app is a lender. Strings must read as a calculator, not a lending tool.
-- **No network calls.** The app is fully offline. The currency converter (the only previous network caller) was removed; don't add Retrofit / OkHttp / INTERNET back without an explicit conversation about the trade-off - the offline story is still part of the app's positioning.
+- **No network calls.** The app is fully offline. Don't add a network library or the `INTERNET` permission without an explicit conversation about the trade-off - the offline story is part of the app's positioning.
 - **Permissions declared** (the manifest is no longer zero-permissions; the floating-calculator feature pulls these in):
   - `SYSTEM_ALERT_WINDOW` - draw the floating overlay over other apps. User-granted via system settings.
   - `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_SPECIAL_USE` - host the overlay in a foreground service so it survives leaving the app (SPECIAL_USE is the catch-all type required on API 34+).
   - `POST_NOTIFICATIONS` - the foreground service's ongoing notification on API 33+.
-  No INTERNET, ACCESS_NETWORK_STATE, location, or contacts. Don't add permissions for new features without raising the trade-off with the user first.
+  The merged manifest also gets `WAKE_LOCK`, `ACCESS_NETWORK_STATE` and `RECEIVE_BOOT_COMPLETED` from AndroidX WorkManager (the Glance widget uses it to schedule updates; no network calls are made) and the signature permission `com.calculator.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` from AndroidX. No INTERNET, location, or contacts. Don't add permissions for new features without raising the trade-off with the user first.
 - **Locale decimal separator.** Parse and render numbers per-locale (`,` in many EU locales, `.` in US/IN). The math engine accepts both via a locale-aware formatter at the UI boundary - the engine itself works on canonical `.`-separated strings.
-- **Crash reporting is opt-in.** Default off, disclosed in settings. Do not wire up Crashlytics or Firebase without an explicit user toggle.
+- **No crash reporter.** The app has none. Adding one needs an explicit opt-in toggle in Settings, off by default, and an update to PRIVACY.md. Do not wire up Crashlytics or Firebase without it.
 - **No analytics in v1.** Do not add Firebase Analytics, no third-party SDKs that phone home.
 - **Backups.** Android Auto Backup is on; nothing sensitive is stored, but `data_extraction_rules.xml` is authored explicitly so the policy is reviewable (the old `backup_rules.xml` was ignored on API 31+ and is gone). Health tools such as ovulation are never saved as recent tools.
 

@@ -33,8 +33,6 @@ In scope:
 
 Out of scope:
 
-- Third-party services (currency rate APIs) we call - report those to their
-  maintainers.
 - Local issues that require physical device access and rooted Android.
 
 ## Disclosure

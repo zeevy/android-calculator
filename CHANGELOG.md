@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- The "Crash reporting" switch in Settings. The app has no crash reporter, so the switch did nothing; the privacy policy and Play listing now say the app sends nothing anywhere.
+
 ### Changed
 
 - The GST calculator is shown only on devices set up for India (an Indian locale, or India's time zone), in the tools menu and in launcher shortcuts.

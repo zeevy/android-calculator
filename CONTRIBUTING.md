@@ -2,7 +2,7 @@
 
 Thanks for your interest in contributing. This document describes how to set up a development environment, the conventions the project follows, and how to get a change merged.
 
-If you only have a few minutes, the short version is: open an issue first for anything non-trivial, then submit a PR that passes `./gradlew ktlintCheck detekt test`.
+If you only have a few minutes, the short version is: open an issue first for anything non-trivial, then submit a PR that passes `./gradlew ktlintCheck detekt lint test`.
 
 ## Table of contents
 
@@ -23,14 +23,12 @@ We follow the [Contributor Covenant](https://www.contributor-covenant.org/versio
 
 1. **Fork** the repository and clone your fork.
 2. **Install prerequisites**:
-   - JDK 17 (Temurin or any other distribution)
-   - Android Studio Ladybug or newer
-   - Android SDK with platform 36 (Android 16) installed
-3. **Generate the Gradle wrapper** if it is not checked in:
-   ```bash
-   gradle wrapper --gradle-version 8.11.1
-   ```
-4. **Verify the build**:
+   - Android SDK Platform 37 (the app uses compileSdk 37, targetSdk 36 and minSdk 31)
+   - An Android Studio version that supports Android Gradle Plugin 9.3 (see [Android Studio releases](https://developer.android.com/studio/releases))
+   - JDK 21 to run Gradle. `gradle/gradle-daemon-jvm.properties` asks for 21. The JDK bundled with Android Studio works.
+   - You do not need to install JDK 17 yourself. The build uses it to compile, and the Foojay toolchain resolver downloads it on the first build.
+   - The project uses Android Gradle Plugin 9.3.2 and Gradle 9.7.0. The Gradle wrapper is checked in; use `./gradlew` and never regenerate the wrapper.
+3. **Verify the build**:
    ```bash
    ./gradlew :app:assembleDebug test
    ```
@@ -80,7 +78,7 @@ This project ships under the Apache License 2.0 and is intended to be read by co
 ## Tests
 
 - **Unit tests live in `app/src/test/`** and run on the JVM using JUnit5.
-- **Compose UI tests also live in `app/src/test/`.** They run on the JVM through Robolectric (JUnit4), so no emulator is needed. There are no instrumented (`androidTest`) tests yet.
+- **Compose UI tests also live in `app/src/test/`.** They run on the JVM through Robolectric (JUnit4), so no emulator is needed. There are no instrumented (`androidTest`) tests.
 - Every bug fix must include a regression test.
 - Every new feature must include unit tests for its domain logic and a smoke-level Compose UI test for the screen.
 
@@ -129,13 +127,14 @@ Common types:
 - `perf` - performance improvement
 
 Examples:
-- `feat(currency): cache exchange rates in Room with 24h TTL`
+- `feat(units): add fuel economy category`
+- `fix(loan): reject a tenure above 600 months`
 - `fix(math): treat -(-5) as 5 instead of a syntax error`
 - `docs(readme): add screenshot of basic calculator`
 
 ## Opening a pull request
 
-1. **Branch** from `main` with a descriptive name: `feat/currency-converter`, `fix/parse-leading-decimal`.
+1. **Branch** from `main` with a descriptive name: `feat/fuel-economy-units`, `fix/parse-leading-decimal`.
 2. **Keep PRs focused** - one logical change per PR. Big diffs are harder to review and slower to land.
 3. **Run the local verification** before pushing:
    ```bash

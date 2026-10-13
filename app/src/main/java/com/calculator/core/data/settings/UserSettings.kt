@@ -9,7 +9,6 @@ package com.calculator.core.data.settings
  *  - Haptics + sound on (parity with iOS).
  *  - Precision 12 sig figs (matches the math engine's transcendental
  *    round-trip).
- *  - Crash reporting OFF until the user opts in (open-source / privacy).
  */
 data class UserSettings(
     val theme: ThemeOption = ThemeOption.System,
@@ -17,7 +16,6 @@ data class UserSettings(
     val haptics: Boolean = true,
     val sound: Boolean = true,
     val precision: Int = DEFAULT_PRECISION,
-    val crashOptIn: Boolean = false,
     /**
      * Per-tool "remember last selection" preferences.
      *

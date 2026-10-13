@@ -77,7 +77,6 @@ class SettingsRepositoryTest {
                 assertTrue(snapshot.haptics)
                 assertTrue(snapshot.sound)
                 assertEquals(UserSettings.DEFAULT_PRECISION, snapshot.precision)
-                assertFalse(snapshot.crashOptIn)
                 cancelAndIgnoreRemainingEvents()
             }
         }
@@ -90,7 +89,6 @@ class SettingsRepositoryTest {
             first.setTheme(UserSettings.ThemeOption.Dark)
             first.setSound(false)
             first.setPrecision(10)
-            first.setCrashOptIn(true)
 
             val second = DataStoreSettingsRepository(store)
             second.settings.test {
@@ -98,7 +96,6 @@ class SettingsRepositoryTest {
                 assertEquals(UserSettings.ThemeOption.Dark, snapshot.theme)
                 assertFalse(snapshot.sound)
                 assertEquals(10, snapshot.precision)
-                assertTrue(snapshot.crashOptIn)
                 cancelAndIgnoreRemainingEvents()
             }
         }

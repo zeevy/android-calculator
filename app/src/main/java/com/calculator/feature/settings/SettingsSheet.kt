@@ -123,17 +123,6 @@ fun SettingsSheetContent(
             onClick = onLaunchFloating,
         )
 
-        // Privacy.
-        Spacer(Modifier.size(16.dp))
-        SectionLabel(stringResource(R.string.settings_section_privacy))
-        ToggleRow(
-            label = stringResource(R.string.settings_crash),
-            description = stringResource(R.string.settings_crash_desc),
-            checked = settings.crashOptIn,
-            onCheckedChange = viewModel::setCrashOptIn,
-            accent = accent,
-        )
-
         // About.
         Spacer(Modifier.size(16.dp))
         SectionLabel(stringResource(R.string.settings_section_about))

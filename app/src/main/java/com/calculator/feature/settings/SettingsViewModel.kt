@@ -56,8 +56,4 @@ class SettingsViewModel
         fun setPrecision(precision: Int) {
             viewModelScope.launch { repository.setPrecision(precision) }
         }
-
-        fun setCrashOptIn(enabled: Boolean) {
-            viewModelScope.launch { repository.setCrashOptIn(enabled) }
-        }
     }

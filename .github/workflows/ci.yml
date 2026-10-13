@@ -201,6 +201,17 @@ jobs:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
       - name: Lint and bundle the release build
         run: ./gradlew :app:lintRelease :app:bundleRelease --stacktrace
+      # PRIVACY.md and the Play listing name every permission; a new one
+      # (often added by a library) must be reviewed and documented first.
+      - name: Check the release permissions
+        run: |
+          grep -o 'uses-permission[^>]*android:name="[^"]*"' \
+            app/build/intermediates/merged_manifests/release/processReleaseManifest/AndroidManifest.xml \
+            | sed 's/.*android:name="//; s/"$//' | sort > /tmp/permissions.txt
+          if ! diff -u config/release-permissions.txt /tmp/permissions.txt; then
+            echo "::error::Release permissions changed. Update config/release-permissions.txt, PRIVACY.md and docs/PLAY_LISTING.md."
+            exit 1
+          fi
       - name: Check the AAB size
         run: |
           size=$(stat -c%s app/build/outputs/bundle/release/app-release.aab)

@@ -36,8 +36,6 @@ interface SettingsRepository {
 
     suspend fun setPrecision(precision: Int)
 
-    suspend fun setCrashOptIn(enabled: Boolean)
-
     suspend fun setLastUnitCategory(category: String)
 
     suspend fun setGstIntraState(intra: Boolean)
@@ -77,7 +75,6 @@ class DataStoreSettingsRepository
                         haptics = prefs[Keys.Haptics] ?: true,
                         sound = prefs[Keys.Sound] ?: true,
                         precision = prefs[Keys.Precision] ?: UserSettings.DEFAULT_PRECISION,
-                        crashOptIn = prefs[Keys.CrashOptIn] ?: false,
                         lastUnitCategory = prefs[Keys.LastUnitCategory],
                         gstIntraState = prefs[Keys.GstIntraState] ?: true,
                         gstRate = prefs[Keys.GstRate] ?: "18",
@@ -106,10 +103,6 @@ class DataStoreSettingsRepository
 
         override suspend fun setPrecision(precision: Int) {
             safeEdit { it[Keys.Precision] = precision.coerceIn(UserSettings.PRECISION_RANGE) }
-        }
-
-        override suspend fun setCrashOptIn(enabled: Boolean) {
-            safeEdit { it[Keys.CrashOptIn] = enabled }
         }
 
         override suspend fun setLastUnitCategory(category: String) {
@@ -163,7 +156,6 @@ class DataStoreSettingsRepository
             val Haptics = booleanPreferencesKey("haptics")
             val Sound = booleanPreferencesKey("sound")
             val Precision = intPreferencesKey("precision")
-            val CrashOptIn = booleanPreferencesKey("crashOptIn")
 
             // Per-tool last-selection memory.
             val LastUnitCategory = stringPreferencesKey("lastUnitCategory")

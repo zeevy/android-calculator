@@ -19,7 +19,7 @@ Before pushing a `v*` tag:
 
 - [ ] `main` is green on the [CI workflow](../.github/workflows/ci.yml).
 - [ ] `:app:lintRelease` reports no errors.
-- [ ] `./gradlew test` (all 250+ unit tests) green.
+- [ ] `./gradlew test` (all unit tests) green.
 - [ ] `./gradlew :app:bundleRelease` builds. **AAB under 15 MB** (the
       most recent run came in at 5.1 MB - 3× headroom).
 - [ ] `LoanCopyTest` passes (Play personal-loans wording guard).

@@ -35,8 +35,6 @@ class FakeSettingsRepository(
 
     override suspend fun setPrecision(precision: Int) = edit { copy(precision = precision) }
 
-    override suspend fun setCrashOptIn(enabled: Boolean) = edit { copy(crashOptIn = enabled) }
-
     override suspend fun setLastUnitCategory(category: String) = edit { copy(lastUnitCategory = category) }
 
     override suspend fun setGstIntraState(intra: Boolean) = edit { copy(gstIntraState = intra) }
