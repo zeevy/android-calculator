@@ -376,6 +376,12 @@
     <string name="investment_gains">अनुमानित लाभ</string>
     <string name="investment_maturity">परिपक्वता मूल्य</string>
     <string name="investment_error_invalid">धनात्मक राशि, दर और अवधि दर्ज करें।</string>
+    <string name="investment_start">प्रारंभिक मूल्य</string>
+    <string name="investment_end">अंतिम मूल्य</string>
+    <string name="investment_cagr">CAGR (प्रति वर्ष)</string>
+    <string name="investment_absolute_return">कुल प्रतिफल</string>
+    <string name="investment_gain">लाभ</string>
+    <string name="investment_cagr_error_invalid">0 से अधिक प्रारंभिक मूल्य, अंतिम मूल्य और अवधि दर्ज करें।</string>
     <string name="percent_title">प्रतिशत</string>
     <string name="percent_section_mode">मोड</string>
     <string name="percent_section_result">परिणाम</string>

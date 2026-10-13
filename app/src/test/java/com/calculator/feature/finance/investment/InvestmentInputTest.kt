@@ -61,4 +61,26 @@ class InvestmentInputTest {
         assertEquals(R.string.investment_years, error.field)
         assertEquals(R.string.input_error_too_large, error.message)
     }
+
+    @Test
+    fun `valid CAGR fields give the growth rate`() {
+        val ok = cagrInput("100000", "200000", "5", Locale.US) as InputResult.Ok
+        assertEquals(14.87, ok.value.cagrPercent, 0.005)
+    }
+
+    @Test
+    fun `CAGR rejects a start value of 0 and a tenure of 0`() {
+        val start = error(cagrInput("0", "200000", "5", Locale.US))
+        assertEquals(R.string.investment_start, start.field)
+        assertEquals(R.string.input_error_positive, start.message)
+        assertEquals(R.string.investment_years, error(cagrInput("100", "200", "0", Locale.US)).field)
+        assertEquals(R.string.investment_end, error(cagrInput("100", "-1", "5", Locale.US)).field)
+    }
+
+    @Test
+    fun `CAGR that overflows says the result is too large`() {
+        val error = error(cagrInput("1", "1000000", "0.0001", Locale.US))
+        assertEquals(R.string.investment_years, error.field)
+        assertEquals(R.string.input_error_too_large, error.message)
+    }
 }

@@ -86,7 +86,7 @@ Each is a focused screen with its own inputs and outputs. All of them open from 
 - **GST** (India) - amount + rate (5/12/18/28% presets) → CGST, SGST/IGST, net & gross. Shown only on devices set up for India (section 11).
 - **Discount** - MRP + discount % → savings + final price; reverse calc (final + MRP → %).
 - **Tip & split** - bill + tip + number of people → tip, total, per-person share, with an option to round up.
-- **Investment** - SIP (monthly amount) or lump sum + annual rate + tenure → total invested, estimated gains, maturity value.
+- **Investment** - SIP (monthly amount) or lump sum + annual rate + tenure → total invested, estimated gains, maturity value; CAGR mode: start value + end value + tenure → CAGR %, absolute return %, gain.
 - **Percentage** - percentage calculator.
 - **Bases** - number-base converter: decimal, hexadecimal, octal, binary.
 - **BMI** - height + weight (metric + imperial) → BMI value + category.

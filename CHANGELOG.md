@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- CAGR mode on the Investment screen: start value, end value and years give the yearly growth rate, the absolute return and the gain.
+
 ### Removed
 
 - The "Crash reporting" switch in Settings. The app has no crash reporter, so the switch did nothing; the privacy policy and Play listing now say the app sends nothing anywhere.

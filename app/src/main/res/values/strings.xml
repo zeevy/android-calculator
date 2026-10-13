@@ -208,6 +208,7 @@
     <string name="investment_section_result">Result</string>
     <string name="investment_mode_sip" translatable="false">SIP</string>
     <string name="investment_mode_lumpsum">Lump sum</string>
+    <string name="investment_mode_cagr" translatable="false">CAGR</string>
     <string name="investment_monthly">Monthly amount</string>
     <string name="investment_principal">Principal</string>
     <string name="investment_rate">Annual rate</string>
@@ -217,6 +218,12 @@
     <string name="investment_gains">Estimated gains</string>
     <string name="investment_maturity">Maturity value</string>
     <string name="investment_error_invalid">Enter a positive amount, rate, and tenure.</string>
+    <string name="investment_start">Start value</string>
+    <string name="investment_end">End value</string>
+    <string name="investment_cagr">CAGR (per year)</string>
+    <string name="investment_absolute_return">Absolute return</string>
+    <string name="investment_gain">Gain</string>
+    <string name="investment_cagr_error_invalid">Enter a start value above 0, an end value and a tenure.</string>
 
     <!-- Percentage -->
     <string name="percent_title">Percentage</string>
