@@ -60,10 +60,10 @@ app/
 ### Prerequisites
 
 - **Android SDK Platform 37** (compileSdk 37, targetSdk 36, minSdk 31)
-- **Android Studio** - a version that supports Android Gradle Plugin 9.3 (see [Android Studio releases](https://developer.android.com/studio/releases))
+- **Android Studio** - a version that supports Android Gradle Plugin 9.4 (see [Android Studio releases](https://developer.android.com/studio/releases))
 - **JDK 21** to run Gradle (`gradle/gradle-daemon-jvm.properties` asks for 21). The JDK bundled with Android Studio works. The build downloads JDK 17 for compiling through the Foojay toolchain resolver.
 
-The project uses Android Gradle Plugin 9.3.2 and Gradle 9.7.0. The Gradle wrapper is checked in; use `./gradlew` and never regenerate it.
+The project uses Android Gradle Plugin 9.4.1 and Gradle 9.8.1. The Gradle wrapper is checked in; use `./gradlew` and never regenerate it.
 
 ### First-time setup
 
