@@ -24,6 +24,7 @@ import com.calculator.feature.converter.unit.UnitConverterScreen
 import com.calculator.feature.datetime.age.AgeScreen
 import com.calculator.feature.datetime.datediff.DateDiffScreen
 import com.calculator.feature.datetime.timezone.TimezoneScreen
+import com.calculator.feature.finance.deposit.DepositScreen
 import com.calculator.feature.finance.discount.DiscountScreen
 import com.calculator.feature.finance.gst.GstScreen
 import com.calculator.feature.finance.investment.InvestmentScreen
@@ -109,6 +110,9 @@ fun CalculatorNavHost(startDestinationHint: String? = null) {
         }
         composable<InvestmentRoute> {
             InvestmentScreen(onOpenMenu = openMenu)
+        }
+        composable<DepositRoute> {
+            DepositScreen(onOpenMenu = openMenu)
         }
         composable<PercentRoute> {
             PercentScreen(onOpenMenu = openMenu)

@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.DateRange
@@ -72,6 +73,14 @@ internal val Tools: List<Tool> =
         Tool("discount", DiscountRoute, R.string.tool_discount, icon = Icons.Filled.LocalOffer),
         Tool("tipsplit", TipSplitRoute, R.string.tool_tipsplit, icon = Icons.Filled.Restaurant),
         Tool("investment", InvestmentRoute, R.string.tool_investment, icon = Icons.Filled.Savings),
+        Tool(
+            "deposit",
+            DepositRoute,
+            R.string.tool_deposit,
+            R.string.shortcut_deposit_long,
+            Icons.Filled.AccountBalanceWallet,
+            indiaOnly = true,
+        ),
         Tool("percent", PercentRoute, R.string.tool_percent, icon = Icons.Filled.Percent),
         Tool("bases", BaseConverterRoute, R.string.tool_basecalc, icon = Icons.Filled.Code),
         Tool("bmi", BmiRoute, R.string.tool_bmi, icon = Icons.Filled.MonitorWeight),

@@ -36,6 +36,7 @@
     <string name="tool_discount">Discount</string>
     <string name="tool_tipsplit">Tip &amp; split</string>
     <string name="tool_investment">Investment</string>
+    <string name="tool_deposit">Deposits</string>
     <string name="tool_percent">Percentage</string>
     <string name="tool_basecalc">Bases</string>
     <string name="tool_tape">Tape</string>
@@ -164,6 +165,7 @@
 
     <!-- Launcher shortcuts -->
     <string name="shortcut_units_long">Unit converter</string>
+    <string name="shortcut_deposit_long">FD, RD and PPF</string>
     <string name="shortcut_floating_short">Float</string>
     <string name="shortcut_floating_long">Floating calculator</string>
 
@@ -224,6 +226,41 @@
     <string name="investment_absolute_return">Absolute return</string>
     <string name="investment_gain">Gain</string>
     <string name="investment_cagr_error_invalid">Enter a start value above 0, an end value and a tenure.</string>
+
+    <!-- Deposits (FD, RD, PPF) -->
+    <string name="deposit_title">Deposits</string>
+    <string name="deposit_section_type">Deposit type</string>
+    <string name="deposit_mode_fd" translatable="false">FD</string>
+    <string name="deposit_mode_rd" translatable="false">RD</string>
+    <string name="deposit_mode_ppf" translatable="false">PPF</string>
+    <string name="deposit_amount">Deposit amount</string>
+    <string name="deposit_monthly">Monthly deposit</string>
+    <string name="deposit_yearly">Yearly deposit</string>
+    <string name="deposit_rate">Interest rate per year</string>
+    <string name="deposit_years">Years</string>
+    <string name="deposit_years_suffix">yrs</string>
+    <string name="deposit_months">Months</string>
+    <string name="deposit_months_suffix">months</string>
+    <string name="deposit_tenure">Tenure</string>
+    <string name="deposit_section_compounding">Compounding</string>
+    <string name="deposit_compounding_monthly">Monthly</string>
+    <string name="deposit_compounding_quarterly">Quarterly</string>
+    <string name="deposit_compounding_half_yearly">Half-yearly</string>
+    <string name="deposit_compounding_yearly">Yearly</string>
+    <string name="deposit_section_result">Result</string>
+    <string name="deposit_deposited">Total deposited</string>
+    <string name="deposit_interest">Total interest</string>
+    <string name="deposit_maturity">Maturity amount</string>
+    <string name="deposit_ppf_years">%1$d years</string>
+    <string name="deposit_error_invalid">Fix the marked field to see the result.</string>
+    <string name="deposit_fd_note">Like most banks: a deposit below 6 months earns simple interest, and the months after the last full compounding period earn simple interest on the compounded amount.</string>
+    <string name="deposit_rd_note">Interest is compounded every quarter, as banks and India Post do.</string>
+    <string name="deposit_ppf_note">Assumes each year\'s deposit is made by 5 April, so it earns interest for the full year. The government sets the PPF rate every quarter.</string>
+    <string name="deposit_section_years">Year by year</string>
+    <string name="deposit_col_year">Year</string>
+    <string name="deposit_col_deposit">Deposit</string>
+    <string name="deposit_col_interest">Interest</string>
+    <string name="deposit_col_balance">Balance</string>
 
     <!-- Percentage -->
     <string name="percent_title">Percentage</string>

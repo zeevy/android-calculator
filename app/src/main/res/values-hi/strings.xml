@@ -151,6 +151,7 @@
 
     <!-- Launcher shortcuts -->
     <string name="shortcut_units_long">इकाई कनवर्टर</string>
+    <string name="shortcut_deposit_long">FD, RD और PPF</string>
 
     <!-- History extras -->
     <string name="history_copied_toast">क्लिपबोर्ड पर कॉपी किया गया</string>
@@ -344,6 +345,7 @@
     <string name="basic_paste_no_number">क्लिपबोर्ड पर कोई संख्या नहीं मिली</string>
     <string name="tool_tipsplit">टिप और बँटवारा</string>
     <string name="tool_investment">निवेश</string>
+    <string name="tool_deposit">जमा</string>
     <string name="tool_percent">प्रतिशत</string>
     <string name="tool_basecalc">आधार</string>
     <string name="tool_tape">टेप</string>
@@ -382,6 +384,38 @@
     <string name="investment_absolute_return">कुल प्रतिफल</string>
     <string name="investment_gain">लाभ</string>
     <string name="investment_cagr_error_invalid">0 से अधिक प्रारंभिक मूल्य, अंतिम मूल्य और अवधि दर्ज करें।</string>
+
+    <!-- जमा (FD, RD, PPF) -->
+    <string name="deposit_title">जमा</string>
+    <string name="deposit_section_type">जमा का प्रकार</string>
+    <string name="deposit_amount">जमा राशि</string>
+    <string name="deposit_monthly">मासिक जमा</string>
+    <string name="deposit_yearly">वार्षिक जमा</string>
+    <string name="deposit_rate">ब्याज दर प्रति वर्ष</string>
+    <string name="deposit_years">वर्ष</string>
+    <string name="deposit_years_suffix">वर्ष</string>
+    <string name="deposit_months">महीने</string>
+    <string name="deposit_months_suffix">महीने</string>
+    <string name="deposit_tenure">अवधि</string>
+    <string name="deposit_section_compounding">चक्रवृद्धि</string>
+    <string name="deposit_compounding_monthly">मासिक</string>
+    <string name="deposit_compounding_quarterly">तिमाही</string>
+    <string name="deposit_compounding_half_yearly">छमाही</string>
+    <string name="deposit_compounding_yearly">वार्षिक</string>
+    <string name="deposit_section_result">परिणाम</string>
+    <string name="deposit_deposited">कुल जमा</string>
+    <string name="deposit_interest">कुल ब्याज</string>
+    <string name="deposit_maturity">परिपक्वता राशि</string>
+    <string name="deposit_ppf_years">%1$d वर्ष</string>
+    <string name="deposit_error_invalid">परिणाम देखने के लिए चिह्नित फ़ील्ड ठीक करें।</string>
+    <string name="deposit_fd_note">अधिकतर बैंकों की तरह: 6 महीने से कम की जमा पर साधारण ब्याज मिलता है, और आखिरी पूरी चक्रवृद्धि अवधि के बाद के महीनों पर चक्रवृद्धि राशि पर साधारण ब्याज मिलता है।</string>
+    <string name="deposit_rd_note">ब्याज हर तिमाही चक्रवृद्धि होता है, जैसा बैंक और डाक घर करते हैं।</string>
+    <string name="deposit_ppf_note">माना गया है कि हर वर्ष की जमा 5 अप्रैल तक की जाती है, ताकि उस पर पूरे वर्ष का ब्याज मिले। PPF की दर सरकार हर तिमाही तय करती है।</string>
+    <string name="deposit_section_years">वर्षवार</string>
+    <string name="deposit_col_year">वर्ष</string>
+    <string name="deposit_col_deposit">जमा</string>
+    <string name="deposit_col_interest">ब्याज</string>
+    <string name="deposit_col_balance">शेष</string>
     <string name="percent_title">प्रतिशत</string>
     <string name="percent_section_mode">मोड</string>
     <string name="percent_section_result">परिणाम</string>

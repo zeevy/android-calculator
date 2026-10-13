@@ -42,6 +42,9 @@ data object TipSplitRoute : ToolRoute
 data object InvestmentRoute : ToolRoute
 
 @Serializable
+data object DepositRoute : ToolRoute
+
+@Serializable
 data object PercentRoute : ToolRoute
 
 @Serializable

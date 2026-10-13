@@ -36,7 +36,13 @@ class ToolsTest {
 
     @Test
     fun `every other tool is offered everywhere`() {
-        assertEquals(Tools.size - 1, availableTools(us, newYork).size)
+        assertEquals(Tools.filterNot { it.indiaOnly }, availableTools(us, newYork))
+    }
+
+    @Test
+    fun `GST and Deposits are the India-only tools`() {
+        assertEquals(setOf(GstRoute, DepositRoute), Tools.filter { it.indiaOnly }.map { it.route }.toSet())
+        assertTrue(availableTools(Locale.forLanguageTag("en-IN"), newYork).any { it.route == DepositRoute })
     }
 
     @Test
