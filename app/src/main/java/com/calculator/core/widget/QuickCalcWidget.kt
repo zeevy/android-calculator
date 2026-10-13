@@ -26,6 +26,7 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
@@ -133,9 +134,6 @@ private fun WidgetContent() {
         }
         Spacer(GlanceModifier.height(6.dp))
 
-        // 4x4 keypad. Rows are weighted via fixed heights inside a
-        // Column-of-Rows because Glance doesn't support Modifier.weight
-        // the way regular Compose does.
         val keypad =
             listOf(
                 listOf(WKey("C", KeyKind.Modifier), WKey("(", KeyKind.Modifier), WKey(")", KeyKind.Modifier), WKey("÷", KeyKind.Operator)),
@@ -144,14 +142,18 @@ private fun WidgetContent() {
                 listOf(WKey("1", KeyKind.Digit), WKey("2", KeyKind.Digit), WKey("3", KeyKind.Digit), WKey("+", KeyKind.Operator)),
                 listOf(WKey("⌫", KeyKind.Modifier), WKey("0", KeyKind.Digit), WKey(".", KeyKind.Digit), WKey("=", KeyKind.Equals)),
             )
-        keypad.forEach { row ->
-            Row(modifier = GlanceModifier.fillMaxWidth().height(40.dp)) {
-                row.forEachIndexed { idx, key ->
-                    KeyBox(key = key)
-                    if (idx != row.lastIndex) Spacer(GlanceModifier.width(4.dp))
+        // A Glance Column drops every child after the 10th, so the 5 key rows
+        // and their spacers need their own Column.
+        Column(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
+            keypad.forEachIndexed { rowIdx, row ->
+                Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
+                    row.forEachIndexed { idx, key ->
+                        KeyBox(key = key, modifier = GlanceModifier.defaultWeight())
+                        if (idx != row.lastIndex) Spacer(GlanceModifier.width(4.dp))
+                    }
                 }
+                if (rowIdx != keypad.lastIndex) Spacer(GlanceModifier.height(4.dp))
             }
-            Spacer(GlanceModifier.height(4.dp))
         }
     }
 }
@@ -161,7 +163,7 @@ private enum class KeyKind { Digit, Operator, Modifier, Equals }
 private data class WKey(val label: String, val kind: KeyKind)
 
 @androidx.compose.runtime.Composable
-private fun KeyBox(key: WKey) {
+private fun KeyBox(key: WKey, modifier: GlanceModifier) {
     val colors = GlanceTheme.colors
     val (bg, fg) =
         when (key.kind) {
@@ -171,11 +173,8 @@ private fun KeyBox(key: WKey) {
         }
     Box(
         modifier =
-            GlanceModifier
-                // width set via Row distribution (no weight in Glance;
-                // we use the row's intrinsic equal-distribution).
-                .height(40.dp)
-                .width(60.dp)
+            modifier
+                .fillMaxHeight()
                 .cornerRadius(12.dp)
                 .background(bg)
                 .clickable(
