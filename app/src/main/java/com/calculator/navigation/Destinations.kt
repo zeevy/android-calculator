@@ -48,6 +48,9 @@ data object InvestmentRoute : ToolRoute
 data object DepositRoute : ToolRoute
 
 @Serializable
+data object SalaryRoute : ToolRoute
+
+@Serializable
 data object PercentRoute : ToolRoute
 
 @Serializable

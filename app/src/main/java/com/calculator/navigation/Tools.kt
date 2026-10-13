@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.MonitorWeight
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Percent
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Receipt
@@ -83,6 +84,7 @@ internal val Tools: List<Tool> =
             Icons.Filled.AccountBalanceWallet,
             indiaOnly = true,
         ),
+        Tool("salary", SalaryRoute, R.string.tool_salary, icon = Icons.Filled.Payments),
         Tool("percent", PercentRoute, R.string.tool_percent, icon = Icons.Filled.Percent),
         Tool("bases", BaseConverterRoute, R.string.tool_basecalc, icon = Icons.Filled.Code),
         Tool("bmi", BmiRoute, R.string.tool_bmi, icon = Icons.Filled.MonitorWeight),

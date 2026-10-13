@@ -9,7 +9,7 @@ A modern, fully-offline, multi-purpose calculator for Android - inspired by Mi C
 - Basic and scientific calculator with editable history and a running tape view
 - Percentage calculator
 - Unit converter (length, area, volume, mass, temperature, speed, time, data, pressure, energy, power) plus a number-base converter
-- Finance calculators: Loan/EMI, GST (India), Discount, Profit and markup, Investment with CAGR, FD/RD/PPF deposits (India), Tip split
+- Finance calculators: Loan/EMI, GST (India), Discount, Profit and markup, Investment with CAGR, FD/RD/PPF deposits (India), Salary hike, Tip split
 - Health calculators: BMI, Ovulation
 - Date & time calculators: Age, Date difference, Timezone converter
 - Floating overlay calculator (draw-over-other-apps) and a home-screen widget (Jetpack Glance)

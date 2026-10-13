@@ -30,6 +30,7 @@ import com.calculator.feature.finance.gst.GstScreen
 import com.calculator.feature.finance.investment.InvestmentScreen
 import com.calculator.feature.finance.loan.LoanScreen
 import com.calculator.feature.finance.profit.ProfitScreen
+import com.calculator.feature.finance.salary.SalaryScreen
 import com.calculator.feature.finance.tipsplit.TipSplitScreen
 import com.calculator.feature.health.bmi.BmiScreen
 import com.calculator.feature.health.ovulation.OvulationScreen
@@ -117,6 +118,9 @@ fun CalculatorNavHost(startDestinationHint: String? = null) {
         }
         composable<DepositRoute> {
             DepositScreen(onOpenMenu = openMenu)
+        }
+        composable<SalaryRoute> {
+            SalaryScreen(onOpenMenu = openMenu)
         }
         composable<PercentRoute> {
             PercentScreen(onOpenMenu = openMenu)

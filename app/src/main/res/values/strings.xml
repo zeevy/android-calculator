@@ -38,6 +38,7 @@
     <string name="tool_tipsplit">Tip &amp; split</string>
     <string name="tool_investment">Investment</string>
     <string name="tool_deposit">Deposits</string>
+    <string name="tool_salary">Salary hike</string>
     <string name="tool_percent">Percentage</string>
     <string name="tool_basecalc">Bases</string>
     <string name="tool_tape">Tape</string>
@@ -224,6 +225,27 @@
     <string name="tipsplit_total">Total</string>
     <string name="tipsplit_per_person">Per person</string>
     <string name="tipsplit_error_invalid">Enter a valid bill and tip amount.</string>
+
+    <!-- Salary hike -->
+    <string name="salary_title">Salary hike</string>
+    <string name="salary_section_mode">Mode</string>
+    <string name="salary_section_period">Salary period</string>
+    <string name="salary_section_result">Result</string>
+    <string name="salary_mode_new">New salary</string>
+    <string name="salary_mode_hike">Hike %</string>
+    <string name="salary_period_monthly">Monthly</string>
+    <string name="salary_period_yearly">Yearly</string>
+    <string name="salary_current">Current salary</string>
+    <string name="salary_hike_input">Hike</string>
+    <string name="salary_old">Old salary</string>
+    <string name="salary_new">New salary</string>
+    <string name="salary_new_monthly">New salary per month</string>
+    <string name="salary_new_yearly">New salary per year</string>
+    <string name="salary_increase_monthly">Increase per month</string>
+    <string name="salary_increase_yearly">Increase per year</string>
+    <string name="salary_increase">Increase amount</string>
+    <string name="salary_hike_result">Hike</string>
+    <string name="salary_error_invalid">Fix the values above to see the result.</string>
 
     <!-- Investment (SIP / compound interest) -->
     <string name="investment_title">Investment</string>
