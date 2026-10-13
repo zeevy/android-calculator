@@ -37,11 +37,14 @@ UNIT CONVERTER
 • Number bases: decimal, hexadecimal, octal and binary
 
 LIFE CALCULATORS
-• Loan EMI estimator with full amortisation
+• Loan EMI estimator: monthly EMI, total interest and total paid
 • GST (India) with CGST / SGST / IGST split, forward and reverse (shown on phones set up for India)
 • Discount: forward (% off → final) and reverse (final → %)
+• Profit and markup: profit or loss, markup and margin, or the selling price from a markup or margin
 • Tip and bill split
-• Investment: SIP and lump sum
+• Investment: SIP, lump sum and CAGR
+• FD, RD and PPF deposits with a year-by-year PPF table (shown on phones set up for India)
+• Salary hike: new salary per month and per year, or the hike % between two salaries
 • Percentage calculator
 • BMI in metric or imperial
 • Age in years / months / days, days to next birthday
@@ -152,7 +155,7 @@ The listing needs 8 phone screenshots, 1 screenshot for a 7" tablet and 1 for a 
 
 1. Basic calculator with a multi-line expression in progress.
 2. Advanced calculator showing trig keys and the memory chip.
-3. Tools menu on a phone set up for India (all 18 tiles: Basic, Advanced, the 14 tools, History and Settings).
+3. Tools menu on a phone set up for India (all 21 tiles: Basic, Advanced, the 17 tools, History and Settings).
 4. Floating calculator on top of another app.
 5. Unit converter on the Length category.
 6. History sheet with several entries.
