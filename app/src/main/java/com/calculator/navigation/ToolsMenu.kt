@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -217,13 +218,14 @@ private fun ToolTileButton(tile: ToolTile, modifier: Modifier = Modifier) {
             modifier
                 .clip(RoundedCornerShape(20.dp))
                 .background(containerColor)
-                .clickable(onClick = tile.onTap)
+                .clickable(role = Role.Button, onClick = tile.onTap)
                 .padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // The text below already names the tile; a label here makes TalkBack read it twice.
         Icon(
             imageVector = tile.icon,
-            contentDescription = tile.label,
+            contentDescription = null,
             tint = contentColor,
             modifier = Modifier.size(24.dp),
         )

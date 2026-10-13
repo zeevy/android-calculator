@@ -1,5 +1,9 @@
 package com.calculator.navigation
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -47,5 +51,14 @@ class ToolsGridTest {
         show(Locale.forLanguageTag("en-IN")) { opened = it }
         composeRule.onNodeWithText("GST").performClick()
         assertEquals(GstRoute, opened)
+    }
+
+    @Test
+    fun tileReadsItsNameOnceAsAButton() {
+        show(Locale.US)
+        composeRule
+            .onNodeWithText("Loan")
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.ContentDescription))
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
     }
 }
