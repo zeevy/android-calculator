@@ -647,11 +647,11 @@ Update this file in the same change that completes a checkbox. Do not retro-edit
 
 ### Phase 11 - Deliverables
 
-- [ ] Play App Signing enrolled, release keystore secured - **out-of-band**: docs/RELEASE.md "Signing" section is the runbook; needs the user to generate the keystore and add GitHub Actions secrets.
+- [ ] Play App Signing enrolled, release keystore secured - **out-of-band**: docs/RELEASE.md "One-time setup for Google Play" is the runbook; the build and the Release workflow already sign from the `RELEASE_*` secrets once the user adds them.
 - [x] Versioning: SemVer `versionName` (1.0.0), monotonic `versionCode` (10000); formula in docs/RELEASE.md
 - [x] Release `bundleRelease` AAB measured at **5.1 MB** - 3× under the 15 MB ceiling (R8 + resource shrinking on)
 - [x] Privacy policy at [PRIVACY.md](../PRIVACY.md) covering `INTERNET`, opt-in crash reporting, on-device-only storage
-- [x] Play Console listing copy at [docs/PLAY_LISTING.md](PLAY_LISTING.md) (title / short + long descriptions / Data Safety verbatim answers); screenshots still need to be captured from a release build on a Pixel 6a-class device
+- [x] Play Console listing copy at [docs/PLAY_LISTING.md](PLAY_LISTING.md) (title / short + long descriptions / every App content answer); icon, feature graphic and 8 phone screenshots in [docs/play/](play/)
 - [x] Data Safety form: verbatim answers in docs/PLAY_LISTING.md (no data collected)
 - [ ] Internal → closed-beta → staged production rollout - **out-of-band**: needs Play Console access; runbook in docs/RELEASE.md
 - [x] GitHub Release workflow ([.github/workflows/release.yml](../.github/workflows/release.yml)) attaches AAB + APK on every `v*.*.*` tag push

@@ -28,7 +28,9 @@ android {
             .toInt()
 
     defaultConfig {
-        applicationId = "com.calculator"
+        // The Play package name. It can never change once the app is on Play.
+        // The Kotlin packages keep the shorter `com.calculator` namespace.
+        applicationId = "io.github.zeevy.calculator"
         minSdk =
             libs.versions.min.sdk
                 .get()
@@ -47,6 +49,18 @@ android {
         vectorDrawables { useSupportLibrary = true }
     }
 
+    // The Release workflow fills these from GitHub secrets. Without them the
+    // release build stays unsigned, so local and CI builds need no key.
+    val releaseKeystore = providers.environmentVariable("RELEASE_KEYSTORE_PATH").orNull
+    if (releaseKeystore != null) {
+        signingConfigs.create("release") {
+            storeFile = file(releaseKeystore)
+            storePassword = providers.environmentVariable("RELEASE_KEYSTORE_PASSWORD").orNull
+            keyAlias = providers.environmentVariable("RELEASE_KEY_ALIAS").orNull
+            keyPassword = providers.environmentVariable("RELEASE_KEY_PASSWORD").orNull
+        }
+    }
+
     buildTypes {
         debug {
             // Keep debug builds fast; no shrinking, app is suffixed so it
@@ -63,10 +77,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            // No signingConfig: release artifacts come out UNSIGNED, so the
-            // APK cannot be installed and the AAB cannot be uploaded to Play.
-            // See the Signing section of docs/RELEASE.md for what enrolling
-            // Play App Signing requires.
+            // Signed with the upload key only when the RELEASE_KEYSTORE_*
+            // variables are set. See "One-time setup for Google Play" in
+            // docs/RELEASE.md.
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 

@@ -1,27 +1,36 @@
-# Play Store Listing Copy
+# Play Store listing
 
-Copy these into the Google Play Console fields. Play's current limits: title up to 30 characters, short description up to 80 characters, full description up to 4000 characters.
+Everything the Google Play Console asks for, ready to copy. The step-by-step order is in [RELEASE.md](RELEASE.md). Play's limits: title 30 characters, short description 80, full description 4000.
+
+## App details
+
+| Field | Value |
+|---|---|
+| Package name | `io.github.zeevy.calculator` (fixed for life once uploaded) |
+| Default language | English (United States) - en-US |
+| App or game | App |
+| Free or paid | Free |
 
 ## Title
 
 ```
-Calculator - CA
+Calculator & Unit Converter
 ```
 
-(15 / 30 chars)
+(27 / 30 chars.) The launcher name on the phone stays "Calculator".
 
 ## Short description
 
 ```
-Scientific calculator, unit converter and life calculators. Offline. Ad-free.
+Scientific calculator, unit converter, loan EMI, BMI and more. Offline. No ads.
 ```
 
-(77 / 80 chars)
+(79 / 80 chars)
 
-## Long description
+## Full description
 
 ```
-A modern, fast, ad-free calculator that does more than add and subtract. It works fully offline.
+A modern, fast calculator with a unit converter and 15+ everyday calculators. No ads, no account, and it works fully offline.
 
 CORE
 • Basic mode: arithmetic, percentage, parentheses, sign flip, repeat equals
@@ -71,32 +80,94 @@ PRIVACY
 • Apache 2.0 open-source on GitHub: zeevy/android-calculator
 ```
 
-## Categorisation
+## Graphics
+
+All files are in [play/](play/). Each one meets Play's rules: PNG with no alpha (except the icon, which may have it), exact sizes, phone screenshots 9:16 at 1080x1920 so Play can use them in its promotions.
+
+| Asset | File | Size |
+|---|---|---|
+| App icon | [icon-512.png](play/icon-512.png) | 512 x 512, full square (Play rounds the corners) |
+| Feature graphic | [feature-graphic.png](play/feature-graphic.png) | 1024 x 500 |
+| Phone screenshots | `play/phone-1-*.png` to `play/phone-8-*.png` | 1080 x 1920 each |
+
+Tablet screenshots are optional and left out: the app has no tablet layout yet.
+
+### Phone screenshots
+
+Upload them in this order. Play shows the first three in search results, so they show the main screens. The alt text goes in the box under each screenshot (max 140 characters).
+
+| # | File | Caption on the image | Alt text |
+|---|---|---|---|
+| 1 | [phone-1-basic.png](play/phone-1-basic.png) | Everyday maths with a live result | Basic calculator showing earlier results above the display and a live result of 30000 while typing 2500×12. |
+| 2 | [phone-2-advanced.png](play/phone-2-advanced.png) | Scientific mode: trig, logs and powers | Advanced calculator in degrees with sin, cos, tan, log, roots and powers, working out sin(30)+sqrt(144)^2 = 144.5. |
+| 3 | [phone-3-tools.png](play/phone-3-tools.png) | All your calculators in one place | Tools menu with tiles for loan, GST, discount, profit, investment, deposits, BMI, age, time zones and more. |
+| 4 | [phone-4-units.png](play/phone-4-units.png) | Convert units in 11 categories | Unit converter changing 42.195 kilometers to 26.22 miles. |
+| 5 | [phone-5-loan.png](play/phone-5-loan.png) | Loan EMI, total interest and total paid | Loan estimator with amount, rate and tenure, showing the monthly EMI, total interest and total paid. |
+| 6 | [phone-6-floating.png](play/phone-6-floating.png) | A floating calculator over any app | Small floating calculator on top of a shopping bill in a browser, adding the items to 2364. |
+| 7 | [phone-7-investment.png](play/phone-7-investment.png) | Plan SIP, lump sum and CAGR | SIP calculator with monthly amount, rate and years, showing total invested, gains and maturity value. |
+| 8 | [phone-8-history.png](play/phone-8-history.png) | Full history, in light or dark | History sheet in dark theme listing past calculations with their results and times. |
+
+The screenshots come from the release build on an emulator (1080x2400, systemui demo mode for a clean status bar), framed with the caption at 1080x1920.
+
+## Store settings
 
 | Field | Value |
 |---|---|
-| Category | Tools |
-| Tags | Calculator, Productivity, Utilities |
-| Content rating | Everyone |
-| Target age | 13+ (Tools default) |
-
-## Contact details
-
-| Field | Value |
-|---|---|
-| Email | venkateswara.rao@zaggle.in |
-| Privacy policy URL | <https://github.com/zeevy/android-calculator/blob/main/PRIVACY.md> |
+| App category | Tools |
+| Tags | Calculator, Productivity, Utilities (pick the closest ones Play offers) |
+| Contact email | The contact email already set on the Play developer account (the same one the other apps on the account use) |
 | Website | <https://github.com/zeevy/android-calculator> |
+| Privacy policy URL | <https://github.com/zeevy/android-calculator/blob/main/PRIVACY.md> |
 
-## Data Safety declaration
+## App content answers
 
-Answers for the Play Console Data Safety form. The app collects no data and shares no data.
+Play Console, Policy and programs, App content. Answer each section as below.
 
 | Section | Answer |
+|---|---|
+| Privacy policy | <https://github.com/zeevy/android-calculator/blob/main/PRIVACY.md> |
+| App access | All functionality is available without special access |
+| Ads | No, the app does not contain ads |
+| Content rating | Category "All other app types". Answer No to every question. Expected rating: Everyone, PEGI 3, IARC 3+ |
+| Target audience | 13-15, 16-17 and 18 and over. Not designed to appeal to children |
+| News app | No |
+| Data safety | See [Data safety](#data-safety) below |
+| Government apps | No |
+| Financial features | My app doesn't provide any financial features (the loan, GST, investment and deposit tools only calculate; see [Loan-screen wording check](#loan-screen-wording-check)) |
+| Health apps | Health and fitness: **Activity and fitness** (the BMI calculator measures body composition) and **Period tracking** (the ovulation estimator predicts ovulation and the fertile window). Nothing in Medical |
+| Advertising ID | No, the app does not use an advertising ID |
+| Foreground service permissions | See [Special-use foreground service](#special-use-foreground-service) below |
+
+### Data safety
+
+The app collects no data and shares no data.
+
+| Question | Answer |
 |---|---|
 | Does your app collect or share any of the required user data types? | **No** |
 | Is all of the user data collected by your app encrypted in transit? | **N/A** (no user data is collected) |
 | Do you provide a way for users to request that their data be deleted? | **N/A** (no user data is collected; uninstalling deletes all on-device data) |
+
+### Special-use foreground service
+
+| Field | Value |
+|---|---|
+| Service | `com.calculator.feature.floating.FloatingCalculatorService` |
+| Foreground service type | `specialUse` |
+| Subtype (`PROPERTY_SPECIAL_USE_FGS_SUBTYPE`) | `floating_calculator` |
+| Video | A link to the demo video (YouTube unlisted). It shows: Settings, Open over other apps, the window over a browser, the ongoing notification with Stop, and the X that closes it |
+
+Description:
+
+```
+A small calculator window the user opens from Settings stays on top of other apps until the user closes it with its X button or the Stop action in the notification. The foreground service only keeps that window alive; it does no background work.
+```
+
+Impact if the system defers or stops it:
+
+```
+The floating calculator window disappears while the user is using it, and the number they were working on is lost. The user started the window on purpose and expects it to stay on screen until they close it.
+```
 
 ## Permissions justification
 
@@ -108,7 +179,7 @@ Declared by the app, all for the floating calculator:
 |---|---|
 | `SYSTEM_ALERT_WINDOW` | Draws the floating calculator window over other apps. The user grants it on the system settings screen that opens the first time they start the floating calculator. |
 | `FOREGROUND_SERVICE` | Keeps the floating calculator window open in a foreground service after the user leaves the app. |
-| `FOREGROUND_SERVICE_SPECIAL_USE` | The foreground service type that Android 14 and newer require for this service. See the declaration below. |
+| `FOREGROUND_SERVICE_SPECIAL_USE` | The foreground service type that Android 14 and newer require for this service. See the declaration above. |
 | `POST_NOTIFICATIONS` | Shows the floating calculator's ongoing notification with a Stop action. On Android 13 and newer it is asked at runtime the first time the user starts the floating calculator from Settings. |
 
 Added by AndroidX libraries:
@@ -118,25 +189,9 @@ Added by AndroidX libraries:
 | `WAKE_LOCK` | AndroidX WorkManager | The Glance home-screen widget library uses WorkManager to schedule widget updates. This keeps the phone awake for a short time while an update runs. |
 | `ACCESS_NETWORK_STATE` | AndroidX WorkManager | Lets WorkManager read the connection state. The app makes no network calls, and this permission cannot send data. |
 | `RECEIVE_BOOT_COMPLETED` | AndroidX WorkManager | Lets WorkManager reschedule widget updates after the phone restarts. |
-| `com.calculator.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` | AndroidX Core | A signature permission, so only this app can send broadcasts to its own receivers. |
+| `io.github.zeevy.calculator.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` | AndroidX Core | A signature permission, so only this app can send broadcasts to its own receivers. |
 
 No contacts, location, storage, camera or microphone permission.
-
-### Special-use foreground service declaration
-
-Play Console asks for this under App content, Foreground service permissions.
-
-| Field | Value |
-|---|---|
-| Service | `com.calculator.feature.floating.FloatingCalculatorService` |
-| Foreground service type | `specialUse` |
-| Subtype (`PROPERTY_SPECIAL_USE_FGS_SUBTYPE`) | `floating_calculator` |
-
-Description:
-
-```
-A small calculator window the user opens from Settings stays on top of other apps until the user closes it with its X button or the Stop action in the notification. The foreground service only keeps that window alive; it does no background work.
-```
 
 ## Loan-screen wording check
 
@@ -148,18 +203,3 @@ Google Play's personal-loans policy bans wording that says or suggests the app i
 - Result labels: `Monthly EMI`, `Total interest`, `Total paid`
 
 The unit test `com.calculator.feature.finance.loan.LoanCopyTest` checks the loan strings, the loan tool label and the launcher shortcut labels in English and Hindi. It fails if any of these appear: `apply`, `qualify`, `lender`, `borrow`, `loan us`, `get a loan`, `eligib`, `approval`.
-
-## Screenshots (TODO)
-
-The listing needs 8 phone screenshots, 1 screenshot for a 7" tablet and 1 for a 10" tablet. Take them on a Pixel 6a class phone with the release build installed. Suggested set:
-
-1. Basic calculator with a multi-line expression in progress.
-2. Advanced calculator showing trig keys and the memory chip.
-3. Tools menu on a phone set up for India (all 21 tiles: Basic, Advanced, the 17 tools, History and Settings).
-4. Floating calculator on top of another app.
-5. Unit converter on the Length category.
-6. History sheet with several entries.
-7. Loan estimator filled in.
-8. Settings sheet showing the appearance and feedback controls.
-
-Put the files in `docs/screenshots/`. Each file should be 1080x2400 (Pixel 6a native).

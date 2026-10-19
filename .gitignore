@@ -64,3 +64,6 @@ lint/tmp/
 
 # Kotlin
 .kotlin/
+
+# Local Play Console key and stats script, owner only. Never commit.
+.config/
