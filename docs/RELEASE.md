@@ -57,6 +57,7 @@ Play Console, Home, **Create app**:
 | Field | Value |
 |---|---|
 | App name | `Calculator & Unit Converter` |
+| Package name | `io.github.zeevy.calculator`, then **Check availability** |
 | Default language | English (United States) - en-US |
 | App or game | App |
 | Free or paid | Free |
