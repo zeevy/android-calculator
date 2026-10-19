@@ -67,7 +67,7 @@ Play Console, Home, **Create app**:
 
 Copy every answer from [PLAY_LISTING.md](PLAY_LISTING.md):
 
-- **Policy and programs, App content**: the section "App content answers", one row per form. The foreground service form needs a link to a short demo video. Record it on a phone or emulator with `adb shell screenrecord /sdcard/fgs.mp4` (Settings, Open over other apps, use the window over another app, pull down the notification, close with X), then upload it to YouTube as Unlisted.
+- **Policy and programs, App content**: the section "App content answers", one row per form. The Advertising ID and foreground service forms show up only after the first upload in step 5. The foreground service form needs a link to a short demo video. Record it on a phone or emulator with `adb shell screenrecord /sdcard/fgs.mp4` (Settings, Open over other apps, use the window over another app, pull down the notification, close with X), then upload it to YouTube as Unlisted.
 - **Grow users, Store presence, Main store listing**: title, short and full description, icon, feature graphic and the 8 phone screenshots from [play/](play/), with the alt text from the table.
 - **Store settings**: category, tags and contact details.
 
@@ -77,7 +77,7 @@ Google takes the first upload of a new app only through the Play Console. The Pl
 
 1. Cut the release as in [Cutting a release](#cutting-a-release). The workflow builds the signed AAB and attaches it to a draft GitHub release.
 2. Download `app-release.aab` from that draft release.
-3. Play Console, **Test and release**, **Testing**: open **Closed testing** if step 6 applies to your account, else **Internal testing**. Use the default track (the closed one is **Alpha**, which CI calls `alpha`; do not create a new one), add testers (an email list), then **Create new release**.
+3. Play Console, **Test and release**, **Testing**: open **Closed testing** if step 6 applies to your account, else **Internal testing**. Use the default track (the closed one is **Alpha**, which CI calls `alpha`; do not create a new one), add testers (an email list; press Enter after each address, and each one must be a Google account, the one signed in to Play on the tester's phone), then **Create new release**.
 4. Play App Signing: keep **Use a Google-generated key**. The key that signed this AAB becomes the upload key.
 5. Upload the AAB. Paste the release notes from `CHANGELOG.md` (max 500 characters). **Next**, then **Save and publish**. The first review can take a few days.
 

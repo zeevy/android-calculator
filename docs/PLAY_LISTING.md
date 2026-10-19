@@ -126,7 +126,7 @@ Play Console, Policy and programs, App content. Answer each section as below.
 | Section | Answer |
 |---|---|
 | Privacy policy | <https://github.com/zeevy/android-calculator/blob/main/PRIVACY.md> |
-| App access | All functionality is available without special access |
+| Sign in details (App access) | All functionality is available without any access restrictions |
 | Ads | No, the app does not contain ads |
 | Content rating | Category "All other app types". Answer No to every question. Expected rating: Everyone, PEGI 3, IARC 3+ |
 | Target audience | 13-15, 16-17 and 18 and over. Not designed to appeal to children |
@@ -135,8 +135,8 @@ Play Console, Policy and programs, App content. Answer each section as below.
 | Government apps | No |
 | Financial features | My app doesn't provide any financial features (the loan, GST, investment and deposit tools only calculate; see [Loan-screen wording check](#loan-screen-wording-check)) |
 | Health apps | Health and fitness: **Activity and fitness** (the BMI calculator measures body composition) and **Period tracking** (the ovulation estimator predicts ovulation and the fertile window). Nothing in Medical |
-| Advertising ID | No, the app does not use an advertising ID |
-| Foreground service permissions | See [Special-use foreground service](#special-use-foreground-service) below |
+| Advertising ID | No, the app does not use an advertising ID. Shown only after the first AAB upload |
+| Foreground service permissions | See [Special-use foreground service](#special-use-foreground-service) below. Shown only after the first AAB upload |
 
 ### Data safety
 
@@ -155,18 +155,13 @@ The app collects no data and shares no data.
 | Service | `com.calculator.feature.floating.FloatingCalculatorService` |
 | Foreground service type | `specialUse` |
 | Subtype (`PROPERTY_SPECIAL_USE_FGS_SUBTYPE`) | `floating_calculator` |
-| Video | A link to the demo video (YouTube unlisted). It shows: Settings, Open over other apps, the window over a browser, the ongoing notification with Stop, and the X that closes it |
+| Task | Other: floating calculator window over other apps |
+| Video | A link to the demo video (YouTube, unlisted). It shows: Settings, Open over other apps, the window over a browser, the ongoing notification with Stop, and the X that closes it |
 
-Description:
-
-```
-A small calculator window the user opens from Settings stays on top of other apps until the user closes it with its X button or the Stop action in the notification. The foreground service only keeps that window alive; it does no background work.
-```
-
-Impact if the system defers or stops it:
+"Describe permission use" takes 500 characters. This text is exactly 500:
 
 ```
-The floating calculator window disappears while the user is using it, and the number they were working on is lost. The user started the window on purpose and expects it to stay on screen until they close it.
+The user opens a small floating calculator window from the app's Settings. It stays on top of other apps, so the user can add up numbers while looking at another app. The service only keeps this window alive: no background work, no network. It must start at once because the user has just asked for the window. It cannot be paused or restarted, because the window would vanish in the middle of a sum and the number would be lost. The user ends it with the X on the window or Stop in the notification.
 ```
 
 ## Permissions justification
