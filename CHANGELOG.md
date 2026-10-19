@@ -7,11 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-10-19
+
+### Changed
+
+- The app's package name is now `in.co.gorest.calculator`, its name on Google Play. Version 1.3.1 was never on the Play Store, so no Play user has to move.
+
 ## [1.3.1] - 2026-10-19
 
 ### Changed
 
-- The app's package name is now `io.github.zeevy.calculator`, its name on Google Play.
+- The app's package name is now `io.github.zeevy.calculator`.
 - Release builds are signed, so the APK on the GitHub release can be installed. Tagged releases are uploaded to Google Play.
 
 ## [1.3.0] - 2026-10-13

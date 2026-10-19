@@ -66,7 +66,7 @@ AndroidX libraries add four more to the final manifest. The Glance home-screen w
 | `WAKE_LOCK` | AndroidX WorkManager | Keeps the phone awake for a short time while WorkManager runs a widget update. |
 | `ACCESS_NETWORK_STATE` | AndroidX WorkManager | Lets WorkManager check whether the phone is connected. The app makes no network calls, and this permission cannot send data. |
 | `RECEIVE_BOOT_COMPLETED` | AndroidX WorkManager | Lets WorkManager reschedule widget updates after the phone restarts. |
-| `io.github.zeevy.calculator.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` | AndroidX Core | A signature permission. Only this app can send broadcasts to its own receivers. |
+| `in.co.gorest.calculator.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` | AndroidX Core | A signature permission. Only this app can send broadcasts to its own receivers. |
 
 The app does not read your contacts, location, storage, camera or microphone.
 
