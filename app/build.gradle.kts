@@ -30,7 +30,7 @@ android {
     defaultConfig {
         // The Play package name. It can never change once the app is on Play.
         // The Kotlin packages keep the shorter `com.calculator` namespace.
-        applicationId = "io.github.zeevy.calculator"
+        applicationId = "in.co.gorest.calculator"
         minSdk =
             libs.versions.min.sdk
                 .get()
@@ -42,8 +42,8 @@ android {
         // Phase 11 versioning. Bumping `versionName` always pairs with
         // a bump of `versionCode` (monotonic across the lifetime of
         // the app). See docs/RELEASE.md for the formula.
-        versionCode = 10301
-        versionName = "1.3.1"
+        versionCode = 10302
+        versionName = "1.3.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }

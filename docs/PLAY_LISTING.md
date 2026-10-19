@@ -6,7 +6,7 @@ Everything the Google Play Console asks for, ready to copy. The step-by-step ord
 
 | Field | Value |
 |---|---|
-| Package name | `io.github.zeevy.calculator` (fixed for life once uploaded) |
+| Package name | `in.co.gorest.calculator` (fixed for life once uploaded) |
 | Default language | English (United States) - en-US |
 | App or game | App |
 | Free or paid | Free |
@@ -184,7 +184,7 @@ Added by AndroidX libraries:
 | `WAKE_LOCK` | AndroidX WorkManager | The Glance home-screen widget library uses WorkManager to schedule widget updates. This keeps the phone awake for a short time while an update runs. |
 | `ACCESS_NETWORK_STATE` | AndroidX WorkManager | Lets WorkManager read the connection state. The app makes no network calls, and this permission cannot send data. |
 | `RECEIVE_BOOT_COMPLETED` | AndroidX WorkManager | Lets WorkManager reschedule widget updates after the phone restarts. |
-| `io.github.zeevy.calculator.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` | AndroidX Core | A signature permission, so only this app can send broadcasts to its own receivers. |
+| `in.co.gorest.calculator.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` | AndroidX Core | A signature permission, so only this app can send broadcasts to its own receivers. |
 
 No contacts, location, storage, camera or microphone permission.
 

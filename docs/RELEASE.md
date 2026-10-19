@@ -17,7 +17,7 @@ Both live in [`app/build.gradle.kts`](../app/build.gradle.kts) under `defaultCon
 |---|---|---|
 | 1. Make the upload key | Terminal | `calculator-upload.jks`, kept outside the repo |
 | 2. Put the key in GitHub secrets | Terminal | The Release workflow signs the AAB and APK |
-| 3. Create the app | Play Console | An empty app for `io.github.zeevy.calculator` |
+| 3. Create the app | Play Console | An empty app for `in.co.gorest.calculator` |
 | 4. App content and store listing | Play Console | Every policy form answered, listing ready |
 | 5. First upload, by hand | Play Console | Play App Signing on, first release in review |
 | 6. Production access | Play Console | Only for new personal developer accounts |
@@ -57,7 +57,7 @@ Play Console, Home, **Create app**:
 | Field | Value |
 |---|---|
 | App name | `Calculator & Unit Converter` |
-| Package name | `io.github.zeevy.calculator`, then **Check availability** |
+| Package name | `in.co.gorest.calculator`, then **Check availability** |
 | Default language | English (United States) - en-US |
 | App or game | App |
 | Free or paid | Free |
