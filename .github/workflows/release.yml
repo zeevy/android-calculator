@@ -1,17 +1,20 @@
 # Release workflow.
 #
-# Triggered manually or by pushing a tag like `v0.1.0`. Split into two
-# connected jobs so the Actions UI renders the pipeline as a DAG:
+# Triggered manually or by pushing a tag like `v0.1.0`. Split into connected
+# jobs so the Actions UI renders the pipeline as a DAG:
 #
 #   build-artifacts  ──>  publish-release
+#                    ──>  publish-play
 #
-# 1. `build-artifacts` assembles the release APK + AAB and uploads them.
-# 2. `publish-release` downloads the APK + AAB and attaches them to a
-#    GitHub release. Only runs for tag pushes.
+# 1. `build-artifacts` assembles the release APK + AAB, signed with the
+#    upload key from secrets, and uploads them.
+# 2. `publish-release` attaches the APK + AAB to a draft GitHub release.
+#    Only runs for tag pushes.
+# 3. `publish-play` uploads the AAB to Google Play. Only runs for tag
+#    pushes, and only when the PLAY_TRACK repository variable is set.
 #
-# Signing is intentionally left unsigned for now; once Play App Signing
-# is enrolled the release config will pull the keystore from encrypted
-# secrets and produce a signed AAB.
+# The publish jobs run no project code, so the GitHub write token and the
+# Play key never reach the Gradle build. The setup is in docs/RELEASE.md.
 
 name: Release
 
@@ -82,11 +85,29 @@ jobs:
         with:
           cache-read-only: true
 
-      - name: Assemble release APK
-        run: ./gradlew :app:assembleRelease --stacktrace
+      # Without the secrets (a fork, or before the key exists) the build
+      # stays unsigned, which Play rejects.
+      - name: Decode the upload keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+            echo "RELEASE_KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+          else
+            echo "::warning::No RELEASE_KEYSTORE_BASE64 secret: the build is unsigned."
+          fi
 
-      - name: Bundle release AAB
-        run: ./gradlew :app:bundleRelease --stacktrace
+      - name: Assemble release APK and AAB
+        env:
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: ./gradlew :app:assembleRelease :app:bundleRelease --stacktrace
+
+      - name: Remove the keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.keystore"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v7
@@ -100,6 +121,14 @@ jobs:
         with:
           name: calculator-aab
           path: app/build/outputs/bundle/release/*.aab
+          retention-days: 90
+
+      # Play uses it to show readable stack traces for the R8-shrunk build.
+      - name: Upload R8 mapping artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: calculator-mapping
+          path: app/build/outputs/mapping/release/mapping.txt
           retention-days: 90
 
   publish-release:
@@ -135,3 +164,35 @@ jobs:
           files: |
             artifacts/apk/*.apk
             artifacts/aab/*.aab
+
+  publish-play:
+    name: Upload to Google Play
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build-artifacts
+    # Off until the PLAY_TRACK variable is set (internal, alpha, beta or
+    # production): Google takes the first upload of a new app only through
+    # the Play Console.
+    if: ${{ startsWith(github.ref, 'refs/tags/') && vars.PLAY_TRACK != '' && needs.build-artifacts.result == 'success' }}
+
+    steps:
+      - name: Download AAB
+        uses: actions/download-artifact@v8
+        with:
+          name: calculator-aab
+          path: artifacts/aab
+
+      - name: Download R8 mapping
+        uses: actions/download-artifact@v8
+        with:
+          name: calculator-mapping
+          path: artifacts/mapping
+
+      - name: Upload to Google Play
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: io.github.zeevy.calculator
+          releaseFiles: artifacts/aab/*.aab
+          mappingFile: artifacts/mapping/mapping.txt
+          track: ${{ vars.PLAY_TRACK }}

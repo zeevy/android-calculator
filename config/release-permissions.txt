@@ -5,4 +5,4 @@ android.permission.POST_NOTIFICATIONS
 android.permission.RECEIVE_BOOT_COMPLETED
 android.permission.SYSTEM_ALERT_WINDOW
 android.permission.WAKE_LOCK
-com.calculator.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+io.github.zeevy.calculator.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
