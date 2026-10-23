@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.3] - 2026-10-24
+
+### Changed
+
+- Updated Kotlin to 2.4.21 and the test libraries to their latest patch versions.
+- The README links to the app on Google Play.
+
 ## [1.3.2] - 2026-10-19
 
 ### Changed
