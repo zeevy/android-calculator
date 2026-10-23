@@ -2,7 +2,9 @@
 
 A modern, fully-offline, multi-purpose calculator for Android - inspired by Mi Calculator, built with Kotlin and Jetpack Compose.
 
-> Status: **v1** - shipping. See [CHANGELOG.md](CHANGELOG.md) for releases and [REQUIREMENTS.md](REQUIREMENTS.md) for the full product spec.
+<a href="https://play.google.com/store/apps/details?id=in.co.gorest.calculator"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80"></a>
+
+> Status: **v1** - live on [Google Play](https://play.google.com/store/apps/details?id=in.co.gorest.calculator). See [CHANGELOG.md](CHANGELOG.md) for releases and [REQUIREMENTS.md](REQUIREMENTS.md) for the full product spec.
 
 ## Screenshots
 
