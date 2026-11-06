@@ -67,3 +67,6 @@ lint/tmp/
 
 # Local Play Console key and stats script, owner only. Never commit.
 .config/
+
+# graphify knowledge graph output, built locally
+/graphify-out/
