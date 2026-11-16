@@ -49,9 +49,9 @@ junit5 = "6.1.3"
 android-junit5-plugin = "2.0.2"
 junit4 = "4.13.2"
 turbine = "1.2.1"
-mockk = "1.14.11"
+mockk = "1.14.12"
 robolectric = "4.17"
-kotest = "6.2.6"
+kotest = "6.2.7"
 
 [libraries]
 # Compose BOM keeps all Compose artifacts in sync; do not pin individual versions.
